@@ -1,4 +1,4 @@
-import { createI18n } from 'vue-i18n'
+﻿import { createI18n } from 'vue-i18n'
 
 type LocaleCode = 'en' | 'zh'
 
@@ -9,7 +9,7 @@ const DEFAULT_LOCALE: LocaleCode = 'en'
 
 const localeLoaders: Record<LocaleCode, () => Promise<{ default: LocaleMessages }>> = {
   en: () => import('./locales/en'),
-  zh: () => import('./locales/zh')
+  zh: () => import('./locales/zh-safe')
 }
 
 function isLocaleCode(value: string): value is LocaleCode {
@@ -35,8 +35,11 @@ export const i18n = createI18n({
   locale: getDefaultLocale(),
   fallbackLocale: DEFAULT_LOCALE,
   messages: {},
-  // 禁用 HTML 消息警告 - 引导步骤使用富文本内容（driver.js 支持 HTML）
-  // 这些内容是内部定义的，不存在 XSS 风险
+  datetimeFormats: {
+    en: { monthYear: { year: 'numeric', month: 'long' } },
+    zh: { monthYear: { year: 'numeric', month: 'long' } }
+  },
+  // 绂佺敤 HTML 娑堟伅璀﹀憡 - 寮曞姝ラ浣跨敤瀵屾枃鏈唴瀹癸紙driver.js 鏀寔 HTML锛?  // 杩欎簺鍐呭鏄唴閮ㄥ畾涔夌殑锛屼笉瀛樺湪 XSS 椋庨櫓
   warnHtmlMessage: false
 })
 
@@ -69,7 +72,7 @@ export async function setLocale(locale: string): Promise<void> {
   localStorage.setItem(LOCALE_KEY, locale)
   document.documentElement.setAttribute('lang', locale)
 
-  // 同步更新浏览器页签标题，使其跟随语言切换
+  // 鍚屾鏇存柊娴忚鍣ㄩ〉绛炬爣棰橈紝浣垮叾璺熼殢璇█鍒囨崲
   const { resolveDocumentTitle } = await import('@/router/title')
   const { default: router } = await import('@/router')
   const { useAppStore } = await import('@/stores/app')
@@ -84,8 +87,9 @@ export function getLocale(): LocaleCode {
 }
 
 export const availableLocales = [
-  { code: 'en', name: 'English', flag: '🇺🇸' },
-  { code: 'zh', name: '中文', flag: '🇨🇳' }
+  { code: 'en', name: 'English', flag: '馃嚭馃嚫' },
+  { code: 'zh', name: '涓枃', flag: '馃嚚馃嚦' }
 ] as const
 
 export default i18n
+

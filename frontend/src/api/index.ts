@@ -1,4 +1,4 @@
-/**
+﻿/**
  * API Client for api-private-router Backend
  * Central export point for all API modules
  */
@@ -18,6 +18,7 @@ export { paymentAPI } from './payment'
 export { userGroupsAPI } from './groups'
 export { userChannelsAPI } from './channels'
 export { totpAPI } from './totp'
+export { checkinAPI } from './checkin'
 export { default as announcementsAPI } from './announcements'
 export { channelMonitorUserAPI } from './channelMonitor'
 

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Vue Router configuration for api-private-router frontend
  * Defines all application routes with lazy loading and navigation guards
  */
@@ -186,15 +186,15 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
-    path: '/usage',
-    name: 'Usage',
-    component: () => import('@/views/user/UsageView.vue'),
+    path: '/checkin',
+    name: 'CheckIn',
+    component: () => import('@/views/user/CheckInView.vue'),
     meta: {
       requiresAuth: true,
       requiresAdmin: false,
-      title: 'Usage Records',
-      titleKey: 'usage.title',
-      descriptionKey: 'usage.description'
+      title: 'Daily Check-In',
+      titleKey: 'checkin.title',
+      descriptionKey: 'checkin.heroDescription'
     }
   },
   {
@@ -665,9 +665,9 @@ const router = createRouter({
  */
 let authInitialized = false
 
-// 初始化导航加载状态和预加载
+// 鍒濆鍖栧鑸姞杞界姸鎬佸拰棰勫姞杞?const navigationLoading = useNavigationLoadingState()
 const navigationLoading = useNavigationLoadingState()
-// 延迟初始化预加载，传入 router 实例
+// 寤惰繜鍒濆鍖栭鍔犺浇锛屼紶鍏?router 瀹炰緥
 let routePrefetch: ReturnType<typeof useRoutePrefetch> | null = null
 const BACKEND_MODE_ALLOWED_PATHS = ['/login', '/key-usage', '/setup', '/payment/result']
 const BACKEND_MODE_CALLBACK_PATHS = [
@@ -697,8 +697,7 @@ function isBackendModePublicRouteAllowed(path: string, hasPendingAuthSession: bo
 }
 
 router.beforeEach((to, _from, next) => {
-  // 开始导航加载状态
-  navigationLoading.startNavigation()
+  // 寮€濮嬪鑸姞杞界姸鎬?  navigationLoading.startNavigation()
 
   const authStore = useAuthStore()
 
@@ -792,7 +791,7 @@ router.beforeEach((to, _from, next) => {
     }
   }
 
-  // 简易模式下限制访问某些页面
+  // 绠€鏄撴ā寮忎笅闄愬埗璁块棶鏌愪簺椤甸潰
   if (authStore.isSimpleMode) {
     const restrictedPaths = [
       '/admin/groups',
@@ -803,8 +802,7 @@ router.beforeEach((to, _from, next) => {
     ]
 
     if (restrictedPaths.some((path) => to.path.startsWith(path))) {
-      // 简易模式下访问受限页面,重定向到仪表板
-      next(authStore.isAdmin ? '/admin/dashboard' : '/dashboard')
+      // 绠€鏄撴ā寮忎笅璁块棶鍙楅檺椤甸潰,閲嶅畾鍚戝埌浠〃鏉?      next(authStore.isAdmin ? '/admin/dashboard' : '/dashboard')
       return
     }
   }
@@ -830,14 +828,14 @@ router.beforeEach((to, _from, next) => {
  * Navigation guard: End loading and trigger prefetch
  */
 router.afterEach((to) => {
-  // 结束导航加载状态
+  // End navigation loading state
   navigationLoading.endNavigation()
 
-  // 懒初始化预加载（首次导航时创建，传入 router 实例）
+  // Lazily initialize route prefetch helper on first navigation
   if (!routePrefetch) {
     routePrefetch = useRoutePrefetch(router)
   }
-  // 触发路由预加载（在浏览器空闲时执行）
+  // Trigger route prefetch during idle time
   routePrefetch.triggerPrefetch(to)
 })
 
@@ -873,3 +871,4 @@ router.onError((error) => {
 })
 
 export default router
+
