@@ -115,6 +115,9 @@ public class BackendModeGuardFilter extends OncePerRequestFilter {
     }
 
     private boolean isUserSelfServicePath(String path) {
+        if (matchesPathPrefix(path, "/api/v1/public/leaderboard")) {
+            return false;
+        }
         if (matchesPathPrefix(path, "/api/v1/payment/public") || matchesPathPrefix(path, "/api/v1/payment/webhook")) {
             return false;
         }

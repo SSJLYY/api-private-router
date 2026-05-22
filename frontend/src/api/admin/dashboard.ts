@@ -5,6 +5,8 @@
 
 import { apiClient } from '../client'
 import type {
+  AccountConsumptionRankingResponse,
+  ConsumptionLeaderboardResponse,
   DashboardStats,
   TrendDataPoint,
   ModelStat,
@@ -240,6 +242,11 @@ export interface UserSpendingRankingParams
   limit?: number
 }
 
+export interface AccountConsumptionRankingParams
+  extends Pick<TrendParams, 'start_date' | 'end_date'> {
+  limit?: number
+}
+
 /**
  * Get user usage trend data
  * @param params - Query parameters for filtering
@@ -262,6 +269,22 @@ export async function getUserSpendingRanking(
 ): Promise<UserSpendingRankingResponse> {
   const { data } = await apiClient.get<UserSpendingRankingResponse>('/admin/dashboard/users-ranking', {
     params
+  })
+  return data
+}
+
+export async function getAccountConsumptionRanking(
+  params?: AccountConsumptionRankingParams
+): Promise<AccountConsumptionRankingResponse> {
+  const { data } = await apiClient.get<AccountConsumptionRankingResponse>('/admin/dashboard/accounts-ranking', {
+    params
+  })
+  return data
+}
+
+export async function getConsumptionLeaderboard(limit?: number): Promise<ConsumptionLeaderboardResponse> {
+  const { data } = await apiClient.get<ConsumptionLeaderboardResponse>('/admin/dashboard/consumption-leaderboard', {
+    params: { limit }
   })
   return data
 }
@@ -325,6 +348,8 @@ export const dashboardAPI = {
   getApiKeyUsageTrend,
   getUserUsageTrend,
   getUserSpendingRanking,
+  getAccountConsumptionRanking,
+  getConsumptionLeaderboard,
   getBatchUsersUsage,
   getBatchApiKeysUsage
 }

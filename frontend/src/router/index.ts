@@ -145,6 +145,16 @@ const routes: RouteRecordRaw[] = [
       title: 'Key Usage',
     }
   },
+  {
+    path: '/leaderboard',
+    name: 'PublicLeaderboard',
+    component: () => import('@/views/public/LeaderboardView.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Consumption Leaderboard',
+      titleKey: 'leaderboard.title'
+    }
+  },
 
   // ==================== User Routes ====================
   {
@@ -346,6 +356,17 @@ const routes: RouteRecordRaw[] = [
       title: 'Admin Dashboard',
       titleKey: 'admin.dashboard.title',
       descriptionKey: 'admin.dashboard.description'
+    }
+  },
+  {
+    path: '/admin/leaderboard',
+    name: 'AdminLeaderboard',
+    component: () => import('@/views/admin/AdminLeaderboardView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Consumption Leaderboard',
+      titleKey: 'leaderboard.title'
     }
   },
   {

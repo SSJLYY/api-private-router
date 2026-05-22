@@ -3,6 +3,7 @@ package org.apiprivaterouter.javabackend.admin.dashboard.repository;
 import org.apiprivaterouter.javabackend.admin.dashboard.model.AdminDashboardStatsResponse;
 import org.apiprivaterouter.javabackend.admin.dashboard.model.BatchApiKeysUsageResponse;
 import org.apiprivaterouter.javabackend.admin.dashboard.model.BatchUsersUsageResponse;
+import org.apiprivaterouter.javabackend.admin.dashboard.model.AccountConsumptionRankingResponse;
 import org.apiprivaterouter.javabackend.admin.dashboard.model.GroupStatResponse;
 import org.apiprivaterouter.javabackend.admin.dashboard.model.ModelStatResponse;
 import org.apiprivaterouter.javabackend.admin.dashboard.model.RealtimeMetricsResponse;
@@ -241,6 +242,78 @@ public class AdminDashboardRepository {
         return new UserSpendingRankingResponse(
                 ranking,
                 totals.total_actual_cost,
+                totals.total_requests,
+                totals.total_tokens,
+                startDate.format(DATE_FORMATTER),
+                endDate.format(DATE_FORMATTER)
+        );
+    }
+
+    public AccountConsumptionRankingResponse loadAccountConsumptionRanking(LocalDate startDate, LocalDate endDate, ZoneId zoneId, int limit) {
+        Instant start = startDate.atStartOfDay(zoneId).toInstant();
+        Instant endExclusive = endDate.plusDays(1L).atStartOfDay(zoneId).toInstant();
+        int normalizedLimit = Math.max(1, Math.min(limit, 50));
+        List<AccountConsumptionRankingResponse.AccountConsumptionRankingItem> ranking = jdbcTemplate.query("""
+                with account_spend as (
+                    select
+                        ul.account_id,
+                        coalesce(a.name, '') as account_name,
+                        coalesce(a.platform, '') as platform,
+                        coalesce(sum(coalesce(ul.account_stats_cost, ul.actual_cost, 0)), 0) as account_cost,
+                        coalesce(sum(ul.actual_cost), 0) as actual_cost,
+                        count(*) as requests,
+                        coalesce(sum(ul.input_tokens + ul.output_tokens + ul.cache_creation_tokens + ul.cache_read_tokens), 0) as tokens
+                    from usage_logs ul
+                    left join accounts a on a.id = ul.account_id
+                    where ul.created_at >= :startTime and ul.created_at < :endTime
+                    group by ul.account_id, a.name, a.platform
+                )
+                select account_id, account_name, platform, account_cost, actual_cost, requests, tokens
+                from account_spend
+                order by account_cost desc, tokens desc, account_id asc
+                limit :limit
+                """, new MapSqlParameterSource()
+                .addValue("startTime", Timestamp.from(start))
+                .addValue("endTime", Timestamp.from(endExclusive))
+                .addValue("limit", normalizedLimit), (rs, rowNum) -> new AccountConsumptionRankingResponse.AccountConsumptionRankingItem(
+                rs.getLong("account_id"),
+                rs.getString("account_name"),
+                rs.getString("platform"),
+                rs.getDouble("account_cost"),
+                rs.getDouble("actual_cost"),
+                rs.getLong("requests"),
+                rs.getLong("tokens")
+        ));
+
+        AccountRankingTotals totals = jdbcTemplate.queryForObject("""
+                select
+                    coalesce(sum(account_cost), 0) as total_account_cost,
+                    coalesce(sum(requests), 0) as total_requests,
+                    coalesce(sum(tokens), 0) as total_tokens
+                from (
+                    select
+                        ul.account_id,
+                        coalesce(sum(coalesce(ul.account_stats_cost, ul.actual_cost, 0)), 0) as account_cost,
+                        count(*) as requests,
+                        coalesce(sum(ul.input_tokens + ul.output_tokens + ul.cache_creation_tokens + ul.cache_read_tokens), 0) as tokens
+                    from usage_logs ul
+                    where ul.created_at >= :startTime and ul.created_at < :endTime
+                    group by ul.account_id
+                ) summary
+                """, new MapSqlParameterSource()
+                .addValue("startTime", Timestamp.from(start))
+                .addValue("endTime", Timestamp.from(endExclusive)), (rs, rowNum) -> new AccountRankingTotals(
+                rs.getDouble("total_account_cost"),
+                rs.getLong("total_requests"),
+                rs.getLong("total_tokens")
+        ));
+        if (totals == null) {
+            totals = new AccountRankingTotals(0, 0, 0);
+        }
+
+        return new AccountConsumptionRankingResponse(
+                ranking,
+                totals.total_account_cost,
                 totals.total_requests,
                 totals.total_tokens,
                 startDate.format(DATE_FORMATTER),
@@ -812,6 +885,13 @@ public class AdminDashboardRepository {
 
     private record RankingTotals(
             double total_actual_cost,
+            long total_requests,
+            long total_tokens
+    ) {
+    }
+
+    private record AccountRankingTotals(
+            double total_account_cost,
             long total_requests,
             long total_tokens
     ) {

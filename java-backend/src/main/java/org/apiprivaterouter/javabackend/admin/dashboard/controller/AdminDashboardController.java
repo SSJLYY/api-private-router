@@ -7,6 +7,8 @@ import org.apiprivaterouter.javabackend.admin.dashboard.model.BatchApiKeysUsageR
 import org.apiprivaterouter.javabackend.admin.dashboard.model.BatchApiKeysUsageResponse;
 import org.apiprivaterouter.javabackend.admin.dashboard.model.BatchUsersUsageRequest;
 import org.apiprivaterouter.javabackend.admin.dashboard.model.BatchUsersUsageResponse;
+import org.apiprivaterouter.javabackend.admin.dashboard.model.AccountConsumptionRankingResponse;
+import org.apiprivaterouter.javabackend.admin.dashboard.model.ConsumptionLeaderboardResponse;
 import org.apiprivaterouter.javabackend.admin.dashboard.model.DashboardAggregationBackfillRequest;
 import org.apiprivaterouter.javabackend.admin.dashboard.model.DashboardSnapshotV2Response;
 import org.apiprivaterouter.javabackend.admin.dashboard.model.GroupStatsResponse;
@@ -199,6 +201,26 @@ public class AdminDashboardController {
     ) {
         currentUserContext.requireAdmin();
         return ApiResponse.success(service.getUserSpendingRanking(startDate, endDate, limit, timezone));
+    }
+
+    @GetMapping("/accounts-ranking")
+    public ApiResponse<AccountConsumptionRankingResponse> getAccountConsumptionRanking(
+            @RequestParam(name = "start_date", required = false) String startDate,
+            @RequestParam(name = "end_date", required = false) String endDate,
+            @RequestParam(required = false) Integer limit,
+            @RequestParam(required = false) String timezone
+    ) {
+        currentUserContext.requireAdmin();
+        return ApiResponse.success(service.getAccountConsumptionRanking(startDate, endDate, limit, timezone));
+    }
+
+    @GetMapping("/consumption-leaderboard")
+    public ApiResponse<ConsumptionLeaderboardResponse> getConsumptionLeaderboard(
+            @RequestParam(required = false) Integer limit,
+            @RequestParam(required = false) String timezone
+    ) {
+        currentUserContext.requireAdmin();
+        return ApiResponse.success(service.getConsumptionLeaderboard(limit, timezone));
     }
 
     @PostMapping("/users-usage")

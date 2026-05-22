@@ -4,6 +4,8 @@ import org.apiprivaterouter.javabackend.admin.dashboard.model.AdminDashboardStat
 import org.apiprivaterouter.javabackend.admin.dashboard.model.ApiKeyTrendResponse;
 import org.apiprivaterouter.javabackend.admin.dashboard.model.BatchApiKeysUsageResponse;
 import org.apiprivaterouter.javabackend.admin.dashboard.model.BatchUsersUsageResponse;
+import org.apiprivaterouter.javabackend.admin.dashboard.model.AccountConsumptionRankingResponse;
+import org.apiprivaterouter.javabackend.admin.dashboard.model.ConsumptionLeaderboardResponse;
 import org.apiprivaterouter.javabackend.admin.dashboard.model.DashboardAggregationBackfillRequest;
 import org.apiprivaterouter.javabackend.admin.dashboard.model.DashboardSnapshotV2Response;
 import org.apiprivaterouter.javabackend.admin.dashboard.model.GroupStatsResponse;
@@ -47,6 +49,36 @@ public class AdminDashboardService {
         LocalDate start = startDate == null || startDate.isBlank() ? end.minusDays(7) : LocalDate.parse(startDate.trim());
         int normalizedLimit = limit == null ? 12 : limit;
         return repository.loadUserSpendingRanking(start, end, zoneId, normalizedLimit);
+    }
+
+    public AccountConsumptionRankingResponse getAccountConsumptionRanking(String startDate, String endDate, Integer limit, String timezone) {
+        ZoneId zoneId = resolveZoneId(timezone);
+        LocalDate end = parseDateOrToday(endDate, zoneId);
+        LocalDate start = startDate == null || startDate.isBlank() ? end.minusDays(7) : LocalDate.parse(startDate.trim());
+        int normalizedLimit = limit == null ? 12 : limit;
+        return repository.loadAccountConsumptionRanking(start, end, zoneId, normalizedLimit);
+    }
+
+    public ConsumptionLeaderboardResponse getConsumptionLeaderboard(Integer limit, String timezone) {
+        ZoneId zoneId = resolveZoneId(timezone);
+        LocalDate today = LocalDate.now(zoneId);
+        int normalizedLimit = limit == null ? 12 : limit;
+
+        LocalDate dailyStart = today;
+        LocalDate weeklyStart = today.minusDays(6);
+        LocalDate monthlyStart = today.withDayOfMonth(1);
+        LocalDate yearlyStart = today.withDayOfYear(1);
+
+        return new ConsumptionLeaderboardResponse(
+                repository.loadUserSpendingRanking(dailyStart, today, zoneId, normalizedLimit),
+                repository.loadUserSpendingRanking(weeklyStart, today, zoneId, normalizedLimit),
+                repository.loadUserSpendingRanking(monthlyStart, today, zoneId, normalizedLimit),
+                repository.loadUserSpendingRanking(yearlyStart, today, zoneId, normalizedLimit),
+                repository.loadAccountConsumptionRanking(dailyStart, today, zoneId, normalizedLimit),
+                repository.loadAccountConsumptionRanking(weeklyStart, today, zoneId, normalizedLimit),
+                repository.loadAccountConsumptionRanking(monthlyStart, today, zoneId, normalizedLimit),
+                repository.loadAccountConsumptionRanking(yearlyStart, today, zoneId, normalizedLimit)
+        );
     }
 
     public BatchUsersUsageResponse getBatchUsersUsage(java.util.List<Long> userIds, String timezone) {

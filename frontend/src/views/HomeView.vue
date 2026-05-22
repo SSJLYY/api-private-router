@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <!-- Custom Home Content: Full Page Mode -->
   <div v-if="homeContent" class="min-h-screen">
     <!-- iframe mode -->
@@ -105,6 +105,12 @@
             class="inline-flex items-center rounded-full bg-gray-900 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700"
           >
             {{ t('home.login') }}
+          </router-link>
+          <router-link
+            to="/leaderboard"
+            class="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-dark-700 dark:bg-dark-800 dark:text-dark-100 dark:hover:bg-dark-700"
+          >
+            {{ t('home.leaderboard') }}
           </router-link>
         </div>
       </nav>
@@ -631,3 +637,5 @@ onMounted(() => {
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 </style>
+
+

@@ -1387,6 +1387,36 @@ export interface UserSpendingRankingResponse {
   end_date: string
 }
 
+export interface AccountConsumptionRankingItem {
+  account_id: number
+  account_name: string
+  platform: string
+  account_cost: number
+  actual_cost: number
+  requests: number
+  tokens: number
+}
+
+export interface AccountConsumptionRankingResponse {
+  ranking: AccountConsumptionRankingItem[]
+  total_account_cost: number
+  total_requests: number
+  total_tokens: number
+  start_date: string
+  end_date: string
+}
+
+export interface ConsumptionLeaderboardResponse {
+  daily: UserSpendingRankingResponse
+  weekly: UserSpendingRankingResponse
+  monthly: UserSpendingRankingResponse
+  yearly_best_employee: UserSpendingRankingResponse
+  account_daily: AccountConsumptionRankingResponse
+  account_weekly: AccountConsumptionRankingResponse
+  account_monthly: AccountConsumptionRankingResponse
+  account_yearly_best_employee: AccountConsumptionRankingResponse
+}
+
 export interface ApiKeyUsageTrendPoint {
   date: string
   api_key_id: number
