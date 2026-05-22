@@ -1,0 +1,33 @@
+[Unit]
+Description=api-private-router - Application Runtime
+After=network.target postgresql.service redis.service
+Wants=postgresql.service redis.service
+
+[Service]
+Type=simple
+User=api-private-router
+Group=api-private-router
+WorkingDirectory=/opt/api-private-router
+ExecStart=/usr/bin/java -jar /opt/api-private-router/api-private-router.jar
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=api-private-router
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/api-private-router
+
+# Environment - Server configuration
+# Modify these values to change listen address and port
+Environment=SERVER_HOST=0.0.0.0
+Environment=SERVER_PORT=8080
+Environment=DATA_DIR=/opt/api-private-router
+Environment=APP_BUILD_TYPE=release
+
+[Install]
+WantedBy=multi-user.target

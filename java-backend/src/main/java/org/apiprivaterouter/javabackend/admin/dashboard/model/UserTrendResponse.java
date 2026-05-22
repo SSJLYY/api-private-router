@@ -1,0 +1,11 @@
+package org.apiprivaterouter.javabackend.admin.dashboard.model;
+
+import java.util.List;
+
+public record UserTrendResponse(
+        List<UserUsageTrendPointResponse> trend,
+        String start_date,
+        String end_date,
+        String granularity
+) {
+}

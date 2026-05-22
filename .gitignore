@@ -1,0 +1,109 @@
+.codex
+
+# ===================
+# 二进制 / 覆盖率
+# ===================
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# 测试覆盖率
+*.out
+coverage.html
+
+# ===================
+# Node.js / Vue 前端
+# ===================
+node_modules/
+frontend/node_modules/
+frontend/dist/
+*.local
+*.tsbuildinfo
+vite.config.d.ts
+vite.config.js.timestamp-*
+
+# 日志
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ===================
+# 环境配置
+# ===================
+.env
+.env.local
+.env.*.local
+*.env
+!.env.example
+docker-compose.override.yml
+
+# ===================
+# IDE / 编辑器
+# ===================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.settings/
+.classpath
+
+# ===================
+# 操作系统
+# ===================
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ===================
+# 临时文件
+# ===================
+tmp/
+temp/
+*.tmp
+*.temp
+*.log
+*.bak
+.cache/
+.dev/
+.serena/
+
+# ===================
+# 构建产物
+# ===================
+dist/
+build/
+release/
+java-backend/target/
+
+# ===================
+# 本地配置文件（包含敏感信息）
+# ===================
+deploy/config.yaml
+
+# ===================
+# 其他
+# ===================
+tests
+CLAUDE.md
+.claude
+scripts
+.code-review-state
+#openspec/
+code-reviews/
+AGENTS.md
+deploy/docker-compose.override.yml
+vite.config.js
+docs/*
+!docs/PAYMENT.md
+!docs/PAYMENT_CN.md
+!docs/ADMIN_PAYMENT_INTEGRATION_API.md
+.serena/
+.codex/
+frontend/coverage/
+aicodex
+output/

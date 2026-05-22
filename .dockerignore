@@ -1,0 +1,72 @@
+# =============================================================================
+# Docker Ignore File for api-private-router
+# =============================================================================
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+!deploy/DOCKER.md
+docs/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+dist/
+build/
+release/
+java-backend/target/
+
+# Node modules (will be installed in container)
+frontend/node_modules/
+node_modules/
+
+# Test files
+**/*.test.js
+coverage/
+.nyc_output/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Local config
+config.yaml
+config.local.yaml
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Deploy files (not needed in image)
+deploy/install.sh
+deploy/api-private-router.service
+deploy/api-private-router-sudoers
+deploy/data/
+deploy/postgres_data/
+deploy/redis_data/
+
+# GitHub
+.github/
+
+# Claude files
+.claude/
+issues/
+CLAUDE.md
