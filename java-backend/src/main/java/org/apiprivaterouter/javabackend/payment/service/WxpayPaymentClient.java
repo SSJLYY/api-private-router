@@ -7,6 +7,7 @@ import org.apiprivaterouter.javabackend.payment.model.CreateOrderRequest;
 import org.apiprivaterouter.javabackend.payment.model.PaymentOrderResponse;
 import org.apiprivaterouter.javabackend.payment.model.ProviderInstanceResponse;
 import org.apiprivaterouter.javabackend.payment.model.WechatJsapiPayload;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.Cipher;
@@ -46,6 +47,7 @@ public class WxpayPaymentClient {
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
 
+    @Autowired
     public WxpayPaymentClient(ObjectMapper objectMapper) {
         this(objectMapper, HttpClient.newBuilder().connectTimeout(HTTP_TIMEOUT).build());
     }

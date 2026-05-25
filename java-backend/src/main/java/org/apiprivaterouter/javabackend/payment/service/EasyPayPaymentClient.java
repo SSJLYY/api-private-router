@@ -5,6 +5,7 @@ import org.apiprivaterouter.javabackend.common.api.StructuredApiErrorException;
 import org.apiprivaterouter.javabackend.payment.model.CreateOrderRequest;
 import org.apiprivaterouter.javabackend.payment.model.PaymentOrderResponse;
 import org.apiprivaterouter.javabackend.payment.model.ProviderInstanceResponse;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -34,6 +35,7 @@ public class EasyPayPaymentClient {
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
 
+    @Autowired
     public EasyPayPaymentClient(ObjectMapper objectMapper) {
         this(objectMapper, HttpClient.newBuilder().connectTimeout(HTTP_TIMEOUT).build());
     }
