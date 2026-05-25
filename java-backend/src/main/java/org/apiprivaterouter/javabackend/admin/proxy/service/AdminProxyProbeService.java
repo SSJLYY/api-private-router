@@ -6,6 +6,7 @@ import org.apiprivaterouter.javabackend.admin.proxy.model.AdminProxyResponse;
 import org.apiprivaterouter.javabackend.admin.proxy.model.ProxyQualityCheckItemResponse;
 import org.apiprivaterouter.javabackend.admin.proxy.model.ProxyQualityCheckResultResponse;
 import org.apiprivaterouter.javabackend.admin.proxy.model.TestProxyResponse;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -63,6 +64,7 @@ public class AdminProxyProbeService {
     private final List<ExitProbeTarget> exitProbeTargets;
     private final List<QualityTarget> qualityTargets;
 
+    @Autowired
     public AdminProxyProbeService(ObjectMapper objectMapper) {
         this(objectMapper, new DefaultHttpClientFactory(), DEFAULT_EXIT_PROBE_TARGETS, DEFAULT_QUALITY_TARGETS);
     }

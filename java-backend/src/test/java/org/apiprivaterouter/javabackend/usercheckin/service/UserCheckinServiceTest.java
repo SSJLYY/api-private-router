@@ -22,7 +22,7 @@ class UserCheckinServiceTest {
         UserCheckinService service = new UserCheckinService(new FakeRepository(new BigDecimal("10.0")));
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> service.checkin(new CurrentUser(1L, "user", "u@test.com"), new UserCheckinRequest(0.001, "UTC")));
+                () -> service.checkin(new CurrentUser(1L, "user", "u@test.com", 0L), new UserCheckinRequest(0.001, "UTC")));
 
         assertEquals("stake_amount must be >= 0.01", ex.getMessage());
     }
@@ -32,7 +32,7 @@ class UserCheckinServiceTest {
         UserCheckinService service = new UserCheckinService(new FakeRepository(new BigDecimal("5.0")));
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> service.checkin(new CurrentUser(1L, "user", "u@test.com"), new UserCheckinRequest(10.0, "UTC")));
+                () -> service.checkin(new CurrentUser(1L, "user", "u@test.com", 0L), new UserCheckinRequest(10.0, "UTC")));
 
         assertEquals("insufficient balance", ex.getMessage());
     }
