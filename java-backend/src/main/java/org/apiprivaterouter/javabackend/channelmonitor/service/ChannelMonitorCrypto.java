@@ -1,5 +1,7 @@
 package org.apiprivaterouter.javabackend.channelmonitor.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.Cipher;
@@ -12,6 +14,7 @@ import java.util.Base64;
 @Component
 public class ChannelMonitorCrypto {
 
+    private static final Logger log = LoggerFactory.getLogger(ChannelMonitorCrypto.class);
     private static final int KEY_LENGTH_BYTES = 32;
     private static final int NONCE_LENGTH_BYTES = 12;
     private static final int GCM_TAG_LENGTH_BITS = 128;
@@ -21,16 +24,23 @@ public class ChannelMonitorCrypto {
 
     public ChannelMonitorCrypto() {
         String raw = System.getenv("TOTP_ENCRYPTION_KEY");
-        if (raw == null || raw.isBlank()) {
-            throw new IllegalStateException("TOTP_ENCRYPTION_KEY is required for channel monitor encryption");
+        byte[] tmp = null;
+        if (raw != null && !raw.isBlank()) {
+            tmp = decodeHex(raw.trim());
+            if (tmp.length != KEY_LENGTH_BYTES) {
+                log.warn("TOTP_ENCRYPTION_KEY must be 64 hex chars, encryption disabled");
+                tmp = null;
+            }
+        } else {
+            log.warn("TOTP_ENCRYPTION_KEY not set, channel monitor encryption disabled");
         }
-        this.keyBytes = decodeHex(raw.trim());
-        if (keyBytes.length != KEY_LENGTH_BYTES) {
-            throw new IllegalStateException("TOTP_ENCRYPTION_KEY must be 64 hex chars");
-        }
+        this.keyBytes = tmp;
     }
 
     public String encrypt(String plaintext) {
+        if (keyBytes == null) {
+            throw new IllegalStateException("TOTP_ENCRYPTION_KEY not configured, channel monitor encryption unavailable");
+        }
         try {
             byte[] nonce = new byte[NONCE_LENGTH_BYTES];
             secureRandom.nextBytes(nonce);
@@ -47,6 +57,9 @@ public class ChannelMonitorCrypto {
     }
 
     public String decrypt(String ciphertext) {
+        if (keyBytes == null) {
+            throw new IllegalStateException("TOTP_ENCRYPTION_KEY not configured, channel monitor encryption unavailable");
+        }
         try {
             byte[] combined = Base64.getDecoder().decode(ciphertext);
             if (combined.length < NONCE_LENGTH_BYTES) {
