@@ -55,9 +55,9 @@ public class SetupAutoConfigurationRunner implements ApplicationRunner {
                 new SetupDatabaseRequest(
                         env("DATABASE_HOST", "database.host", "127.0.0.1"),
                         envInt("DATABASE_PORT", "database.port", 5432),
-                        env("DATABASE_USER", "database.user", "api-private-router"),
+                        env("DATABASE_USER", "database.user", "api_private_router"),
                         env("DATABASE_PASSWORD", "database.password", ""),
-                        env("DATABASE_DBNAME", "database.dbname", "api-private-router"),
+                        env("DATABASE_DBNAME", "database.dbname", "api_private_router"),
                         env("DATABASE_SSLMODE", "database.sslmode", "disable")
                 ),
                 new SetupRedisRequest(
