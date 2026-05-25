@@ -2,6 +2,8 @@ package org.apiprivaterouter.javabackend.setup;
 
 import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.security.crypto.bcrypt.BCrypt;
@@ -48,8 +50,10 @@ import java.util.regex.Pattern;
 
 @Service
 public class SetupService {
+    private static final Logger log = LoggerFactory.getLogger(SetupService.class);
 
     private static final Pattern HOST_PATTERN = Pattern.compile("^[a-zA-Z0-9.\\-:]+$");
+
     private static final Pattern DATABASE_NAME_PATTERN = Pattern.compile("^[a-zA-Z][a-zA-Z0-9_]*$");
     private static final Pattern USERNAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_]+$");
     private static final Set<String> VALID_SSL_MODES = Set.of("disable", "require", "verify-ca", "verify-full");
@@ -271,14 +275,19 @@ public class SetupService {
     }
 
     private void testDatabaseConnection(DatabaseConfig config) throws SQLException {
+        String url = buildJdbcUrl(config, config.dbName());
+        log.info("Testing database connection: url={}, user={}, password_length={}", url, config.user(), config.password().length());
         try {
             try (Connection ignored = openConnection(config, config.dbName())) {
+                log.info("Database connection successful to: {}", config.dbName());
                 return;
             }
         } catch (SQLException ex) {
+            log.error("Database connection failed: url={}, sqlState={}, message={}", url, ex.getSQLState(), ex.getMessage(), ex);
             if (!isMissingDatabaseError(ex)) {
                 throw ex;
             }
+            log.info("Database '{}' does not exist, will try to create it", config.dbName());
         }
 
         try (Connection maintenance = openConnection(config, "postgres")) {
@@ -394,7 +403,14 @@ public class SetupService {
         properties.setProperty("password", config.password());
         properties.setProperty("connectTimeout", "5");
         properties.setProperty("socketTimeout", "5");
-        return DriverManager.getConnection(buildJdbcUrl(config, dbName), properties);
+        String jdbcUrl = buildJdbcUrl(config, dbName);
+        log.info("Opening JDBC connection: {} with user={}", jdbcUrl, config.user());
+        try {
+            return DriverManager.getConnection(jdbcUrl, properties);
+        } catch (SQLException ex) {
+            log.error("DriverManager.getConnection failed: {}", ex.getMessage(), ex);
+            throw ex;
+        }
     }
 
     private String buildJdbcUrl(DatabaseConfig config, String dbName) {
