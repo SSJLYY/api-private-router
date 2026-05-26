@@ -603,7 +603,7 @@ public class AdminDashboardRepository {
             Boolean stream,
             Integer billingType
     ) {
-        String sql = """
+        StringBuilder sql = new StringBuilder("""
                 select
                     coalesce(ul.group_id, 0) as group_id,
                     coalesce(g.name, '') as group_name,
@@ -615,44 +615,43 @@ public class AdminDashboardRepository {
                 from usage_logs ul
                 left join groups g on g.id = ul.group_id
                 where ul.created_at >= :startTime and ul.created_at < :endTime
-                  and (:userId is null or ul.user_id = :userId)
-                  and (:apiKeyId is null or ul.api_key_id = :apiKeyId)
-                  and (:accountId is null or ul.account_id = :accountId)
-                  and (:groupId is null or ul.group_id = :groupId)
-                  and (
-                        :requestType is null
-                        or (
-                            :requestType = 'sync'
-                            and (ul.request_type = 1 or (ul.request_type = 0 and ul.stream = false and ul.openai_ws_mode = false))
-                        )
-                        or (
-                            :requestType = 'stream'
-                            and (ul.request_type = 2 or (ul.request_type = 0 and ul.stream = true and ul.openai_ws_mode = false))
-                        )
-                        or (
-                            :requestType = 'ws_v2'
-                            and (ul.request_type = 3 or (ul.request_type = 0 and ul.openai_ws_mode = true))
-                        )
-                        or (
-                            :requestType = 'unknown'
-                            and ul.request_type = 0
-                        )
-                  )
-                  and (:requestType is not null or :stream is null or ul.stream = :stream)
-                  and (:billingType is null or ul.billing_type = :billingType)
-                group by ul.group_id, g.name
-                order by total_tokens desc
-                """;
-        return jdbcTemplate.query(sql, new MapSqlParameterSource()
+                """);
+        MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("startTime", Timestamp.from(startTime))
-                .addValue("endTime", Timestamp.from(endTime))
-                .addValue("userId", userId)
-                .addValue("apiKeyId", apiKeyId)
-                .addValue("accountId", accountId)
-                .addValue("groupId", groupId)
-                .addValue("requestType", blankToNull(requestType))
-                .addValue("stream", requestType == null ? stream : null)
-                .addValue("billingType", billingType), (rs, rowNum) -> new GroupStatResponse(
+                .addValue("endTime", Timestamp.from(endTime));
+        if (userId != null) {
+            sql.append(" and ul.user_id = :userId");
+            params.addValue("userId", userId);
+        }
+        if (apiKeyId != null) {
+            sql.append(" and ul.api_key_id = :apiKeyId");
+            params.addValue("apiKeyId", apiKeyId);
+        }
+        if (accountId != null) {
+            sql.append(" and ul.account_id = :accountId");
+            params.addValue("accountId", accountId);
+        }
+        if (groupId != null) {
+            sql.append(" and ul.group_id = :groupId");
+            params.addValue("groupId", groupId);
+        }
+        String normalizedRequestType = blankToNull(requestType);
+        if (normalizedRequestType != null) {
+            sql.append(" and ((:requestType = 'sync' and (ul.request_type = 1 or (ul.request_type = 0 and ul.stream = false and ul.openai_ws_mode = false)))")
+                    .append(" or (:requestType = 'stream' and (ul.request_type = 2 or (ul.request_type = 0 and ul.stream = true and ul.openai_ws_mode = false)))")
+                    .append(" or (:requestType = 'ws_v2' and (ul.request_type = 3 or (ul.request_type = 0 and ul.openai_ws_mode = true)))")
+                    .append(" or (:requestType = 'unknown' and ul.request_type = 0))");
+            params.addValue("requestType", normalizedRequestType);
+        } else if (stream != null) {
+            sql.append(" and ul.stream = :stream");
+            params.addValue("stream", stream);
+        }
+        if (billingType != null) {
+            sql.append(" and ul.billing_type = :billingType");
+            params.addValue("billingType", billingType);
+        }
+        sql.append(" group by ul.group_id, g.name order by total_tokens desc");
+        return jdbcTemplate.query(sql.toString(), params, (rs, rowNum) -> new GroupStatResponse(
                 rs.getLong("group_id"),
                 rs.getString("group_name"),
                 rs.getLong("requests"),
