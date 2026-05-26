@@ -1,4 +1,4 @@
-export default {
+﻿export default {
   home: {
     leaderboard: 'Consumption Leaderboard',
     login: 'Login',
@@ -61,6 +61,7 @@ export default {
     edit: 'Edit',
     delete: 'Delete',
     more: 'More',
+    cancel: 'Cancel',
   },
   announcements: {
     title: 'Announcements',
@@ -117,6 +118,39 @@ export default {
       status: {
         active: 'Active',
       },
+    },
+    channels: {
+      searchChannels: 'Search channels',
+      allStatus: 'All status',
+      createChannel: 'Create Channel',
+      createFirstChannel: 'Create Your First Channel',
+      noChannelsYet: 'No channels yet',
+      columns: {
+        description: 'Description',
+        status: 'Status',
+        groups: 'Groups',
+        pricing: 'Pricing',
+        createdAt: 'Created At',
+        actions: 'Actions',
+      },
+    },
+    channelMonitor: {
+      runResultTitle: 'Run Result',
+      searchPlaceholder: 'Search monitors',
+      allProviders: 'All providers',
+      enabledFilter: 'Enabled filter',
+      createButton: 'Create Monitor',
+      createFirstMonitor: 'Create Your First Monitor',
+      noMonitorsYet: 'No monitors yet',
+      template: {
+        applyPickerTitle: 'Apply Monitor Template',
+        manageButton: 'Manage Templates',
+      },
+    },
+    subscriptions: {
+      assignSubscription: 'Assign Subscription',
+      assignFirstSubscription: 'Assign First Subscription',
+      noSubscriptionsYet: 'No subscriptions yet',
     },
   },
   dashboard: {
