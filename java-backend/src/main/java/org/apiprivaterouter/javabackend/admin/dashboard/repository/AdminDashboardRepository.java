@@ -405,7 +405,7 @@ public class AdminDashboardRepository {
             Integer billingType
     ) {
         String dateFormat = "hour".equalsIgnoreCase(granularity) ? "YYYY-MM-DD HH24:00" : "YYYY-MM-DD";
-        String sql = """
+        StringBuilder sql = new StringBuilder("""
                 select
                     to_char(created_at, '%s') as date,
                     count(*) as requests,
@@ -418,46 +418,49 @@ public class AdminDashboardRepository {
                     coalesce(sum(actual_cost), 0) as actual_cost
                 from usage_logs
                 where created_at >= :startTime and created_at < :endTime
-                  and (:userId is null or user_id = :userId)
-                  and (:apiKeyId is null or api_key_id = :apiKeyId)
-                  and (:accountId is null or account_id = :accountId)
-                  and (:groupId is null or group_id = :groupId)
-                  and (:model is null or model = :model)
-                  and (:billingType is null or billing_type = :billingType)
-                  and (
-                        :requestType is null
-                        or (
-                            :requestType = 'sync'
-                            and (request_type = 1 or (request_type = 0 and stream = false and openai_ws_mode = false))
-                        )
-                        or (
-                            :requestType = 'stream'
-                            and (request_type = 2 or (request_type = 0 and stream = true and openai_ws_mode = false))
-                        )
-                        or (
-                            :requestType = 'ws_v2'
-                            and (request_type = 3 or (request_type = 0 and openai_ws_mode = true))
-                        )
-                        or (
-                            :requestType = 'unknown'
-                            and request_type = 0
-                        )
-                  )
-                  and (:requestType is not null or :stream is null or stream = :stream)
-                group by 1
-                order by date asc
-                """.formatted(dateFormat);
-        return jdbcTemplate.query(sql, new MapSqlParameterSource()
+                """.formatted(dateFormat));
+        MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("startTime", Timestamp.from(startTime))
-                .addValue("endTime", Timestamp.from(endTime))
-                .addValue("userId", userId)
-                .addValue("apiKeyId", apiKeyId)
-                .addValue("accountId", accountId)
-                .addValue("groupId", groupId)
-                .addValue("model", blankToNull(model))
-                .addValue("requestType", blankToNull(requestType))
-                .addValue("stream", requestType == null ? stream : null)
-                .addValue("billingType", billingType), (rs, rowNum) -> new TrendDataPointResponse(
+                .addValue("endTime", Timestamp.from(endTime));
+        if (userId != null) {
+            sql.append(" and user_id = :userId");
+            params.addValue("userId", userId);
+        }
+        if (apiKeyId != null) {
+            sql.append(" and api_key_id = :apiKeyId");
+            params.addValue("apiKeyId", apiKeyId);
+        }
+        if (accountId != null) {
+            sql.append(" and account_id = :accountId");
+            params.addValue("accountId", accountId);
+        }
+        if (groupId != null) {
+            sql.append(" and group_id = :groupId");
+            params.addValue("groupId", groupId);
+        }
+        String normalizedModel = blankToNull(model);
+        if (normalizedModel != null) {
+            sql.append(" and model = :model");
+            params.addValue("model", normalizedModel);
+        }
+        if (billingType != null) {
+            sql.append(" and billing_type = :billingType");
+            params.addValue("billingType", billingType);
+        }
+        String normalizedRequestType = blankToNull(requestType);
+        if (normalizedRequestType != null) {
+            sql.append(" and (")
+                    .append("(:requestType = 'sync' and (request_type = 1 or (request_type = 0 and stream = false and openai_ws_mode = false)))")
+                    .append(" or (:requestType = 'stream' and (request_type = 2 or (request_type = 0 and stream = true and openai_ws_mode = false)))")
+                    .append(" or (:requestType = 'ws_v2' and (request_type = 3 or (request_type = 0 and openai_ws_mode = true)))")
+                    .append(" or (:requestType = 'unknown' and request_type = 0))");
+            params.addValue("requestType", normalizedRequestType);
+        } else if (stream != null) {
+            sql.append(" and stream = :stream");
+            params.addValue("stream", stream);
+        }
+        sql.append(" group by 1 order by date asc");
+        return jdbcTemplate.query(sql.toString(), params, (rs, rowNum) -> new TrendDataPointResponse(
                 rs.getString("date"),
                 rs.getLong("requests"),
                 rs.getLong("input_tokens"),
@@ -486,7 +489,7 @@ public class AdminDashboardRepository {
                 ? "coalesce(sum(coalesce(account_stats_cost, total_cost) * coalesce(account_rate_multiplier, 1)), 0)"
                 : "coalesce(sum(actual_cost), 0)";
         String modelExpr = resolveModelExpression(modelSource);
-        String sql = """
+        StringBuilder sql = new StringBuilder("""
                 select
                     %s as model,
                     count(*) as requests,
@@ -500,44 +503,44 @@ public class AdminDashboardRepository {
                     coalesce(sum(coalesce(account_stats_cost, total_cost) * coalesce(account_rate_multiplier, 1)), 0) as account_cost
                 from usage_logs
                 where created_at >= :startTime and created_at < :endTime
-                  and (:userId is null or user_id = :userId)
-                  and (:apiKeyId is null or api_key_id = :apiKeyId)
-                  and (:accountId is null or account_id = :accountId)
-                  and (:groupId is null or group_id = :groupId)
-                  and (
-                        :requestType is null
-                        or (
-                            :requestType = 'sync'
-                            and (request_type = 1 or (request_type = 0 and stream = false and openai_ws_mode = false))
-                        )
-                        or (
-                            :requestType = 'stream'
-                            and (request_type = 2 or (request_type = 0 and stream = true and openai_ws_mode = false))
-                        )
-                        or (
-                            :requestType = 'ws_v2'
-                            and (request_type = 3 or (request_type = 0 and openai_ws_mode = true))
-                        )
-                        or (
-                            :requestType = 'unknown'
-                            and request_type = 0
-                        )
-                  )
-                  and (:requestType is not null or :stream is null or stream = :stream)
-                  and (:billingType is null or billing_type = :billingType)
-                group by %s
-                order by total_tokens desc
                 """.formatted(modelExpr, actualCostExpr, modelExpr);
-        return jdbcTemplate.query(sql, new MapSqlParameterSource()
+        MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("startTime", Timestamp.from(startTime))
-                .addValue("endTime", Timestamp.from(endTime))
-                .addValue("userId", userId)
-                .addValue("apiKeyId", apiKeyId)
-                .addValue("accountId", accountId)
-                .addValue("groupId", groupId)
-                .addValue("requestType", blankToNull(requestType))
-                .addValue("stream", requestType == null ? stream : null)
-                .addValue("billingType", billingType), (rs, rowNum) -> new ModelStatResponse(
+                .addValue("endTime", Timestamp.from(endTime));
+        if (userId != null) {
+            sql.append(" and user_id = :userId");
+            params.addValue("userId", userId);
+        }
+        if (apiKeyId != null) {
+            sql.append(" and api_key_id = :apiKeyId");
+            params.addValue("apiKeyId", apiKeyId);
+        }
+        if (accountId != null) {
+            sql.append(" and account_id = :accountId");
+            params.addValue("accountId", accountId);
+        }
+        if (groupId != null) {
+            sql.append(" and group_id = :groupId");
+            params.addValue("groupId", groupId);
+        }
+        String normalizedRequestType = blankToNull(requestType);
+        if (normalizedRequestType != null) {
+            sql.append(" and (")
+                    .append("(:requestType = 'sync' and (request_type = 1 or (request_type = 0 and stream = false and openai_ws_mode = false)))")
+                    .append(" or (:requestType = 'stream' and (request_type = 2 or (request_type = 0 and stream = true and openai_ws_mode = false)))")
+                    .append(" or (:requestType = 'ws_v2' and (request_type = 3 or (request_type = 0 and openai_ws_mode = true)))")
+                    .append(" or (:requestType = 'unknown' and request_type = 0))");
+            params.addValue("requestType", normalizedRequestType);
+        } else if (stream != null) {
+            sql.append(" and stream = :stream");
+            params.addValue("stream", stream);
+        }
+        if (billingType != null) {
+            sql.append(" and billing_type = :billingType");
+            params.addValue("billingType", billingType);
+        }
+        sql.append(" group by ").append(modelExpr).append(" order by total_tokens desc");
+        return jdbcTemplate.query(sql.toString(), params, (rs, rowNum) -> new ModelStatResponse(
                 rs.getString("model"),
                 rs.getLong("requests"),
                 rs.getLong("input_tokens"),
