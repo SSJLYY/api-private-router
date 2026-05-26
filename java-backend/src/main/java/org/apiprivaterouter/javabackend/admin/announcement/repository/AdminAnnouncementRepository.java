@@ -213,6 +213,10 @@ public class AdminAnnouncementRepository {
         return timestamp == null ? null : timestamp.toInstant().toString();
     }
 
+    private String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
     private boolean computeEligible(Map<String, Object> targeting, long userId, double balance) {
         List<Map<String, Object>> groups = jsonHelper.readObjectList(jsonHelper.writeJson(targeting.get("any_of")));
         if (groups.isEmpty()) {
