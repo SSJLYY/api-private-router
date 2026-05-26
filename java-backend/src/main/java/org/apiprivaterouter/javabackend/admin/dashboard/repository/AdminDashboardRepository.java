@@ -489,7 +489,7 @@ public class AdminDashboardRepository {
                 ? "coalesce(sum(coalesce(account_stats_cost, total_cost) * coalesce(account_rate_multiplier, 1)), 0)"
                 : "coalesce(sum(actual_cost), 0)";
         String modelExpr = resolveModelExpression(modelSource);
-        StringBuilder sql = new StringBuilder(("""
+        String sqlTemplate = """
                 select
                     %s as model,
                     count(*) as requests,
@@ -503,7 +503,8 @@ public class AdminDashboardRepository {
                     coalesce(sum(coalesce(account_stats_cost, total_cost) * coalesce(account_rate_multiplier, 1)), 0) as account_cost
                 from usage_logs
                 where created_at >= :startTime and created_at < :endTime
-                """.formatted(modelExpr, actualCostExpr, modelExpr));
+                """;
+        StringBuilder sql = new StringBuilder(sqlTemplate.formatted(modelExpr, actualCostExpr));
         MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("startTime", Timestamp.from(startTime))
                 .addValue("endTime", Timestamp.from(endTime));
