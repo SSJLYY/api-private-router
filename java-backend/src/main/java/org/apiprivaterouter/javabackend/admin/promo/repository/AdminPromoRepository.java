@@ -36,16 +36,20 @@ public class AdminPromoRepository {
             default -> "pc.id";
         };
         String resolvedSortOrder = "asc".equalsIgnoreCase(sortOrder) ? "asc" : "desc";
-        String where = """
-                where (:status is null or :status = '' or pc.status = :status)
-                  and (:search is null or :search = '' or pc.code ilike :likeSearch)
-                """;
+        StringBuilder where = new StringBuilder("where 1=1");
         MapSqlParameterSource params = new MapSqlParameterSource()
-                .addValue("status", blankToNull(status))
-                .addValue("search", blankToNull(search))
-                .addValue("likeSearch", search == null || search.isBlank() ? null : "%" + search.trim() + "%")
                 .addValue("pageSize", pageSize)
                 .addValue("offset", offset);
+        String normalizedStatus = blankToNull(status);
+        if (normalizedStatus != null) {
+            where.append(" and pc.status = :status");
+            params.addValue("status", normalizedStatus);
+        }
+        String normalizedSearch = blankToNull(search);
+        if (normalizedSearch != null) {
+            where.append(" and pc.code ilike :likeSearch");
+            params.addValue("likeSearch", "%" + normalizedSearch + "%");
+        }
         Long total = jdbcTemplate.queryForObject("""
                 select count(*)
                 from promo_codes pc

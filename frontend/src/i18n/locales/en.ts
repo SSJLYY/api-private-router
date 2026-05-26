@@ -187,6 +187,14 @@
       generateCodes: 'Generate Codes',
       failedToLoad: 'Failed to load redeem codes',
     },
+    promo: {
+      searchCodes: 'Search promo codes',
+      createCode: 'Create Promo Code',
+      failedToLoad: 'Failed to load promo codes',
+      columns: {
+        actions: 'Actions',
+      },
+    },
   },
   dashboard: {
     title: 'Dashboard',
