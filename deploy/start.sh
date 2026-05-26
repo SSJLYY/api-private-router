@@ -4,8 +4,8 @@ set -e
 BASE_DIR="/data/api-private-router"
 JAVA_BACKEND_DIR="$BASE_DIR/java-backend"
 JAR_FILE="$JAVA_BACKEND_DIR/target/api-private-router.jar"
-JAVA_CMD="/data/java/jdk21/bin/java"
-MVN_CMD="/data/java/jdk21/bin/mvn"
+JAVA_CMD="java"
+MVN_CMD="mvn"
 
 # ===== 环境变量 =====
 export TOTP_ENCRYPTION_KEY=3acdf0c2aac8a09e02f77b95ccacd83c27a084f0a43bf7312ae6cfaea824e420
