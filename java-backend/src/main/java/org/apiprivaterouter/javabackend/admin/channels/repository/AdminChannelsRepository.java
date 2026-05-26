@@ -93,7 +93,7 @@ public class AdminChannelsRepository {
                 from channels c
                 """ + where + """
                 order by c.""" + safeSortBy + " " + safeSortOrder + ", c.id " + safeSortOrder + """
-                limit :limit offset :offset
+                 limit :limit offset :offset
                 """, params, (rs, rowNum) -> new ChannelRow(
                 rs.getLong("id"),
                 defaultString(rs.getString("name")),
