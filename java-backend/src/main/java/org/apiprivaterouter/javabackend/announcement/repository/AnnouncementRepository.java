@@ -107,7 +107,7 @@ public class AnnouncementRepository {
                 where user_id = :userId
                   and status = 'active'
                   and (starts_at is null or starts_at <= now())
-                  and (ends_at is null or ends_at > now())
+                  and (expires_at is null or expires_at > now())
                 """, new MapSqlParameterSource("userId", userId), (rs, rowNum) -> rs.getLong("group_id"));
     }
 
