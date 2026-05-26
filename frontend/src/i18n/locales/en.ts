@@ -62,15 +62,41 @@
     delete: 'Delete',
     more: 'More',
     cancel: 'Cancel',
+    save: 'Save',
+    autoRefresh: {
+      title: 'Auto Refresh',
+      countdown: 'Refresh in {seconds}s',
+    },
   },
   empty: {
     noData: 'No data',
+  },
+  errors: {
+    pageNotFound: 'Page Not Found',
+    pageNotFoundDescription: "The page you are looking for doesn't exist or has been moved.",
+    goBack: 'Go Back',
+    goToDashboard: 'Go to Dashboard',
   },
   announcements: {
     title: 'Announcements',
   },
   version: {
     upToDate: 'Up to date',
+  },
+  channelStatus: {
+    detailTitle: 'Channel Status Details',
+    windowTab: {
+      '7d': '7D',
+      '15d': '15D',
+      '30d': '30D',
+    },
+    overall: {
+      operational: 'Operational',
+    },
+    empty: {
+      title: 'No channel data',
+      description: 'Channel status data will appear here once available.',
+    },
   },
   admin: {
     dashboard: {
@@ -116,6 +142,31 @@
     },
     settings: {
       title: 'Settings',
+    },
+    backup: {
+      empty: 'No backups yet',
+      schedule: {
+        cronHint: 'Use cron syntax to schedule automatic backups',
+        retainDays: 'Retain Days',
+        retainDaysHint: 'Automatically delete backups older than this many days',
+        retainCount: 'Retain Count',
+        retainCountHint: 'Keep at most this many recent backups',
+      },
+      operations: {
+        title: 'Backup Operations',
+        description: 'Create, refresh, and manage backup files',
+        expireDays: 'Expire Days',
+        createBackup: 'Create Backup',
+      },
+      columns: {
+        status: 'Status',
+        fileName: 'File Name',
+        size: 'Size',
+        expiresAt: 'Expires At',
+        triggeredBy: 'Triggered By',
+        startedAt: 'Started At',
+        actions: 'Actions',
+      },
     },
     groups: {
       public: 'Public',
@@ -215,7 +266,13 @@
     redeemCode: 'Redeem Code',
     addBalanceWithCode: 'Add balance with a code',
   },
-  keys: { title: 'API Keys', description: 'Manage your API keys' },
+  keys: {
+    title: 'API Keys',
+    description: 'Manage your API keys',
+    noKeysYet: 'No API keys yet',
+    createFirstKey: 'Create your first API key',
+    createKey: 'Create Key',
+  },
   usage: {
     title: 'Usage Records',
     description: 'Inspect usage and billing records',
@@ -227,12 +284,70 @@
     upstreamModel: 'Upstream Model',
     mapping: 'Model Mapping',
   },
-  redeem: { title: 'Redeem Code', description: 'Redeem balance or benefits' },
-  affiliate: { title: 'Affiliate', description: 'View affiliate data' },
-  availableChannels: { title: 'Available Channels', description: 'View available channels' },
-  profile: { title: 'Profile', description: 'Manage your profile' },
-  userSubscriptions: { title: 'My Subscriptions', description: 'Manage your subscriptions' },
-  purchase: { description: 'Purchase subscriptions and recharge balance' },
-  leaderboard: { title: 'Consumption Leaderboard' },
-  checkin: { title: 'Daily Check-In' }
+  redeem: {
+    title: 'Redeem Code',
+    description: 'Redeem balance or benefits',
+    currentBalance: 'Current Balance',
+    concurrency: 'Concurrency',
+    requests: 'requests',
+    redeemCodeLabel: 'Redeem Code',
+    redeemCodePlaceholder: 'Enter your redeem code',
+    redeemCodeHint: 'Codes are case-insensitive and can only be used once when applicable',
+    redeemButton: 'Redeem',
+    aboutCodes: 'About Redeem Codes',
+    codeRule1: 'Each code may have its own usage limits and validity period.',
+    codeRule2: 'Some codes credit balance directly, others grant group-related benefits.',
+    codeRule3: 'Redeemed benefits may take effect immediately after success.',
+    codeRule4: 'If redemption fails, please verify the code status or contact an administrator.',
+    recentActivity: 'Recent Activity',
+    historyWillAppear: 'Your redemption history will appear here.',
+  },
+  affiliate: {
+    title: 'Affiliate',
+    description: 'View affiliate data',
+  },
+  availableChannels: {
+    title: 'Available Channels',
+    description: 'View available channels',
+  },
+  profile: {
+    title: 'Profile',
+    description: 'Manage your profile',
+    basicsDescription: 'Manage your basic profile information',
+    avatar: {
+      title: 'Avatar',
+      uploadHint: 'Upload a square image for best results',
+      uploadAction: 'Upload Avatar',
+    },
+    authBindings: {
+      title: 'Authentication Bindings',
+      description: 'Manage your linked authentication providers',
+      manageEmailAction: 'Manage Email',
+      providers: {
+        email: 'Email',
+        linuxdo: 'Linux.do',
+        oidc: 'OIDC',
+        wechat: 'WeChat',
+      },
+      status: {
+        bound: 'Bound',
+        notBound: 'Not Bound',
+      },
+    },
+  },
+  userSubscriptions: {
+    title: 'My Subscriptions',
+    description: 'Manage your subscriptions',
+    noActiveSubscriptions: 'No active subscriptions',
+    noActiveSubscriptionsDesc: 'You do not have any active subscriptions yet.',
+  },
+  purchase: {
+    description: 'Purchase subscriptions and recharge balance',
+  },
+  leaderboard: {
+    title: 'Consumption Leaderboard',
+  },
+  checkin: {
+    title: 'Daily Check-In',
+  }
 }

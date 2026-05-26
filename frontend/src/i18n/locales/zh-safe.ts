@@ -62,9 +62,41 @@
     delete: '删除',
     more: '更多',
     cancel: '取消',
+    save: '保存',
+    autoRefresh: {
+      title: '自动刷新',
+      countdown: '{seconds} 秒后刷新',
+    },
+  },
+  empty: {
+    noData: '暂无数据',
+  },
+  errors: {
+    pageNotFound: '页面未找到',
+    pageNotFoundDescription: '你访问的页面不存在，或已被移动。',
+    goBack: '返回上一页',
+    goToDashboard: '前往仪表盘',
   },
   announcements: {
     title: '公告',
+  },
+  version: {
+    upToDate: '已是最新版本',
+  },
+  channelStatus: {
+    detailTitle: '通道状态详情',
+    windowTab: {
+      '7d': '7天',
+      '15d': '15天',
+      '30d': '30天',
+    },
+    overall: {
+      operational: '运行正常',
+    },
+    empty: {
+      title: '暂无通道数据',
+      description: '有可用数据后会在这里显示通道状态。',
+    },
   },
   admin: {
     dashboard: {
@@ -85,6 +117,9 @@
       granularity: '粒度',
       modelDistribution: '模型分布',
       tokenUsageTrend: 'Token 使用趋势',
+      groupDistribution: '分组分布',
+      metricTokens: 'Tokens',
+      metricActualCost: '实际成本',
       recentUsage: '最近使用',
       noDataAvailable: '暂无数据',
       failedToLoad: '加载仪表盘数据失败',
@@ -94,8 +129,43 @@
     users: {
       deposit: '充值',
       balanceHistoryTip: '查看余额变动记录',
+      columnSettings: '列设置',
       roles: {
         admin: '管理员',
+      },
+    },
+    errorPassthrough: {
+      title: '错误透传',
+    },
+    tlsFingerprintProfiles: {
+      title: 'TLS 指纹配置',
+    },
+    settings: {
+      title: '设置',
+    },
+    backup: {
+      empty: '暂无备份',
+      schedule: {
+        cronHint: '使用 Cron 表达式设置自动备份计划',
+        retainDays: '保留天数',
+        retainDaysHint: '自动删除超过该天数的备份',
+        retainCount: '保留数量',
+        retainCountHint: '最多保留最近的备份数量',
+      },
+      operations: {
+        title: '备份操作',
+        description: '创建、刷新并管理备份文件',
+        expireDays: '过期天数',
+        createBackup: '创建备份',
+      },
+      columns: {
+        status: '状态',
+        fileName: '文件名',
+        size: '大小',
+        expiresAt: '过期时间',
+        triggeredBy: '触发人',
+        startedAt: '开始时间',
+        actions: '操作',
       },
     },
     groups: {
@@ -115,9 +185,18 @@
       },
     },
     accounts: {
+      createAccount: '创建账号',
+      dataImport: '导入数据',
+      dataExport: '导出数据',
+      syncFromRemoteSource: '从远端同步',
       status: {
         active: '启用',
       },
+    },
+    announcements: {
+      searchAnnouncements: '搜索公告',
+      createAnnouncement: '创建公告',
+      failedToLoad: '加载公告失败',
     },
     channels: {
       searchChannels: '搜索通道',
@@ -152,6 +231,30 @@
       assignFirstSubscription: '分配第一个订阅',
       noSubscriptionsYet: '还没有订阅',
     },
+    proxies: {
+      testConnection: '测试连接',
+      batchQualityCheck: '批量质量检测',
+      batchDeleteAction: '批量删除',
+      dataImport: '导入数据',
+      dataExport: '导出数据',
+      createProxy: '创建代理',
+      createFirstProxy: '创建第一个代理',
+      noProxiesYet: '还没有代理',
+    },
+    redeem: {
+      searchCodes: '搜索兑换码',
+      exportCsv: '导出 CSV',
+      generateCodes: '生成兑换码',
+      failedToLoad: '加载兑换码失败',
+    },
+    promo: {
+      searchCodes: '搜索优惠码',
+      createCode: '创建优惠码',
+      failedToLoad: '加载优惠码失败',
+      columns: {
+        actions: '操作',
+      },
+    },
   },
   dashboard: {
     title: '仪表盘',
@@ -163,14 +266,88 @@
     redeemCode: '兑换码',
     addBalanceWithCode: '使用兑换码充值余额',
   },
-  keys: { title: 'API 密钥', description: '管理你的 API 密钥' },
-  usage: { title: '使用记录', description: '查看用量和计费记录' },
-  redeem: { title: '兑换', description: '兑换余额或权益' },
-  affiliate: { title: '邀请返利', description: '查看返利数据' },
-  availableChannels: { title: '可用通道', description: '查看可用通道' },
-  profile: { title: '个人资料', description: '管理你的个人资料' },
-  userSubscriptions: { title: '我的订阅', description: '管理你的订阅' },
-  purchase: { description: '购买订阅并充值余额' },
-  leaderboard: { title: '消费排行榜' },
-  checkin: { title: '每日签到' }
+  keys: {
+    title: 'API 密钥',
+    description: '管理你的 API 密钥',
+    noKeysYet: '还没有 API 密钥',
+    createFirstKey: '创建第一个 API 密钥',
+    createKey: '创建密钥',
+  },
+  usage: {
+    title: '使用记录',
+    description: '查看用量和计费记录',
+    endpointDistribution: '端点分布',
+    inbound: '入站',
+    upstream: '上游',
+    path: '路径',
+    requestedModel: '请求模型',
+    upstreamModel: '上游模型',
+    mapping: '模型映射',
+  },
+  redeem: {
+    title: '兑换',
+    description: '兑换余额或权益',
+    currentBalance: '当前余额',
+    concurrency: '并发数',
+    requests: '请求',
+    redeemCodeLabel: '兑换码',
+    redeemCodePlaceholder: '输入兑换码',
+    redeemCodeHint: '兑换码通常不区分大小写，且部分兑换码仅可使用一次',
+    redeemButton: '立即兑换',
+    aboutCodes: '关于兑换码',
+    codeRule1: '每个兑换码都可能有自己的使用限制和有效期。',
+    codeRule2: '有些兑换码会直接发放余额，有些则会发放分组相关权益。',
+    codeRule3: '兑换成功后，权益通常会立即生效。',
+    codeRule4: '如果兑换失败，请检查兑换码状态或联系管理员。',
+    recentActivity: '最近活动',
+    historyWillAppear: '你的兑换记录会显示在这里。',
+  },
+  affiliate: {
+    title: '邀请返利',
+    description: '查看返利数据',
+  },
+  availableChannels: {
+    title: '可用通道',
+    description: '查看可用通道',
+  },
+  profile: {
+    title: '个人资料',
+    description: '管理你的个人资料',
+    basicsDescription: '管理你的基础资料信息',
+    avatar: {
+      title: '头像',
+      uploadHint: '建议上传正方形图片以获得更好显示效果',
+      uploadAction: '上传头像',
+    },
+    authBindings: {
+      title: '认证绑定',
+      description: '管理已绑定的认证提供商',
+      manageEmailAction: '管理邮箱',
+      providers: {
+        email: '邮箱',
+        linuxdo: 'Linux.do',
+        oidc: 'OIDC',
+        wechat: '微信',
+      },
+      status: {
+        bound: '已绑定',
+        notBound: '未绑定',
+      },
+    },
+  },
+  userSubscriptions: {
+    title: '我的订阅',
+    description: '管理你的订阅',
+    noActiveSubscriptions: '暂无有效订阅',
+    noActiveSubscriptionsDesc: '你目前还没有有效订阅。',
+  },
+  purchase: {
+    description: '购买订阅并充值余额',
+  },
+  leaderboard: {
+    title: '消费排行榜',
+  },
+  checkin: {
+    title: '每日签到',
+  }
 }
