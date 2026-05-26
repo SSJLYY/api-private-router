@@ -58,6 +58,9 @@ export default {
     active: 'active',
     total: 'Total',
     refresh: 'Refresh',
+    edit: 'Edit',
+    delete: 'Delete',
+    more: 'More',
   },
   announcements: {
     title: 'Announcements',
@@ -68,6 +71,8 @@ export default {
       description: 'Overview of users, usage, and spending',
       apiKeys: 'API Keys',
       accounts: 'Accounts',
+      accountCost: 'Account Cost',
+      standard: 'Standard',
       todayRequests: 'Requests Today',
       users: 'Users',
       todayTokens: 'Tokens Today',
@@ -79,10 +84,39 @@ export default {
       granularity: 'Granularity',
       modelDistribution: 'Model Distribution',
       tokenUsageTrend: 'Token Usage Trend',
+      recentUsage: 'Recent Usage',
       noDataAvailable: 'No data available',
       failedToLoad: 'Failed to load dashboard data',
       viewModelDistribution: 'Model Distribution',
       viewSpendingRanking: 'Spending Ranking',
+    },
+    users: {
+      deposit: 'Deposit',
+      balanceHistoryTip: 'View balance history',
+      roles: {
+        admin: 'Admin',
+      },
+    },
+    groups: {
+      public: 'Public',
+      accountsAvailable: 'Available Accounts',
+      accountsUnit: 'accounts',
+      accountsTotal: 'Total Accounts',
+      usageToday: 'Usage Today',
+      usageTotal: 'Usage Total',
+      rateMultipliers: 'Rate Multipliers',
+      rpmOverrides: 'RPM Overrides',
+      platforms: {
+        anthropic: 'Anthropic',
+      },
+      subscription: {
+        standard: 'Standard',
+      },
+    },
+    accounts: {
+      status: {
+        active: 'Active',
+      },
     },
   },
   dashboard: {
