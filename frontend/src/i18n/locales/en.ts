@@ -69,6 +69,9 @@
   announcements: {
     title: 'Announcements',
   },
+  version: {
+    upToDate: 'Up to date',
+  },
   admin: {
     dashboard: {
       title: 'Admin Dashboard',
@@ -110,6 +113,9 @@
     },
     tlsFingerprintProfiles: {
       title: 'TLS Fingerprint Profiles',
+    },
+    settings: {
+      title: 'Settings',
     },
     groups: {
       public: 'Public',
