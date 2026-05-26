@@ -444,7 +444,7 @@ public class AdminDashboardRepository {
                         )
                   )
                   and (:requestType is not null or :stream is null or stream = :stream)
-                group by to_char(created_at, '%s')
+                group by 1
                 order by date asc
                 """.formatted(dateFormat);
         return jdbcTemplate.query(sql, new MapSqlParameterSource()
@@ -573,7 +573,7 @@ public class AdminDashboardRepository {
                 left join api_keys k on k.id = u.api_key_id
                 where u.api_key_id in (select api_key_id from top_keys)
                   and u.created_at >= :startTime and u.created_at < :endTime
-                group by to_char(u.created_at, '%s'), u.api_key_id, k.name
+                group by 1, u.api_key_id, k.name
                 order by date asc, tokens desc
                 """.formatted(dateFormat);
         return jdbcTemplate.query(sql, new MapSqlParameterSource()
@@ -684,7 +684,7 @@ public class AdminDashboardRepository {
                 left join users us on us.id = u.user_id
                 where u.user_id in (select user_id from top_users)
                   and u.created_at >= :startTime and u.created_at < :endTime
-                group by to_char(u.created_at, '%s'), u.user_id, us.email, us.username
+                group by 1, u.user_id, us.email, us.username
                 order by date asc, tokens desc
                 """.formatted(dateFormat);
         return jdbcTemplate.query(sql, new MapSqlParameterSource()
