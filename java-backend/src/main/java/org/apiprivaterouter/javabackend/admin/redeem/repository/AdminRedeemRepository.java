@@ -38,18 +38,25 @@ public class AdminRedeemRepository {
             default -> "rc.id";
         };
         String resolvedSortOrder = "asc".equalsIgnoreCase(sortOrder) ? "asc" : "desc";
-        String where = """
-                where (:type is null or :type = '' or rc.type = :type)
-                  and (:status is null or :status = '' or rc.status = :status)
-                  and (:search is null or :search = '' or rc.code ilike :likeSearch or coalesce(u.email, '') ilike :likeSearch)
-                """;
+        StringBuilder where = new StringBuilder("where 1=1");
         MapSqlParameterSource params = new MapSqlParameterSource()
-                .addValue("type", type)
-                .addValue("status", status)
-                .addValue("search", search)
-                .addValue("likeSearch", search == null || search.isBlank() ? null : "%" + search.trim() + "%")
                 .addValue("pageSize", pageSize)
                 .addValue("offset", offset);
+        String normalizedType = type == null || type.isBlank() ? null : type.trim();
+        if (normalizedType != null) {
+            where.append(" and rc.type = :type");
+            params.addValue("type", normalizedType);
+        }
+        String normalizedStatus = status == null || status.isBlank() ? null : status.trim();
+        if (normalizedStatus != null) {
+            where.append(" and rc.status = :status");
+            params.addValue("status", normalizedStatus);
+        }
+        String normalizedSearch = search == null || search.isBlank() ? null : search.trim();
+        if (normalizedSearch != null) {
+            where.append(" and (rc.code ilike :likeSearch or coalesce(u.email, '') ilike :likeSearch)");
+            params.addValue("likeSearch", "%" + normalizedSearch + "%");
+        }
         Long total = jdbcTemplate.queryForObject("""
                 select count(*)
                 from redeem_codes rc

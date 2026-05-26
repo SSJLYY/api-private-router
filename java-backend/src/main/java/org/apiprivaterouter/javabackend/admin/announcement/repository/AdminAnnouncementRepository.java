@@ -39,16 +39,20 @@ public class AdminAnnouncementRepository {
             default -> "created_at";
         };
         String resolvedSortOrder = "asc".equalsIgnoreCase(sortOrder) ? "asc" : "desc";
-        String where = """
-                where (:status is null or :status = '' or status = :status)
-                  and (:search is null or :search = '' or title ilike :likeSearch or content ilike :likeSearch)
-                """;
+        StringBuilder where = new StringBuilder("where 1=1");
         MapSqlParameterSource params = new MapSqlParameterSource()
-                .addValue("status", status)
-                .addValue("search", search)
-                .addValue("likeSearch", search == null || search.isBlank() ? null : "%" + search.trim() + "%")
                 .addValue("pageSize", pageSize)
                 .addValue("offset", offset);
+        String normalizedStatus = blankToNull(status);
+        if (normalizedStatus != null) {
+            where.append(" and status = :status");
+            params.addValue("status", normalizedStatus);
+        }
+        String normalizedSearch = blankToNull(search);
+        if (normalizedSearch != null) {
+            where.append(" and (title ilike :likeSearch or content ilike :likeSearch)");
+            params.addValue("likeSearch", "%" + normalizedSearch + "%");
+        }
         Long total = jdbcTemplate.queryForObject("select count(*) from announcements " + where, params, Long.class);
         List<AnnouncementResponse> items = jdbcTemplate.query("""
                 select id, title, content, status, notify_mode, targeting, starts_at, ends_at,
@@ -268,7 +272,7 @@ public class AdminAnnouncementRepository {
                 where user_id = :userId
                   and status = 'active'
                   and (starts_at is null or starts_at <= now())
-                  and (ends_at is null or ends_at > now())
+                  and (expires_at is null or expires_at > now())
                 """, new MapSqlParameterSource("userId", userId), (rs, rowNum) -> rs.getLong("group_id"));
     }
 

@@ -37,24 +37,27 @@ public class AdminProxyRepository {
             String sortOrder
     ) {
         int offset = Math.max(page - 1, 0) * pageSize;
-        String where = """
+        StringBuilder where = new StringBuilder("""
                 where p.deleted_at is null
-                  and (:protocol is null or p.protocol = :protocol)
-                  and (:status is null or p.status = :status)
-                  and (
-                    :search is null
-                    or p.name ilike :likeSearch
-                    or p.host ilike :likeSearch
-                    or coalesce(p.username, '') ilike :likeSearch
-                  )
-                """;
+                """);
         MapSqlParameterSource params = new MapSqlParameterSource()
-                .addValue("protocol", blankToNull(protocol))
-                .addValue("status", blankToNull(status))
-                .addValue("search", blankToNull(search))
-                .addValue("likeSearch", search == null || search.isBlank() ? null : "%" + search.trim() + "%")
                 .addValue("pageSize", pageSize)
                 .addValue("offset", offset);
+        String normalizedProtocol = blankToNull(protocol);
+        if (normalizedProtocol != null) {
+            where.append(" and p.protocol = :protocol");
+            params.addValue("protocol", normalizedProtocol);
+        }
+        String normalizedStatus = blankToNull(status);
+        if (normalizedStatus != null) {
+            where.append(" and p.status = :status");
+            params.addValue("status", normalizedStatus);
+        }
+        String normalizedSearch = blankToNull(search);
+        if (normalizedSearch != null) {
+            where.append(" and (p.name ilike :likeSearch or p.host ilike :likeSearch or coalesce(p.username, '') ilike :likeSearch)");
+            params.addValue("likeSearch", "%" + normalizedSearch + "%");
+        }
         Long total = jdbcTemplate.queryForObject("""
                 select count(*)
                 from proxies p
@@ -90,9 +93,13 @@ public class AdminProxyRepository {
                 ) acc on acc.proxy_id = p.id
                 where p.deleted_at is null
                   and p.status = 'active'
-                  and (:protocol is null or p.protocol = :protocol)
+                """ + (blankToNull(protocol) == null ? "" : "\n  and p.protocol = :protocol") + """
                 order by """ + (withCount ? "coalesce(acc.account_count, 0) desc, p.created_at desc, p.id desc" : "p.created_at desc, p.id desc");
-        return jdbcTemplate.query(sql, new MapSqlParameterSource("protocol", blankToNull(protocol)), (rs, rowNum) -> mapProxy(rs));
+        MapSqlParameterSource allParams = new MapSqlParameterSource();
+        if (blankToNull(protocol) != null) {
+            allParams.addValue("protocol", blankToNull(protocol));
+        }
+        return jdbcTemplate.query(sql, allParams, (rs, rowNum) -> mapProxy(rs));
     }
 
     public Optional<AdminProxyResponse> getProxy(long id) {

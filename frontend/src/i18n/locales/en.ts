@@ -63,6 +63,9 @@
     more: 'More',
     cancel: 'Cancel',
   },
+  empty: {
+    noData: 'No data',
+  },
   announcements: {
     title: 'Announcements',
   },
@@ -94,9 +97,16 @@
     users: {
       deposit: 'Deposit',
       balanceHistoryTip: 'View balance history',
+      columnSettings: 'Column Settings',
       roles: {
         admin: 'Admin',
       },
+    },
+    errorPassthrough: {
+      title: 'Error Passthrough',
+    },
+    tlsFingerprintProfiles: {
+      title: 'TLS Fingerprint Profiles',
     },
     groups: {
       public: 'Public',
@@ -115,9 +125,18 @@
       },
     },
     accounts: {
+      createAccount: 'Create Account',
+      dataImport: 'Data Import',
+      dataExport: 'Data Export',
+      syncFromRemoteSource: 'Sync From Remote Source',
       status: {
         active: 'Active',
       },
+    },
+    announcements: {
+      searchAnnouncements: 'Search announcements',
+      createAnnouncement: 'Create Announcement',
+      failedToLoad: 'Failed to load announcements',
     },
     channels: {
       searchChannels: 'Search channels',
@@ -151,6 +170,22 @@
       assignSubscription: 'Assign Subscription',
       assignFirstSubscription: 'Assign First Subscription',
       noSubscriptionsYet: 'No subscriptions yet',
+    },
+    proxies: {
+      testConnection: 'Test Connection',
+      batchQualityCheck: 'Batch Quality Check',
+      batchDeleteAction: 'Batch Delete',
+      dataImport: 'Data Import',
+      dataExport: 'Data Export',
+      createProxy: 'Create Proxy',
+      createFirstProxy: 'Create Your First Proxy',
+      noProxiesYet: 'No proxies yet',
+    },
+    redeem: {
+      searchCodes: 'Search codes',
+      exportCsv: 'Export CSV',
+      generateCodes: 'Generate Codes',
+      failedToLoad: 'Failed to load redeem codes',
     },
   },
   dashboard: {
