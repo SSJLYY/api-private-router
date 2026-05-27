@@ -1,4 +1,4 @@
-﻿import { createI18n } from 'vue-i18n'
+import { createI18n } from 'vue-i18n'
 
 type LocaleCode = 'en' | 'zh'
 
@@ -39,7 +39,8 @@ export const i18n = createI18n({
     en: { monthYear: { year: 'numeric', month: 'long' } },
     zh: { monthYear: { year: 'numeric', month: 'long' } }
   },
-  // 绂佺敤 HTML 娑堟伅璀﹀憡 - 寮曞姝ラ浣跨敤瀵屾枃鏈唴瀹癸紙driver.js 鏀寔 HTML锛?  // 杩欎簺鍐呭鏄唴閮ㄥ畾涔夌殑锛屼笉瀛樺湪 XSS 椋庨櫓
+  // disable HTML message warnings - guide steps use rich text (driver.js supports HTML)
+  // These are internally defined, no XSS risk
   warnHtmlMessage: false
 })
 
@@ -72,7 +73,7 @@ export async function setLocale(locale: string): Promise<void> {
   localStorage.setItem(LOCALE_KEY, locale)
   document.documentElement.setAttribute('lang', locale)
 
-  // 鍚屾鏇存柊娴忚鍣ㄩ〉绛炬爣棰橈紝浣垮叾璺熼殢璇█鍒囨崲
+  // Sync browser tab title with language change
   const { resolveDocumentTitle } = await import('@/router/title')
   const { default: router } = await import('@/router')
   const { useAppStore } = await import('@/stores/app')
@@ -87,8 +88,8 @@ export function getLocale(): LocaleCode {
 }
 
 export const availableLocales = [
-  { code: 'en', name: 'English', flag: '馃嚭馃嚫' },
-  { code: 'zh', name: '涓枃', flag: '馃嚚馃嚦' }
+  { code: 'en', name: 'English', flag: '🇺🇸' },
+  { code: 'zh', name: '中文', flag: '🇨🇳' }
 ] as const
 
 export default i18n
