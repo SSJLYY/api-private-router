@@ -8549,10 +8549,10 @@ watch(
   @apply text-primary-600 dark:text-primary-400;
   background: linear-gradient(
     135deg,
-    rgba(20, 184, 166, 0.08),
-    rgba(20, 184, 166, 0.03)
+    rgba(59, 130, 246, 0.08),
+    rgba(59, 130, 246, 0.03)
   );
-  box-shadow: 0 1px 2px rgba(20, 184, 166, 0.1);
+  box-shadow: 0 1px 2px rgba(59, 130, 246, 0.1);
 }
 
 :root.dark .settings-tab-active {
