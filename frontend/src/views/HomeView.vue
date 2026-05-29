@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <!-- Custom Home Content: Full Page Mode -->
   <div v-if="homeContent" class="min-h-screen">
     <!-- iframe mode -->

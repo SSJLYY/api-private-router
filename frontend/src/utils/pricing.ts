@@ -1,4 +1,4 @@
-﻿/**
+/**
  * formatScaled formats a per-token (or per-request) USD price scaled by `scale`.
  *
  *   formatScaled(0.000003, 1_000_000) 鈫?"$3"        // per 1M tokens
