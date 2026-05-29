@@ -4813,7 +4813,15 @@ export default {
     apply: 'Apply',
     endDate: 'End date',
     selectDateRange: 'Select date range',
-    startDate: 'Start date'
+    startDate: 'Start date',
+    today: 'Today',
+    yesterday: 'Yesterday',
+    last24Hours: 'Last 24 Hours',
+    last7Days: 'Last 7 Days',
+    last14Days: 'Last 14 Days',
+    last30Days: 'Last 30 Days',
+    thisMonth: 'This Month',
+    lastMonth: 'Last Month'
   },
   groups: {
     subscription: 'Subscription'

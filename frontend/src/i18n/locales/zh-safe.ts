@@ -4813,7 +4813,15 @@ export default {
     apply: 'Apply',
     endDate: 'End date',
     selectDateRange: 'selectdate范围',
-    startDate: 'Start date'
+    startDate: 'Start date',
+    today: '今天',
+    yesterday: '昨天',
+    last24Hours: '最近24小时',
+    last7Days: '最近7天',
+    last14Days: '最近14天',
+    last30Days: '最近30天',
+    thisMonth: '本月',
+    lastMonth: '上月'
   },
   groups: {
     subscription: '订阅'
