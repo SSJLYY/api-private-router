@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <AppLayout>
     <TablePageLayout>
       <template #filters>
@@ -557,7 +557,7 @@ async function handleSave() {
     await loadAnnouncements()
   } catch (error: any) {
     console.error('Failed to save announcement:', error)
-    appStore.showError(extractApiErrorMessage(error, (editingAnnouncement.value ? t('admin.announcements.failedToUpdate')) : t('admin.announcements.failedToCreate')))
+    appStore.showError(extractApiErrorMessage(error, editingAnnouncement.value ? t('admin.announcements.failedToUpdate') : t('admin.announcements.failedToCreate')))
   } finally {
     saving.value = false
   }
