@@ -20,13 +20,9 @@ public class AuthUserRepository {
         String sql = """
                 select id, email, role, status, password_hash, coalesce(token_version, 0) as token_version
                 from users
-                where id = :userId and deleted_at is null
+                where id = :userId and deleted_at is null and status = 'active'
                 """;
-        List<CurrentUser> rows = jdbcTemplate.query(sql, new MapSqlParameterSource("userId", userId), (rs, rowNum) -> {
-            String status = rs.getString("status");
-            if (!"active".equalsIgnoreCase(status)) {
-                return null;
-            }
+        return jdbcTemplate.query(sql, new MapSqlParameterSource("userId", userId), (rs, rowNum) -> {
             String email = rs.getString("email");
             String passwordHash = rs.getString("password_hash");
             long rawTokenVersion = rs.getLong("token_version");
@@ -36,7 +32,6 @@ public class AuthUserRepository {
                     rs.getString("role"),
                     TokenVersionResolver.resolve(email, passwordHash, rawTokenVersion)
             );
-        });
-        return rows.stream().filter(user -> user != null).findFirst();
+        }).stream().findFirst();
     }
 }
