@@ -107,7 +107,7 @@ public class ApiExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleUnexpected(Exception ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error(500, ex.getMessage()));
+                .body(ApiResponse.error(500, "Internal server error"));
     }
 
     private String formatFieldError(FieldError fieldError) {
