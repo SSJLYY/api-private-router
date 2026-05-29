@@ -58,6 +58,7 @@ public class ChannelMonitorRunnerService {
             try {
                 semaphore.acquire();
             } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt(); // Restore interrupt flag
                 inFlight.remove(record.id());
                 Thread.currentThread().interrupt();
                 return;
