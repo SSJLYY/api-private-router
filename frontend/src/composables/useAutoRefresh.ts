@@ -1,4 +1,4 @@
-import { ref, onBeforeUnmount, type Ref } from 'vue'
+﻿import { ref, onBeforeUnmount, type Ref } from 'vue'
 
 export interface UseAutoRefreshOptions {
   storageKey: string
@@ -94,6 +94,10 @@ export function useAutoRefresh(options: UseAutoRefreshOptions) {
   }
 
   loadFromStorage()
+  if (enabled.value) {
+    countdown.value = intervalSeconds.value
+    start()
+  }
 
   onBeforeUnmount(stop)
 

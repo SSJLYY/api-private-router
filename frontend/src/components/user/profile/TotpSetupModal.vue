@@ -315,7 +315,7 @@ const loadVerificationMethod = async () => {
     const method = await totpAPI.getVerificationMethod()
     verificationMethod.value = method.method
   } catch (err: any) {
-    appStore.showError(err.response?.data?.message || t('common.error'))
+    appStore.showError(err.message || t('common.error'))
     emit('close')
   } finally {
     methodLoading.value = false
@@ -343,7 +343,7 @@ const handleSendCode = async () => {
       }
     }, 1000)
   } catch (err: any) {
-    appStore.showError(err.response?.data?.message || t('profile.totp.sendCodeFailed'))
+    appStore.showError(err.message || t('profile.totp.sendCodeFailed'))
   } finally {
     sendingCode.value = false
   }
@@ -360,7 +360,7 @@ const handleVerifyAndSetup = async () => {
     setupData.value = await totpAPI.initiateSetup(request)
     step.value = 1
   } catch (err: any) {
-    appStore.showError(err.response?.data?.message || t('profile.totp.setupFailed'))
+    appStore.showError(err.message || t('profile.totp.setupFailed'))
   } finally {
     setupLoading.value = false
   }
@@ -380,7 +380,7 @@ const handleVerify = async () => {
     appStore.showSuccess(t('profile.totp.enableSuccess'))
     emit('success')
   } catch (err: any) {
-    appStore.showError(err.response?.data?.message || t('profile.totp.verifyFailed'))
+    appStore.showError(err.message || t('profile.totp.verifyFailed'))
     code.value = ['', '', '', '', '', '']
     nextTick(() => {
       inputRefs.value[0]?.focus()

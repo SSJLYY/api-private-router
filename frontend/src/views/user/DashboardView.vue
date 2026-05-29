@@ -145,7 +145,12 @@ const refreshAll = () => {
   loadCheckInStatus()
 }
 
-onMounted(() => {
-  refreshAll()
+onMounted(async () => {
+  await Promise.allSettled([
+    loadStats(),
+    loadCharts(),
+    loadRecent(),
+    loadCheckInStatus()
+  ])
 })
 </script>

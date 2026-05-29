@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, onUnmounted } from 'vue'
 import { useAppStore } from '@/stores/app'
 import { i18n } from '@/i18n'
 
@@ -31,6 +31,9 @@ function fallbackCopy(text: string): boolean {
 export function useClipboard() {
   const appStore = useAppStore()
   const copied = ref(false)
+  let copyTimer: ReturnType<typeof setTimeout> | null = null
+
+  onUnmounted(() => { if (copyTimer) clearTimeout(copyTimer) })
 
   const copyToClipboard = async (
     text: string,

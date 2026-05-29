@@ -59,7 +59,13 @@ export function formatNumber(num: number | null | undefined): string {
  * @returns 格式化后的字符串，如 "$1.25"
  */
 export function formatCurrency(amount: number | null | undefined, currency: string = 'USD'): string {
-  if (amount === null || amount === undefined) return '$0.00'
+  if (amount === null || amount === undefined) {
+    const locale = getLocale()
+    return new Intl.NumberFormat(locale, {
+      style: 'currency', currency,
+      minimumFractionDigits: 2, maximumFractionDigits: 2
+    }).format(0)
+  }
 
   const locale = getLocale()
 

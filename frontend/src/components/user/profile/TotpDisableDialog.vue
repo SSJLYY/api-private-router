@@ -120,7 +120,7 @@ const loadVerificationMethod = async () => {
     const method = await totpAPI.getVerificationMethod()
     verificationMethod.value = method.method
   } catch (err: any) {
-    appStore.showError(err.response?.data?.message || t('common.error'))
+    appStore.showError(err.message || t('common.error'))
     emit('close')
   } finally {
     methodLoading.value = false
@@ -148,7 +148,7 @@ const handleSendCode = async () => {
       }
     }, 1000)
   } catch (err: any) {
-    appStore.showError(err.response?.data?.message || t('profile.totp.sendCodeFailed'))
+    appStore.showError(err.message || t('profile.totp.sendCodeFailed'))
   } finally {
     sendingCode.value = false
   }
@@ -168,7 +168,7 @@ const handleDisable = async () => {
     appStore.showSuccess(t('profile.totp.disableSuccess'))
     emit('success')
   } catch (err: any) {
-    appStore.showError(err.response?.data?.message || t('profile.totp.disableFailed'))
+    appStore.showError(err.message || t('profile.totp.disableFailed'))
   } finally {
     loading.value = false
   }

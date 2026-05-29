@@ -466,7 +466,7 @@ onMounted(() => {
   initTheme()
 
   // Check auth state
-  authStore.checkAuth()
+  authStore.checkAuth().catch(() => {})
 
   // Ensure public settings are loaded (will use cache if already loaded from injected config)
   if (!appStore.publicSettingsLoaded) {

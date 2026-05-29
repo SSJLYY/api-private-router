@@ -553,7 +553,11 @@ export function useOnboardingTour(options: OnboardingOptions) {
       clearTimeout(autoStartTimer)
       autoStartTimer = null
     }
-    // 关键修复：不再此处清理 globalKeyboardHandler，交由 driver.onDestroyed 管理
+    // Fix: destroy driver on unmount to clean up keyboard handler
+    if (driverInstance?.isActive()) {
+      driverInstance.destroy()
+      onboardingStore.setDriverInstance(null)
+    }
     onboardingStore.clearControlMethods()
   })
 
