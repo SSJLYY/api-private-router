@@ -1,6 +1,8 @@
 import { ref } from 'vue'
 import { useAppStore } from '@/stores/app'
 import { adminAPI } from '@/api/admin'
+import { extractApiErrorMessage } from '@/utils/apiError'
+
 
 export type AddMethod = 'oauth' | 'setup-token'
 export type AuthInputMethod = 'manual' | 'cookie' | 'refresh_token' | 'mobile_refresh_token' | 'session_token' | 'access_token'
@@ -64,7 +66,7 @@ export function useAccountOAuth() {
       sessionId.value = response.session_id
       return true
     } catch (err: any) {
-      error.value = err.response?.data?.detail || 'Failed to generate auth URL'
+      error.value = extractApiErrorMessage(err, 'Failed to generate auth URL')
       appStore.showError(error.value)
       return false
     } finally {
@@ -100,7 +102,7 @@ export function useAccountOAuth() {
 
       return tokenInfo as TokenInfo
     } catch (err: any) {
-      error.value = err.response?.data?.detail || 'Failed to exchange auth code'
+      error.value = extractApiErrorMessage(err, 'Failed to exchange auth code')
       appStore.showError(error.value)
       return null
     } finally {
@@ -137,7 +139,7 @@ export function useAccountOAuth() {
 
       return tokenInfo as TokenInfo
     } catch (err: any) {
-      error.value = err.response?.data?.detail || 'Cookie authorization failed'
+      error.value = extractApiErrorMessage(err, 'Cookie authorization failed')
       return null
     } finally {
       loading.value = false

@@ -1,5 +1,7 @@
-import { ref } from 'vue'
+﻿import { ref } from 'vue'
 import { useAppStore } from '@/stores/app'
+import { extractApiErrorMessage } from '@/utils/apiError'
+
 
 interface UseFormOptions<T> {
   form: T
@@ -27,8 +29,7 @@ export function useForm<T>(options: UseFormOptions<T>) {
         appStore.showSuccess(successMsg)
       }
     } catch (error: any) {
-      const detail = error.response?.data?.detail || error.response?.data?.message || error.message
-      appStore.showError(errorMsg || detail)
+      appStore.showError(extractApiErrorMessage(error, errorMsg || 'Operation failed'))
       // 继续抛出错误，让组件有机会进行局部处理（如验证错误显示）
       throw error
     } finally {

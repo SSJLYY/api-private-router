@@ -1073,6 +1073,8 @@ import type { Column } from '@/components/common/types'
 import type { BatchApiKeyUsageStats } from '@/api/usage'
 import { formatDateTime } from '@/utils/format'
 import { maskApiKey } from '@/utils/maskApiKey'
+import { extractApiErrorMessage } from '@/utils/apiError'
+
 
 // Helper to format date for datetime-local input
 const formatDateTimeLocal = (isoDate: string): string => {
@@ -1572,7 +1574,7 @@ const handleSubmit = async () => {
     closeModals()
     loadApiKeys()
   } catch (error: any) {
-    const errorMsg = error.response?.data?.detail || t('keys.failedToSave')
+    const errorMsg = extractApiErrorMessage(error, t('keys.failedToSave'))
     appStore.showError(errorMsg)
     // Don't advance tour on error
   } finally {
@@ -1650,7 +1652,7 @@ const resetQuotaUsed = async () => {
       selectedKey.value.quota_used = 0
     }
   } catch (error: any) {
-    const errorMsg = error.response?.data?.detail || t('keys.failedToResetQuota')
+    const errorMsg = extractApiErrorMessage(error, t('keys.failedToResetQuota'))
     appStore.showError(errorMsg)
   }
 }
@@ -1681,7 +1683,7 @@ const resetRateLimitUsage = async () => {
       selectedKey.value = refreshedKey
     }
   } catch (error: any) {
-    const errorMsg = error.response?.data?.detail || t('keys.failedToResetRateLimit')
+    const errorMsg = extractApiErrorMessage(error, t('keys.failedToResetRateLimit'))
     appStore.showError(errorMsg)
   }
 }

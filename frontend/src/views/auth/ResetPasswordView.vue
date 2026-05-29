@@ -312,13 +312,11 @@ async function handleSubmit(): Promise<void> {
     isSuccess.value = true
     appStore.showSuccess(t('auth.passwordResetSuccess'))
   } catch (error: unknown) {
-    const err = error as { message?: string; response?: { data?: { detail?: string; code?: string } } }
+    const err = error as { message?: string; code?: string | number; reason?: string }
 
-    // Check for invalid/expired token error
-    if (err.response?.data?.code === 'INVALID_RESET_TOKEN') {
+    // Check for invalid/expired token error (interceptor puts code/reason at top level)
+    if (err.code === 'INVALID_RESET_TOKEN' || err.reason === 'INVALID_RESET_TOKEN') {
       errorMessage.value = t('auth.invalidOrExpiredToken')
-    } else if (err.response?.data?.detail) {
-      errorMessage.value = err.response.data.detail
     } else if (err.message) {
       errorMessage.value = err.message
     } else {

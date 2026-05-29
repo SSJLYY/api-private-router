@@ -251,10 +251,10 @@ async function handleSubmit(): Promise<void> {
       turnstileToken.value = ''
     }
 
-    const err = error as { message?: string; response?: { data?: { detail?: string } } }
+    const err = error as { message?: string; code?: string | number; reason?: string }
 
-    if (err.response?.data?.detail) {
-      errorMessage.value = err.response.data.detail
+    if (err.message) {
+      errorMessage.value = err.message
     } else if (err.message) {
       errorMessage.value = err.message
     } else {

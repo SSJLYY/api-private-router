@@ -10,6 +10,8 @@ import { opsAPI } from '@/api/admin/ops'
 import type { AlertRule, MetricType, Operator } from '../types'
 import type { OpsSeverity } from '@/api/admin/ops'
 import { formatDateTime } from '../utils/opsFormatters'
+import { extractApiErrorMessage } from '@/utils/apiError'
+
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -23,7 +25,7 @@ async function load() {
     rules.value = await opsAPI.listAlertRules()
   } catch (err: any) {
     console.error('[OpsAlertRulesCard] Failed to load rules', err)
-    appStore.showError(err?.response?.data?.detail || t('admin.ops.alertRules.loadFailed'))
+    appStore.showError(extractApiErrorMessage(err, t('admin.ops.alertRules.loadFailed')))
     rules.value = []
   } finally {
     loading.value = false
@@ -344,7 +346,7 @@ async function save() {
     appStore.showSuccess(t('admin.ops.alertRules.saveSuccess'))
   } catch (err: any) {
     console.error('[OpsAlertRulesCard] Failed to save rule', err)
-    appStore.showError(err?.response?.data?.detail || t('admin.ops.alertRules.saveFailed'))
+    appStore.showError(extractApiErrorMessage(err, t('admin.ops.alertRules.saveFailed')))
   } finally {
     saving.value = false
   }
@@ -368,7 +370,7 @@ async function confirmDelete() {
     appStore.showSuccess(t('admin.ops.alertRules.deleteSuccess'))
   } catch (err: any) {
     console.error('[OpsAlertRulesCard] Failed to delete rule', err)
-    appStore.showError(err?.response?.data?.detail || t('admin.ops.alertRules.deleteFailed'))
+    appStore.showError(extractApiErrorMessage(err, t('admin.ops.alertRules.deleteFailed')))
   }
 }
 

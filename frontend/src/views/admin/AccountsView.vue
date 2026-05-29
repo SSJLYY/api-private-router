@@ -381,6 +381,8 @@ import TLSFingerprintProfilesModal from '@/components/admin/TLSFingerprintProfil
 import { buildOpenAIUsageRefreshKey } from '@/utils/accountUsageRefresh'
 import { formatDateTime, formatRelativeTime } from '@/utils/format'
 import type { Account, AccountPlatform, AccountType, Proxy as AccountProxy, AdminGroup, WindowStats, ClaudeModel } from '@/types'
+import { extractApiErrorMessage } from '@/utils/apiError'
+
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -1521,7 +1523,7 @@ const handleSetPrivacy = async (a: Account) => {
     appStore.showSuccess(t('common.success'))
   } catch (error: any) {
     console.error('Failed to set privacy:', error)
-    appStore.showError(error?.response?.data?.message || t('admin.accounts.privacyFailed'))
+    appStore.showError(extractApiErrorMessage(error, t('admin.accounts.privacyFailed')))
   }
 }
 const handleDelete = (a: Account) => { deletingAcc.value = a; showDeleteDialog.value = true }

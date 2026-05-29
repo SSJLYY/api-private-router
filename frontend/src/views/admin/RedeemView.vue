@@ -417,6 +417,8 @@ import Select from '@/components/common/Select.vue'
 import GroupBadge from '@/components/common/GroupBadge.vue'
 import GroupOptionItem from '@/components/common/GroupOptionItem.vue'
 import Icon from '@/components/icons/Icon.vue'
+import { extractApiErrorMessage } from '@/utils/apiError'
+
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -676,7 +678,7 @@ const handleGenerateCodes = async () => {
     generateForm.validity_days = 30
     loadCodes()
   } catch (error: any) {
-    appStore.showError(error.response?.data?.detail || t('admin.redeem.failedToGenerate'))
+    appStore.showError(extractApiErrorMessage(error, t('admin.redeem.failedToGenerate')))
     console.error('Error generating codes:', error)
   } finally {
     generating.value = false
@@ -709,7 +711,7 @@ const handleExportCodes = async () => {
 
     appStore.showSuccess(t('admin.redeem.codesExported'))
   } catch (error: any) {
-    appStore.showError(error.response?.data?.detail || t('admin.redeem.failedToExport'))
+    appStore.showError(extractApiErrorMessage(error, t('admin.redeem.failedToExport')))
     console.error('Error exporting codes:', error)
   }
 }
@@ -729,7 +731,7 @@ const confirmDelete = async () => {
     deletingCode.value = null
     loadCodes()
   } catch (error: any) {
-    appStore.showError(error.response?.data?.detail || t('admin.redeem.failedToDelete'))
+    appStore.showError(extractApiErrorMessage(error, t('admin.redeem.failedToDelete')))
     console.error('Error deleting code:', error)
   }
 }
@@ -751,7 +753,7 @@ const confirmDeleteUnused = async () => {
     showDeleteUnusedDialog.value = false
     loadCodes()
   } catch (error: any) {
-    appStore.showError(error.response?.data?.detail || t('admin.redeem.failedToDeleteUnused'))
+    appStore.showError(extractApiErrorMessage(error, t('admin.redeem.failedToDeleteUnused')))
     console.error('Error deleting unused codes:', error)
   }
 }

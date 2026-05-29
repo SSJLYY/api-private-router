@@ -322,6 +322,8 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore, useAppStore } from '@/stores'
 import { performUpdate, restartService } from '@/api/admin/system'
 import Icon from '@/components/icons/Icon.vue'
+import { extractApiErrorMessage } from '@/utils/apiError'
+
 
 const { t } = useI18n()
 
@@ -389,7 +391,7 @@ async function handleUpdate() {
     appStore.clearVersionCache()
   } catch (error: unknown) {
     const err = error as { response?: { data?: { message?: string } }; message?: string }
-    updateError.value = err.response?.data?.message || err.message || t('version.updateFailed')
+    updateError.value = extractApiErrorMessage(err, err.message || t('version.updateFailed'))
   } finally {
     updating.value = false
   }

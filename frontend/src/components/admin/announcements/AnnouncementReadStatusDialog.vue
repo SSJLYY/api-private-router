@@ -83,6 +83,8 @@ import BaseDialog from '@/components/common/BaseDialog.vue'
 import DataTable from '@/components/common/DataTable.vue'
 import Pagination from '@/components/common/Pagination.vue'
 import Icon from '@/components/icons/Icon.vue'
+import { extractApiErrorMessage } from '@/utils/apiError'
+
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -186,7 +188,7 @@ async function load() {
       return
     }
     console.error('Failed to load read status:', error)
-    appStore.showError(error.response?.data?.detail || t('admin.announcements.failedToLoadReadStatus'))
+    appStore.showError(extractApiErrorMessage(error, t('admin.announcements.failedToLoadReadStatus')))
   } finally {
     if (currentController === requestController) {
       loading.value = false

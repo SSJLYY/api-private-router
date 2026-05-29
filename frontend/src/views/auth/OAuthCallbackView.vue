@@ -158,6 +158,8 @@ import {
   type OAuthTokenResponse
 } from '@/api/auth'
 import {
+import { extractApiErrorMessage } from '@/utils/apiError'
+
   clearAllAffiliateReferralCodes,
   loadOAuthAffiliateCode,
   oauthAffiliatePayload
@@ -314,7 +316,7 @@ async function resumePendingEmailOAuth() {
     appStore.showError(completion.error || t('auth.loginFailed'))
   } catch (e: unknown) {
     const err = e as { message?: string; response?: { data?: { message?: string } } }
-    const message = err.response?.data?.message || err.message || t('auth.loginFailed')
+    const message = extractApiErrorMessage(err, err.message || t('auth.loginFailed'))
     appStore.showError(message)
     invalidCallback.value = true
   } finally {
@@ -358,7 +360,7 @@ async function handleSubmitRegistration() {
   } catch (e: unknown) {
     const err = e as { message?: string; response?: { data?: { message?: string } } }
     registrationError.value =
-      err.response?.data?.message || err.message || t('auth.oidc.completeRegistrationFailed')
+      extractApiErrorMessage(err, err.message || t('auth.oidc.completeRegistrationFailed'))
   } finally {
     isSubmitting.value = false
   }

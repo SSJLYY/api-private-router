@@ -404,4 +404,8 @@ const OverviewStat = defineComponent({
 onMounted(() => {
   void loadRecords()
 })
+
+onUnmounted(() => {
+  if (debounceTimer) clearTimeout(debounceTimer)
+})
 </script>

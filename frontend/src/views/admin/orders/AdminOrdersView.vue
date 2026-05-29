@@ -112,7 +112,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, onUnmounted, reactive, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { adminPaymentAPI } from '@/api/admin/payment'
@@ -237,4 +237,8 @@ async function handleRefund(data: { amount: number; reason: string; deduct_balan
 function formatDateTime(dateStr: string): string { return formatOrderDateTime(dateStr) }
 
 onMounted(() => loadOrders())
+
+onUnmounted(() => {
+  if (debounceTimer) clearTimeout(debounceTimer)
+})
 </script>

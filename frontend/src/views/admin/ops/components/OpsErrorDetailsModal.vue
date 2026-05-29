@@ -184,6 +184,10 @@ watch(
     fetchErrorLogs()
   }
 )
+
+onUnmounted(() => {
+  if (searchTimeout) clearTimeout(searchTimeout)
+})
 </script>
 
 <template>

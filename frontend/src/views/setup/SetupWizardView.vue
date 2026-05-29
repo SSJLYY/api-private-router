@@ -496,6 +496,8 @@ import { testDatabase, testRedis, install, type InstallRequest } from '@/api/set
 import Select from '@/components/common/Select.vue'
 import Toggle from '@/components/common/Toggle.vue'
 import Icon from '@/components/icons/Icon.vue'
+import { extractApiErrorMessage } from '@/utils/apiError'
+
 
 const { t } = useI18n()
 
@@ -584,7 +586,7 @@ async function testDatabaseConnection() {
   } catch (error: unknown) {
     const err = error as { response?: { data?: { detail?: string; message?: string } }; message?: string }
     errorMessage.value =
-      err.response?.data?.detail || err.response?.data?.message || err.message || 'Connection failed'
+      extractApiErrorMessage(err, extractApiErrorMessage(err, err.message || 'Connection failed'))
   } finally {
     testingDb.value = false
   }
@@ -601,7 +603,7 @@ async function testRedisConnection() {
   } catch (error: unknown) {
     const err = error as { response?: { data?: { detail?: string; message?: string } }; message?: string }
     errorMessage.value =
-      err.response?.data?.detail || err.response?.data?.message || err.message || 'Connection failed'
+      extractApiErrorMessage(err, extractApiErrorMessage(err, err.message || 'Connection failed'))
   } finally {
     testingRedis.value = false
   }
@@ -626,7 +628,7 @@ async function performInstall() {
   } catch (error: unknown) {
     const err = error as { response?: { data?: { detail?: string; message?: string } }; message?: string }
     errorMessage.value =
-      err.response?.data?.detail || err.response?.data?.message || err.message || 'Installation failed'
+      extractApiErrorMessage(err, extractApiErrorMessage(err, err.message || 'Installation failed'))
   } finally {
     installing.value = false
   }

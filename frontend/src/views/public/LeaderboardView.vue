@@ -79,7 +79,7 @@ const RankingCard = defineComponent({
         h('div', { class: 'flex items-center justify-between gap-3' }, [
           h('div', [
             h('h3', { class: 'text-base font-semibold text-gray-900 dark:text-white' }, props.title),
-            h('p', { class: 'mt-1 text-xs text-gray-500 dark:text-dark-400' }, `${props.data.start_date} ~ ${props.data.end_date}`),
+            h('p', { class: 'mt-1 text-xs text-gray-500 dark:text-dark-400' }, `${props.data?.start_date ?? ""} ~ ${props.data?.end_date ?? ""}`),
           ]),
           h('div', { class: 'text-right' }, [
             h('p', { class: 'text-xs text-gray-500 dark:text-dark-400' }, t('leaderboard.totalPrefix', { metric: props.metricLabel })),
@@ -89,6 +89,7 @@ const RankingCard = defineComponent({
       ]),
       h('div', { class: 'divide-y divide-gray-100 dark:divide-dark-700' }, items.value.length
         ? items.value.map((item: any, index: number) => h('div', {
+            key: item.user_id || item.account_id || index,
             class: ['flex items-center justify-between gap-4 px-5 py-4', props.highlightFirst && index === 0 ? 'bg-amber-50 dark:bg-amber-900/10' : '']
           }, [
             h('div', { class: 'min-w-0 flex items-center gap-3' }, [

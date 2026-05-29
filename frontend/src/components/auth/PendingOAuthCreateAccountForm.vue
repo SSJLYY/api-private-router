@@ -93,6 +93,8 @@ import { useI18n } from 'vue-i18n'
 import TurnstileWidget from '@/components/TurnstileWidget.vue'
 import { getPublicSettings, sendPendingOAuthVerifyCode } from '@/api/auth'
 import { useAppStore } from '@/stores'
+import { extractApiErrorMessage } from '@/utils/apiError'
+
 
 export type PendingOAuthCreateAccountPayload = {
   email: string
@@ -183,7 +185,7 @@ function startCountdown(seconds: number) {
 
 function getRequestErrorMessage(error: unknown, fallback: string): string {
   const err = error as { message?: string; response?: { data?: { detail?: string; message?: string } } }
-  return err.response?.data?.detail || err.response?.data?.message || err.message || fallback
+  return extractApiErrorMessage(err, extractApiErrorMessage(err, err.message || fallback))
 }
 
 function resetTurnstile() {
