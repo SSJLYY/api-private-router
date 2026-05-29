@@ -400,5 +400,19 @@ export default {
   },
   checkin: {
     title: '每日签到',
+  },
+  pagination: {
+    showing: '显示',
+    to: '到',
+    of: '/',
+    results: '条',
+    perPage: '每页',
+    previous: '上一页',
+    next: '下一页',
+    goToPage: '前往第 {page} 页',
+    pageOf: '第 {page} 页 / 共 {total} 页',
+    jumpTo: '跳转到',
+    jumpPlaceholder: '页码',
+    jumpAction: '确定',
   }
 }

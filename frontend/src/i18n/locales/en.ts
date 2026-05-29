@@ -400,5 +400,19 @@ export default {
   },
   checkin: {
     title: 'Daily Check-In',
+  },
+  pagination: {
+    showing: 'Showing',
+    to: 'to',
+    of: 'of',
+    results: 'results',
+    perPage: 'Per page',
+    previous: 'Previous',
+    next: 'Next',
+    goToPage: 'Go to page {page}',
+    pageOf: 'Page {page} of {total}',
+    jumpTo: 'Jump to',
+    jumpPlaceholder: 'Page',
+    jumpAction: 'Go',
   }
 }
