@@ -8,7 +8,7 @@
  * Uses toPrecision(10) then strips trailing zeros to avoid IEEE 754 display noise.
  */
 export function formatScaled(value: number | null, scale: number): string {
-  if (value == null) return ‘-’
+  if (value == null) return '-'
   const raw = value * scale
   const str = raw.toPrecision(10)
   if (str.includes('e')) return `$${raw}`
