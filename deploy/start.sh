@@ -1,10 +1,11 @@
-#!/bin/bash
+﻿#!/bin/bash
 set -e
 
 BASE_DIR="/data/api-private-router"
 JAVA_BACKEND_DIR="$BASE_DIR/java-backend"
 JAR_FILE="$JAVA_BACKEND_DIR/target/api-private-router.jar"
-JAVA_CMD="java"
+JAVA_HOME="/data/java/jdk21"
+JAVA_CMD="$JAVA_HOME/bin/java"
 MVN_CMD="mvn"
 
 # ===== 环境变量 =====
@@ -28,29 +29,22 @@ step() {
   log "==> $1"
 }
 
-step "1/4 拉取最新代码..."
+step "1/4 拉取最新代码.."
 cd "$BASE_DIR"
 git pull
 log "     完成"
 
-step "2/4 打包后端..."
+step "2/4 打包后端.."
 cd "$JAVA_BACKEND_DIR"
-$MVN_CMD clean package -DskipTests -q
+JAVA_HOME="$JAVA_HOME" $MVN_CMD clean package -DskipTests -q
 log "     完成"
 
-step "3/4 停止旧进程..."
-OLD_PID=$(pgrep -f "api-private-router.jar" 2>/dev/null || true)
-if [ -n "$OLD_PID" ]; then
-  kill "$OLD_PID" 2>/dev/null || true
-  sleep 2
-  # 强制杀
-  kill -9 "$OLD_PID" 2>/dev/null || true
-  log "     已停止 PID $OLD_PID"
-else
-  log "     无运行中的进程"
-fi
+step "3/4 停止旧进程.."
+fuser -k 8080/tcp 2>/dev/null || true
+sleep 2
+log "     完成"
 
-step "4/4 启动新服务..."
+step "4/4 启动新服务.."
 nohup $JAVA_CMD -jar "$JAR_FILE" > "$JAVA_BACKEND_DIR/app.log" 2>&1 &
 NEW_PID=$!
 log "     已启动 PID $NEW_PID"
