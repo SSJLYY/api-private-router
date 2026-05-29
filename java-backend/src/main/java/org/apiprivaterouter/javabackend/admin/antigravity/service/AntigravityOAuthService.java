@@ -82,7 +82,8 @@ public class AntigravityOAuthService {
 
     public AntigravityOAuthTokenResponse exchangeCode(AntigravityExchangeCodeRequest request) {
         OAuthSession session = getSessionOrThrow(request.session_id());
-        if (!session.state().equals(request.state().trim())) {
+        String requestState = request.state() == null ? "" : request.state().trim();
+        if (!session.state().equals(requestState)) {
             throw new IllegalArgumentException("invalid oauth state");
         }
         ProxySettings proxy = request.proxy_id() == null ? session.proxy() : resolveProxy(request.proxy_id(), session.proxy());

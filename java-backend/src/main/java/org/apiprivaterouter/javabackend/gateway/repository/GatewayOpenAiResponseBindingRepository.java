@@ -136,8 +136,9 @@ public class GatewayOpenAiResponseBindingRepository {
         if (schemaInitialized.get()) {
             return;
         }
-        initSchema();
-        schemaInitialized.set(true);
+        if (schemaInitialized.compareAndSet(false, true)) {
+            initSchema();
+        }
     }
 
     private OffsetDateTime toOffsetDateTime(Instant instant) {

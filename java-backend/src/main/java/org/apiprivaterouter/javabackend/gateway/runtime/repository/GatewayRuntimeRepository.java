@@ -259,8 +259,8 @@ public class GatewayRuntimeRepository {
                       and a.platform = 'openai'
                       and (
                           lower(coalesce(a.extra->>'openai_compact_mode', '')) = 'force_on'
-                          or lower(coalesce(a.extra->>'openai_compact_mode', '')) not in ('force_off')
-                             and coalesce(a.extra->>'openai_compact_supported', '') <> 'false'
+                          or (lower(coalesce(a.extra->>'openai_compact_mode', '')) not in ('force_off')
+                              and coalesce(a.extra->>'openai_compact_supported', '') <> 'false')
                       )
                     """);
         }
@@ -287,8 +287,8 @@ public class GatewayRuntimeRepository {
                       and a.platform = 'openai'
                       and (
                           lower(coalesce(a.extra->>'openai_compact_mode', '')) = 'force_on'
-                          or lower(coalesce(a.extra->>'openai_compact_mode', '')) not in ('force_off')
-                             and coalesce(a.extra->>'openai_compact_supported', '') <> 'false'
+                          or (lower(coalesce(a.extra->>'openai_compact_mode', '')) not in ('force_off')
+                              and coalesce(a.extra->>'openai_compact_supported', '') <> 'false')
                       )
                     """);
         }
