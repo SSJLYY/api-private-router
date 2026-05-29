@@ -157,7 +157,8 @@ export default {
     verifying: '验证中',
     yes: 'Yes',
     no: '否',
-    required: '必填'
+    required: '必填',
+    login: '登录'
   },
   empty: {
     noData: '暂无数据'
@@ -414,7 +415,9 @@ export default {
       userUpdated: '用户已更新',
       username: '用户名',
       withdrawAll: 'withdraw全部',
-      withdrawAmount: 'withdraw金额'
+      withdrawAmount: 'withdraw金额',
+      title: '用户管理',
+      description: '管理所有用户'
     },
     errorPassthrough: {
       title: '错误透传',
@@ -1179,7 +1182,8 @@ export default {
         redirectUrlPlaceholder: '跳转链接占位符',
         redirectUrlSetAndCopied: '跳转链接设置和已复制',
         title: '标题'
-      }
+      },
+      description: '系统配置'
     },
     backup: {
       empty: '暂无备份',
@@ -1467,7 +1471,9 @@ export default {
       rpmOverridesTitle: 'rpmoverrides标题',
       rpmSaved: 'RPM 已保存',
       searchUserPlaceholder: '搜索用户placeholder',
-      unsavedChanges: '未保存的更改'
+      unsavedChanges: '未保存的更改',
+      title: '分组管理',
+      description: '管理用户分组'
     },
     accounts: {
       createAccount: '创建账号',
@@ -2183,7 +2189,9 @@ export default {
         title: '隐私政策',
         saved: '已保存',
         removed: '已移除'
-      }
+      },
+      title: '账号管理',
+      description: '管理 API 账号'
     },
     announcements: {
       searchAnnouncements: '搜索公告',
@@ -2251,7 +2259,9 @@ export default {
       },
       readAt: '已读时间',
       searchUsers: '搜索用户',
-      unread: 'Unread'
+      unread: 'Unread',
+      title: '公告管理',
+      description: '管理公告'
     },
     channels: {
       searchChannels: '搜索通道',
@@ -2304,7 +2314,9 @@ export default {
       creating: '创建中',
       updating: '更新中',
       pricing: '定价',
-      batchDelete: '批量删除'
+      batchDelete: '批量删除',
+      title: '通道管理',
+      description: '管理 API 通道'
     },
     channelMonitor: {
       runResultTitle: '运行结果',
@@ -2410,7 +2422,9 @@ export default {
         none: '无',
         placeholder: '占位符'
       },
-      updateSuccess: '更新成功'
+      updateSuccess: '更新成功',
+      title: '通道监控',
+      description: '监控通道健康状态'
     },
     subscriptions: {
       assignSubscription: '分配订阅',
@@ -2509,7 +2523,9 @@ export default {
         }
       },
       assign: '分配',
-      assigning: '分配中'
+      assigning: '分配中',
+      title: '订阅管理',
+      description: '管理用户订阅'
     },
     proxies: {
       testConnection: '测试连接',
@@ -2626,7 +2642,9 @@ export default {
       dataImportTitle: '数据导入标题',
       dataImportWarning: '数据导入警告',
       dataImporting: '数据importing',
-      testFailed: 'test失败'
+      testFailed: 'test失败',
+      title: '代理管理',
+      description: '管理代理服务器'
     },
     redeem: {
       searchCodes: '搜索兑换码',
@@ -2681,7 +2699,9 @@ export default {
       subscription: '订阅',
       unused: '未使用',
       used: '使用',
-      validityDays: '有效期天'
+      validityDays: '有效期天',
+      title: '兑换码管理',
+      description: '管理兑换码'
     },
     promo: {
       searchCodes: '搜索优惠码',
@@ -2727,7 +2747,9 @@ export default {
       statusMaxUsed: '状态最大使用',
       usageRecords: '使用记录记录',
       viewUsages: '查看Usages',
-      zeroUnlimited: 'zero不限'
+      zeroUnlimited: 'zero不限',
+      title: '优惠码管理',
+      description: '管理优惠码'
     },
     affiliates: {
       overview: {
@@ -2762,7 +2784,10 @@ export default {
         transferAmount: '转账金额',
         transferredAt: '转账',
         user: '用户'
-      }
+      },
+      invitesDescription: '查看邀请记录',
+      rebatesDescription: '查看返利记录',
+      transfersDescription: '查看转账记录'
     },
     ops: {
       accountAvailability: {
@@ -3377,7 +3402,8 @@ export default {
       upstream: '上游',
       upstreamErrors: '上游错误',
       upstreamExcl429529: '上游Excl429529',
-      waiting: '等待'
+      waiting: '等待',
+      description: '运维监控'
     },
     riskControl: {
       action: {
@@ -3612,7 +3638,9 @@ export default {
       clickToViewBalance: '点击to查看余额',
       searchAccountPlaceholder: '搜索账号placeholder',
       searchApiKeyPlaceholder: '搜索API密钥placeholder',
-      userFilter: '用户筛选'
+      userFilter: '用户筛选',
+      title: '使用记录',
+      description: '查看用量和计费记录'
     },
     scheduledTests: {
       addPlan: '添加plan',
@@ -3690,7 +3718,8 @@ export default {
     tokens: 'Tokens',
     totalTokens: '总计Tokens',
     viewAllUsage: '查看全部用量',
-    input: '输入'
+    input: '输入',
+    welcomeMessage: '欢迎回来'
   },
   keys: {
     title: 'API 密钥',
@@ -4190,7 +4219,8 @@ export default {
     userSectionHint: '用户Section提示',
     userSectionTitle: '用户Section标题',
     weekly: '每周',
-    yearlyBestEmployee: '年度最佳员工'
+    yearlyBestEmployee: '年度最佳员工',
+    totalPrefix: '总{metric}：'
   },
   checkin: {
     title: '每日签到',
@@ -4764,14 +4794,20 @@ export default {
       callbackTitle: '回调标题'
     },
     wechatProviderName: '微信提供商名称',
-    welcomeBack: '欢迎返回'
+    welcomeBack: '欢迎返回',
+    oauthCallbackPageTitle: 'OAuth 回调',
+    communityCallbackPageTitle: '社区登录回调',
+    wechatCallbackPageTitle: '微信回调',
+    wechatPaymentCallbackPageTitle: '微信支付回调',
+    oidcCallbackPageTitle: 'OIDC 回调'
   },
   customPage: {
     notConfiguredDesc: '未configureddesc',
     notConfiguredTitle: '未configured标题',
     notFoundDesc: '未founddesc',
     notFoundTitle: '未found标题',
-    openInNewTab: 'openin新建标签页'
+    openInNewTab: 'openin新建标签页',
+    title: '自定义页面'
   },
   dates: {
     apply: 'Apply',

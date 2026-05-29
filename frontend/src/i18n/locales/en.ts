@@ -157,7 +157,8 @@ export default {
     verifying: 'Verifying',
     yes: 'Yes',
     no: 'No',
-    required: 'Required'
+    required: 'Required',
+    login: 'Login'
   },
   empty: {
     noData: 'No data'
@@ -414,7 +415,9 @@ export default {
       userUpdated: 'User updated',
       username: 'Username',
       withdrawAll: 'Withdraw all',
-      withdrawAmount: 'Withdraw amount'
+      withdrawAmount: 'Withdraw amount',
+      title: 'Users',
+      description: 'Manage all users'
     },
     errorPassthrough: {
       title: 'Error Passthrough',
@@ -1179,7 +1182,8 @@ export default {
         redirectUrlPlaceholder: 'Redirect Url Placeholder',
         redirectUrlSetAndCopied: 'Redirect Url Set And Copied',
         title: 'Title'
-      }
+      },
+      description: 'System configuration'
     },
     backup: {
       empty: 'No backups yet',
@@ -1467,7 +1471,9 @@ export default {
       rpmOverridesTitle: 'Rpm overrides title',
       rpmSaved: 'Rpm saved',
       searchUserPlaceholder: 'Search user placeholder',
-      unsavedChanges: 'Unsaved changes'
+      unsavedChanges: 'Unsaved changes',
+      title: 'Groups',
+      description: 'Manage user groups'
     },
     accounts: {
       createAccount: 'Create Account',
@@ -2183,7 +2189,9 @@ export default {
         title: 'Title',
         saved: 'Saved',
         removed: 'Removed'
-      }
+      },
+      title: 'Accounts',
+      description: 'Manage API accounts'
     },
     announcements: {
       searchAnnouncements: 'Search announcements',
@@ -2251,7 +2259,9 @@ export default {
       },
       readAt: 'Read at',
       searchUsers: 'Search users',
-      unread: 'Unread'
+      unread: 'Unread',
+      title: 'Announcements',
+      description: 'Manage announcements'
     },
     channels: {
       searchChannels: 'Search channels',
@@ -2304,7 +2314,9 @@ export default {
       creating: 'Creating',
       updating: 'Updating',
       pricing: 'Pricing',
-      batchDelete: 'Batch Delete'
+      batchDelete: 'Batch Delete',
+      title: 'Channels',
+      description: 'Manage API channels'
     },
     channelMonitor: {
       runResultTitle: 'Run Result',
@@ -2410,7 +2422,9 @@ export default {
         none: 'None',
         placeholder: 'Placeholder'
       },
-      updateSuccess: 'Update success'
+      updateSuccess: 'Update success',
+      title: 'Channel Monitor',
+      description: 'Monitor channel health'
     },
     subscriptions: {
       assignSubscription: 'Assign Subscription',
@@ -2509,7 +2523,9 @@ export default {
         }
       },
       assign: 'Assign',
-      assigning: 'Assigning'
+      assigning: 'Assigning',
+      title: 'Subscriptions',
+      description: 'Manage user subscriptions'
     },
     proxies: {
       testConnection: 'Test Connection',
@@ -2626,7 +2642,9 @@ export default {
       dataImportTitle: 'Data import title',
       dataImportWarning: 'Data import warning',
       dataImporting: 'Data importing',
-      testFailed: 'Test failed'
+      testFailed: 'Test failed',
+      title: 'Proxies',
+      description: 'Manage proxy servers'
     },
     redeem: {
       searchCodes: 'Search codes',
@@ -2681,7 +2699,9 @@ export default {
       subscription: 'Subscription',
       unused: 'Unused',
       used: 'Used',
-      validityDays: 'Validity Days'
+      validityDays: 'Validity Days',
+      title: 'Redeem Codes',
+      description: 'Manage redeem codes'
     },
     promo: {
       searchCodes: 'Search promo codes',
@@ -2727,7 +2747,9 @@ export default {
       statusMaxUsed: 'Status Max Used',
       usageRecords: 'Usage Records',
       viewUsages: 'View Usages',
-      zeroUnlimited: 'Zero Unlimited'
+      zeroUnlimited: 'Zero Unlimited',
+      title: 'Promo Codes',
+      description: 'Manage promo codes'
     },
     affiliates: {
       overview: {
@@ -2762,7 +2784,10 @@ export default {
         transferAmount: 'Transfer Amount',
         transferredAt: 'Transferred At',
         user: 'User'
-      }
+      },
+      invitesDescription: 'View invite records',
+      rebatesDescription: 'View rebate records',
+      transfersDescription: 'View transfer records'
     },
     ops: {
       accountAvailability: {
@@ -3377,7 +3402,8 @@ export default {
       upstream: 'Upstream',
       upstreamErrors: 'Upstream Errors',
       upstreamExcl429529: 'Upstream Excl 429529',
-      waiting: 'Waiting'
+      waiting: 'Waiting',
+      description: 'Operations monitoring'
     },
     riskControl: {
       action: {
@@ -3612,7 +3638,9 @@ export default {
       clickToViewBalance: 'Click to view balance',
       searchAccountPlaceholder: 'Search account placeholder',
       searchApiKeyPlaceholder: 'Search api key placeholder',
-      userFilter: 'User filter'
+      userFilter: 'User filter',
+      title: 'Usage Records',
+      description: 'View usage and billing records'
     },
     scheduledTests: {
       addPlan: 'Add plan',
@@ -3690,7 +3718,8 @@ export default {
     tokens: 'Tokens',
     totalTokens: 'Total tokens',
     viewAllUsage: 'View all usage',
-    input: 'Input'
+    input: 'Input',
+    welcomeMessage: 'Welcome back'
   },
   keys: {
     title: 'API Keys',
@@ -4190,7 +4219,8 @@ export default {
     userSectionHint: 'User Section Hint',
     userSectionTitle: 'User Section Title',
     weekly: 'Weekly',
-    yearlyBestEmployee: 'Yearly Best Employee'
+    yearlyBestEmployee: 'Yearly Best Employee',
+    totalPrefix: 'Total {metric}:'
   },
   checkin: {
     title: 'Daily Check-In',
@@ -4764,14 +4794,20 @@ export default {
       callbackTitle: 'Callback title'
     },
     wechatProviderName: 'Wechat provider name',
-    welcomeBack: 'Welcome back'
+    welcomeBack: 'Welcome back',
+    oauthCallbackPageTitle: 'OAuth Callback',
+    communityCallbackPageTitle: 'Community Callback',
+    wechatCallbackPageTitle: 'WeChat Callback',
+    wechatPaymentCallbackPageTitle: 'WeChat Payment Callback',
+    oidcCallbackPageTitle: 'OIDC Callback'
   },
   customPage: {
     notConfiguredDesc: 'Not configured desc',
     notConfiguredTitle: 'Not configured title',
     notFoundDesc: 'Not found desc',
     notFoundTitle: 'Not found title',
-    openInNewTab: 'Open in new tab'
+    openInNewTab: 'Open in new tab',
+    title: 'Custom Page'
   },
   dates: {
     apply: 'Apply',
