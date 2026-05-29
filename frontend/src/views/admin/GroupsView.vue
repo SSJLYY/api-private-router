@@ -2859,7 +2859,6 @@ import { createStableObjectKeyResolver } from "@/utils/stableObjectKey";
 import { useKeyedDebouncedSearch } from "@/composables/useKeyedDebouncedSearch";
 import { getPersistedPageSize } from "@/composables/usePersistedPageSize";
 import {
-import { extractApiErrorMessage } from '@/utils/apiError'
 
   createDefaultMessagesDispatchFormState,
   messagesDispatchConfigToFormState,
@@ -2867,6 +2866,7 @@ import { extractApiErrorMessage } from '@/utils/apiError'
   resetMessagesDispatchFormState,
   type MessagesDispatchMappingRow,
 } from "./groupsMessagesDispatch";
+import { extractApiErrorMessage } from '@/utils/apiError'
 
 const { t } = useI18n();
 const appStore = useAppStore();

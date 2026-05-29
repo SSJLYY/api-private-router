@@ -257,12 +257,12 @@ import {
   type PendingOAuthExchangeResponse
 } from '@/api/auth'
 import {
-import { extractApiErrorMessage } from '@/utils/apiError'
 
   clearAllAffiliateReferralCodes,
   loadOAuthAffiliateCode,
   oauthAffiliatePayload
 } from '@/utils/oauthAffiliate'
+import { extractApiErrorMessage } from '@/utils/apiError'
 
 const route = useRoute()
 const router = useRouter()
