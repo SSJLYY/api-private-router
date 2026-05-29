@@ -545,7 +545,7 @@ function switchToCreateAccountMode() {
 
 function getRequestErrorMessage(error: unknown, fallback: string): string {
   const err = error as { message?: string; response?: { data?: { detail?: string; message?: string } } }
-  return extractApiErrorMessage(err, extractApiErrorMessage(err, err.message || fallback))
+  return extractApiErrorMessage(err, fallback)
 }
 
 function isCreateAccountRecoveryError(error: unknown): boolean {

@@ -325,6 +325,7 @@ import PendingOAuthCreateAccountForm, {
 } from '@/components/auth/PendingOAuthCreateAccountForm.vue'
 import { apiClient } from '@/api/client'
 import { useAuthStore, useAppStore } from '@/stores'
+import { extractApiErrorMessage } from '@/utils/apiError'
 import {
   completeWeChatOAuthRegistration,
   exchangePendingOAuthCompletion,
@@ -341,7 +342,6 @@ import {
   type PendingOAuthExchangeResponse
 } from '@/api/auth'
 import {
-import { extractApiErrorMessage } from '@/utils/apiError'
 
   clearAllAffiliateReferralCodes,
   loadOAuthAffiliateCode,
@@ -778,7 +778,7 @@ function switchToCreateAccountMode() {
 
 function getRequestErrorMessage(error: unknown, fallback: string): string {
   const err = error as { message?: string; response?: { data?: { detail?: string; message?: string } } }
-  return extractApiErrorMessage(err, extractApiErrorMessage(err, err.message || fallback))
+  return extractApiErrorMessage(err, fallback)
 }
 
 function isCreateAccountRecoveryError(error: unknown): boolean {

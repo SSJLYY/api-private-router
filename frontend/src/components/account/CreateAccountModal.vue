@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <BaseDialog
     :show="show"
     :title="t('admin.accounts.createAccount')"
