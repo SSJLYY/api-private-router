@@ -33,7 +33,9 @@ step() {
 
 step "1/4 拉取最新代码.."
 cd "$BASE_DIR"
-git pull
+git fetch origin main
+git reset --hard origin/main
+git clean -fd
 log "     完成"
 
 step "2/4 打包后端.."
