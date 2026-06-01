@@ -535,6 +535,16 @@ export default {
     },
     settings: {
       title: 'Settings',
+      tabs: {
+        general: 'General',
+        features: 'Features',
+        security: 'Security',
+        users: 'Users',
+        gateway: 'Gateway',
+        payment: 'Payment',
+        email: 'Email',
+        backup: 'Backup'
+      },
       adminApiKey: {
         copyKey: 'Copy Key',
         create: 'Create',
@@ -753,6 +763,11 @@ export default {
         cchSigningHint: 'Cch Signing Hint',
         description: 'Description',
         metadataPassthrough: 'Metadata Passthrough',
+        metadataPassthroughHint: 'When enabled, metadata fields from requests are forwarded when possible.',
+        fingerprintUnification: 'Fingerprint Unification',
+        fingerprintUnificationHint: 'Use a unified client fingerprint for gateway forwarding requests.',
+        anthropicCacheTTL1hInjection: 'Anthropic Cache TTL 1h Injection',
+        anthropicCacheTTL1hInjectionHint: 'Automatically inject a 1-hour TTL for Anthropic cache control.',
         title: 'Title'
       },
       linuxdo: {
@@ -860,6 +875,8 @@ export default {
         description: 'Description',
         enabled: 'Enabled',
         enabledHint: 'Enabled Hint',
+        cooldownSeconds: 'Cooldown Seconds',
+        cooldownSecondsHint: 'Seconds an account stays temporarily unschedulable after a 429 rate-limit response.',
         saveFailed: 'Save Failed',
         saved: 'Saved',
         title: 'Title'
@@ -1008,6 +1025,8 @@ export default {
         description: 'Description',
         emailSuffixWhitelist: 'Email Suffix Whitelist',
         emailSuffixWhitelistHint: 'Email Suffix Whitelist Hint',
+        emailSuffixWhitelistPlaceholder: 'e.g. gmail.com, company.com',
+        emailSuffixWhitelistInputHint: 'Enter an email suffix and press Enter to add it. Leave empty to allow all suffixes.',
         emailVerification: 'Email Verification',
         emailVerificationHint: 'Email Verification Hint',
         enableRegistration: 'Enable Registration',

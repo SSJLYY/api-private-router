@@ -535,6 +535,16 @@ export default {
     },
     settings: {
       title: '设置',
+      tabs: {
+        general: '常规',
+        features: '功能',
+        security: '安全',
+        users: '用户',
+        gateway: '网关',
+        payment: '支付',
+        email: '邮件',
+        backup: '备份'
+      },
       adminApiKey: {
         copyKey: '复制密钥',
         create: '创建',
@@ -753,6 +763,11 @@ export default {
         cchSigningHint: 'cchSigning提示',
         description: '描述',
         metadataPassthrough: '元数据透传',
+        metadataPassthroughHint: '开启后会尽量透传请求中的 metadata 字段。',
+        fingerprintUnification: '指纹统一',
+        fingerprintUnificationHint: '为网关转发请求使用统一的客户端指纹。',
+        anthropicCacheTTL1hInjection: 'Anthropic 缓存 TTL 1 小时注入',
+        anthropicCacheTTL1hInjectionHint: '自动为 Anthropic 缓存控制注入 1 小时 TTL。',
         title: '标题'
       },
       linuxdo: {
@@ -860,6 +875,8 @@ export default {
         description: '描述',
         enabled: '已启用',
         enabledHint: '已启用提示',
+        cooldownSeconds: '冷却秒数',
+        cooldownSecondsHint: '触发 429 限流后账号临时不可调度的秒数。',
         saveFailed: '保存失败',
         saved: '已保存',
         title: '标题'
@@ -1008,6 +1025,8 @@ export default {
         description: '描述',
         emailSuffixWhitelist: '邮箱Suffix白名单',
         emailSuffixWhitelistHint: '邮箱Suffix白名单提示',
+        emailSuffixWhitelistPlaceholder: '例如：gmail.com、company.com',
+        emailSuffixWhitelistInputHint: '输入邮箱后缀并按 Enter 添加；留空表示不限制。',
         emailVerification: '邮箱Verification',
         emailVerificationHint: '邮箱Verification提示',
         enableRegistration: '启用Registration',
