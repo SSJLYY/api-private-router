@@ -969,6 +969,8 @@ const forbiddenBadgeClass = computed(() => {
 })
 
 const linkCopied = ref(false)
+let linkCopiedTimer: ReturnType<typeof setTimeout> | null = null
+
 const copyValidationURL = async () => {
   if (!validationURL.value) return
   try {
@@ -1229,6 +1231,7 @@ watch(isDesktopViewport, (isDesktop) => {
 })
 
 onUnmounted(() => {
+  if (linkCopiedTimer) clearTimeout(linkCopiedTimer)
   detachVisibilityObserver()
   if (desktopViewportMediaQuery && desktopViewportListener) {
     if (typeof desktopViewportMediaQuery.removeEventListener === 'function') {

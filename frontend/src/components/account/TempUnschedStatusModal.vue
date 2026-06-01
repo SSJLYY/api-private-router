@@ -208,8 +208,12 @@ const remainingText = computed(() => {
   return t('admin.accounts.tempUnschedulable.remainingHoursMinutes', { hours, minutes: rest })
 })
 
+const isMounted = ref(true)
+onBeforeUnmount(() => { isMounted.value = false })
+
 const loadStatus = async () => {
   if (!props.account) return
+  if (!isMounted.value) return
   loading.value = true
   try {
     status.value = await adminAPI.accounts.getTempUnschedulableStatus(props.account.id)
@@ -217,7 +221,7 @@ const loadStatus = async () => {
     appStore.showError(error?.message || t('admin.accounts.tempUnschedulable.failedToLoad'))
     status.value = null
   } finally {
-    loading.value = false
+    if (isMounted.value) loading.value = false
   }
 }
 

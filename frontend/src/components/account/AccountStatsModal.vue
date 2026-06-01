@@ -690,17 +690,23 @@ watch(
   }
 )
 
+const isMounted = ref(true)
+onBeforeUnmount(() => { isMounted.value = false })
+
 const loadStats = async () => {
   if (!props.account) return
 
   loading.value = true
   try {
-    stats.value = await adminAPI.accounts.getStats(props.account.id, 30)
+    const result = await adminAPI.accounts.getStats(props.account.id, 30)
+  if (isMounted.value) stats.value = result
   } catch (error) {
-    console.error('Failed to load account stats:', error)
-    stats.value = null
+    if (isMounted.value) {
+      console.error('Failed to load account stats:', error)
+      stats.value = null
+    }
   } finally {
-    loading.value = false
+    if (isMounted.value) loading.value = false
   }
 }
 
