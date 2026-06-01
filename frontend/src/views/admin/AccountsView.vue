@@ -1588,11 +1588,15 @@ const handleClickOutside = (event: MouseEvent) => {
 onMounted(async () => {
   load()
   try {
-    const [p, g] = await Promise.all([adminAPI.proxies.getAll(), adminAPI.groups.getAll()])
-    proxies.value = p
-    groups.value = g
+    groups.value = await adminAPI.groups.getAll()
   } catch (error) {
-    console.error('Failed to load proxies/groups:', error)
+    console.error('Failed to load groups:', error)
+  }
+  try {
+    proxies.value = await adminAPI.proxies.getAll()
+  } catch (error) {
+    proxies.value = []
+    console.error('Failed to load proxies:', error)
   }
   window.addEventListener('scroll', handleScroll, true)
   document.addEventListener('click', handleClickOutside)

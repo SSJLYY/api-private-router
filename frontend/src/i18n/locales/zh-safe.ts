@@ -1539,6 +1539,7 @@ export default {
       dataExportSelected: '数据导出选中',
       dataExported: '数据已导出',
       deleteAccount: '删除账号',
+      deleteConfirm: '确定要删除账号 {name} 吗？',
       enableAutoRefresh: '启用自动刷新',
       expired: '过期',
       failedToToggleSchedulable: '失败到切换可调度',

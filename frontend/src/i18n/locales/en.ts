@@ -1539,6 +1539,7 @@ export default {
       dataExportSelected: 'Data Export Selected',
       dataExported: 'Data Exported',
       deleteAccount: 'Delete Account',
+      deleteConfirm: 'Delete account {name}?',
       enableAutoRefresh: 'Enable Auto Refresh',
       expired: 'Expired',
       failedToToggleSchedulable: 'Failed To Toggle Schedulable',

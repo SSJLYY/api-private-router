@@ -16,6 +16,8 @@ export REDIS_HOST=192.168.215.116
 export DATABASE_HOST=192.168.215.116
 export DATABASE_USER=api_private_router
 export DATABASE_DBNAME=api_private_router
+export SECURITY_URL_ALLOWLIST_ALLOW_PRIVATE_HOSTS=true
+export SECURITY_URL_ALLOWLIST_ALLOW_INSECURE_HTTP=true
 
 # 仅在首次安装时取消注释下面这行
 # export AUTO_SETUP=true
