@@ -41,9 +41,9 @@ management:
 
 logging:
   level:
-    root: INFO
-    org.springframework.web.servlet.DispatcherServlet: INFO
-    org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver: WARN
-    org.springframework.jdbc.core: DEBUG
-    org.springframework.jdbc.support: DEBUG
-    org.springframework.web: INFO
+    root: ${LOG_LEVEL:ERROR}
+    org.springframework.web.servlet.DispatcherServlet: ${SPRING_WEB_LOG_LEVEL:ERROR}
+    org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver: ${SPRING_EXCEPTION_LOG_LEVEL:ERROR}
+    org.springframework.jdbc.core: ${SPRING_JDBC_LOG_LEVEL:ERROR}
+    org.springframework.jdbc.support: ${SPRING_JDBC_LOG_LEVEL:ERROR}
+    org.springframework.web: ${SPRING_WEB_LOG_LEVEL:ERROR}
