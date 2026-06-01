@@ -4265,6 +4265,8 @@ export default {
     checkInNow: '检查in现在',
     heroDescription: '主描述',
     historyTitle: '历史标题',
+    historyStakeReward: '投入 {stake}，奖励 {reward}，倍率 x{multiplier}',
+    historyBalanceChange: '余额 {before} -> {after}',
     latestMultiplier: '最新倍率',
     latestReward: '最新reward',
     multiplierRange: '倍率范围',

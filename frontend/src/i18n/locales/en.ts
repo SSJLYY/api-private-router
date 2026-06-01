@@ -4265,6 +4265,8 @@ export default {
     checkInNow: 'Check in now',
     heroDescription: 'Hero description',
     historyTitle: 'History title',
+    historyStakeReward: 'Stake {stake}, reward {reward}, multiplier x{multiplier}',
+    historyBalanceChange: 'Balance {before} -> {after}',
     latestMultiplier: 'Latest multiplier',
     latestReward: 'Latest reward',
     multiplierRange: 'Multiplier range',
