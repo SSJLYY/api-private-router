@@ -19,6 +19,8 @@ import org.apiprivaterouter.javabackend.admin.proxy.service.AdminProxyService;
 import org.apiprivaterouter.javabackend.common.api.ApiResponse;
 import org.apiprivaterouter.javabackend.common.api.PageResponse;
 import org.apiprivaterouter.javabackend.common.security.CurrentUserContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -35,6 +37,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/admin/proxies")
 public class AdminProxyController {
+
+    private static final Logger log = LoggerFactory.getLogger(AdminProxyController.class);
 
     private final AdminProxyService service;
     private final CurrentUserContext currentUserContext;
@@ -64,7 +68,12 @@ public class AdminProxyController {
             @RequestParam(name = "with_count", defaultValue = "false") boolean withCount
     ) {
         currentUserContext.requireAdmin();
-        return ApiResponse.success(service.listAll(protocol, withCount));
+        try {
+            return ApiResponse.success(service.listAll(protocol, withCount));
+        } catch (Exception ex) {
+            log.warn("Failed to list active proxies, returning empty list", ex);
+            return ApiResponse.success(List.of());
+        }
     }
 
     @GetMapping("/{id}")
