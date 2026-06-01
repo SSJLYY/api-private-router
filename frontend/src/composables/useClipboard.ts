@@ -57,8 +57,10 @@ export function useClipboard() {
     if (success) {
       copied.value = true
       appStore.showSuccess(successMessage || t('common.copiedToClipboard'))
-      setTimeout(() => {
+      if (copyTimer) clearTimeout(copyTimer)
+      copyTimer = setTimeout(() => {
         copied.value = false
+        copyTimer = null
       }, 2000)
     } else {
       appStore.showError(t('common.copyFailed'))

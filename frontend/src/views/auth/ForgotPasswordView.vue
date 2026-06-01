@@ -255,8 +255,8 @@ async function handleSubmit(): Promise<void> {
 
     if (err.message) {
       errorMessage.value = err.message
-    } else if (err.message) {
-      errorMessage.value = err.message
+    } else if (err.reason) {
+      errorMessage.value = err.reason
     } else {
       errorMessage.value = t('auth.sendResetLinkFailed')
     }
