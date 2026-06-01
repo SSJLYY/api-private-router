@@ -1643,8 +1643,10 @@ export default {
         wsMode: 'ws模式',
         wsModeCtxPool: 'ws模式ctxpool',
         wsModeDesc: 'ws模式desc',
+        wsModeConcurrencyHint: '连接池模式会复用上游 WebSocket，会占用账号并发连接。',
         wsModeOff: 'ws模式关闭',
-        wsModePassthrough: 'ws模式passthrough'
+        wsModePassthrough: 'ws模式passthrough',
+        wsModePassthroughHint: '透传模式会为每个下游连接直连上游，请注意账号并发限制。'
       },
       privacyFailed: '隐私失败',
       recoverStateFailed: '恢复状态失败',
@@ -2101,6 +2103,7 @@ export default {
       },
       subscriptionAbnormal: '订阅abnormal',
       subscriptionExpires: '订阅到期',
+      selectedModels: '已选择 {count} 个模型',
       supportsAllModels: 'supports全部模型',
       syncErrors: '同步Errors',
       syncFailed: 'sync失败',

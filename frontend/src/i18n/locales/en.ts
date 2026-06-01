@@ -1643,8 +1643,10 @@ export default {
         wsMode: 'Ws mode',
         wsModeCtxPool: 'Ws mode ctx pool',
         wsModeDesc: 'Ws mode desc',
+        wsModeConcurrencyHint: 'Context-pool mode reuses upstream WebSocket connections and consumes account concurrency.',
         wsModeOff: 'Ws mode off',
-        wsModePassthrough: 'Ws mode passthrough'
+        wsModePassthrough: 'Ws mode passthrough',
+        wsModePassthroughHint: 'Passthrough mode opens one upstream connection per downstream connection. Watch account concurrency limits.'
       },
       privacyFailed: 'Privacy Failed',
       recoverStateFailed: 'Recover State Failed',
@@ -2101,6 +2103,7 @@ export default {
       },
       subscriptionAbnormal: 'Subscription abnormal',
       subscriptionExpires: 'Subscription expires',
+      selectedModels: 'Selected {count} models',
       supportsAllModels: 'Supports all models',
       syncErrors: 'Sync errors',
       syncFailed: 'Sync failed',
