@@ -16,6 +16,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
@@ -46,7 +47,17 @@ public class ContentModerationGatewayFilter extends OncePerRequestFilter {
             return;
         }
 
-        byte[] body = request.getInputStream().readAllBytes();
+        // TODO: Reduce maxBodySize or use streaming to avoid 10MB memory pressure per request
+        int maxBodySize = 10 * 1024 * 1024; // 10MB
+        // Note: Content-Length header check is unreliable as clients can spoof it.
+        // The actual body size is enforced by readBoundedBody below.
+        byte[] body = readBoundedBody(request, maxBodySize);
+        if (body == null) {
+            response.setStatus(413);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\":{\"message\":\"Request body too large\"}}");
+            return;
+        }
         CachedBodyHttpServletRequest wrapped = new CachedBodyHttpServletRequest(request, body);
         String inboundApiKey = extractApiKey(request);
         if (inboundApiKey == null || inboundApiKey.isBlank()) {
@@ -279,6 +290,42 @@ public class ContentModerationGatewayFilter extends OncePerRequestFilter {
         if (value == null) {
             return "";
         }
-        return value.replace("\\", "\\\\").replace("\"", "\\\"");
+        StringBuilder sb = new StringBuilder(value.length() + 16);
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            switch (c) {
+                case '\\' -> sb.append("\\\\");
+                case '"' -> sb.append("\\\"");
+                case '\n' -> sb.append("\\n");
+                case '\r' -> sb.append("\\r");
+                case '\t' -> sb.append("\\t");
+                case '\b' -> sb.append("\\b");
+                case '\f' -> sb.append("\\f");
+                default -> {
+                    if (c < 0x20) {
+                        sb.append(String.format("\\u%04x", (int) c));
+                    } else {
+                        sb.append(c);
+                    }
+                }
+            }
+        }
+        return sb.toString();
+    }
+
+    private byte[] readBoundedBody(HttpServletRequest request, int maxSize) throws IOException {
+        var input = request.getInputStream();
+        var buffer = new ByteArrayOutputStream(4096);
+        byte[] chunk = new byte[4096];
+        int totalRead = 0;
+        int bytesRead;
+        while ((bytesRead = input.read(chunk)) != -1) {
+            totalRead += bytesRead;
+            if (totalRead > maxSize) {
+                return null;
+            }
+            buffer.write(chunk, 0, bytesRead);
+        }
+        return buffer.toByteArray();
     }
 }

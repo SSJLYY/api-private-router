@@ -11,7 +11,7 @@ interface APIErrorLike {
 
 function extractErrorMessage(error: unknown): string {
   const err = (error || {}) as APIErrorLike
-  return extractApiErrorMessage(err, extractApiErrorMessage(err, err.message || ''))
+  return extractApiErrorMessage(err, err.message || '')
 }
 
 export function buildAuthErrorMessage(

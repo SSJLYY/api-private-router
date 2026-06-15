@@ -41,15 +41,18 @@ public class GatewayGeminiMessagesCompatService {
 
     private final AdminAccountRepository accountRepository;
     private final GatewayGeminiProxyService geminiProxyService;
+    private final GatewayUsageLoggingService usageLoggingService;
     private final ObjectMapper objectMapper;
 
     public GatewayGeminiMessagesCompatService(
             AdminAccountRepository accountRepository,
             GatewayGeminiProxyService geminiProxyService,
+            GatewayUsageLoggingService usageLoggingService,
             ObjectMapper objectMapper
     ) {
         this.accountRepository = accountRepository;
         this.geminiProxyService = geminiProxyService;
+        this.usageLoggingService = usageLoggingService;
         this.objectMapper = objectMapper;
     }
 
@@ -97,10 +100,10 @@ public class GatewayGeminiMessagesCompatService {
             throw translateGeminiError(captured.status(), captured.body());
         }
         if (compatRequest.stream()) {
-            writeClaudeStreamingResponse(response, captured.body(), compatRequest.model());
+            writeClaudeStreamingResponse(runtimeContext, response, captured.body(), compatRequest.model());
             return;
         }
-        writeClaudeJsonResponse(response, captured.body(), compatRequest.model());
+        writeClaudeJsonResponse(runtimeContext, response, captured.body(), compatRequest.model());
     }
 
     private ClaudeCompatRequest parseClaudeRequest(byte[] body) {
@@ -382,7 +385,7 @@ public class GatewayGeminiMessagesCompatService {
         }
     }
 
-    private void writeClaudeJsonResponse(HttpServletResponse response, byte[] rawBody, String originalModel) {
+    private void writeClaudeJsonResponse(GatewayRuntimeContext runtimeContext, HttpServletResponse response, byte[] rawBody, String originalModel) {
         byte[] body = unwrapGeminiResponse(rawBody);
         try {
             JsonNode node = objectMapper.readTree(body);
@@ -390,6 +393,9 @@ public class GatewayGeminiMessagesCompatService {
                 throw new AnthropicApiErrorException(502, "api_error", "Failed to parse upstream response");
             }
             ObjectNode output = convertGeminiToClaudeMessage(geminiResp, originalModel, body);
+            ClaudeUsage usage = new ClaudeUsage();
+            updateUsageFromGeminiResponse(body, usage);
+            logUsageFromState(runtimeContext, originalModel, usage.inputTokens, usage.outputTokens, 0, usage.cacheReadInputTokens, false);
             response.setStatus(200);
             response.setContentType("application/json");
             response.getOutputStream().write(writeJsonBytes(output));
@@ -399,7 +405,7 @@ public class GatewayGeminiMessagesCompatService {
         }
     }
 
-    private void writeClaudeStreamingResponse(HttpServletResponse response, byte[] rawBody, String originalModel) {
+    private void writeClaudeStreamingResponse(GatewayRuntimeContext runtimeContext, HttpServletResponse response, byte[] rawBody, String originalModel) {
         response.setStatus(200);
         response.setContentType("text/event-stream");
         response.setHeader("Cache-Control", "no-cache");
@@ -505,6 +511,7 @@ public class GatewayGeminiMessagesCompatService {
             writeSse(output, "message_delta", messageDelta(sawToolUse ? "tool_use" : mapStopReason(finishReason), usage));
             writeSse(output, "message_stop", Map.of("type", "message_stop"));
             output.flush();
+            logUsageFromState(runtimeContext, originalModel, usage.inputTokens, usage.outputTokens, 0, usage.cacheReadInputTokens, true);
             response.flushBuffer();
         } catch (IOException ex) {
             throw new HttpStatusException(500, "failed to write upstream response");
@@ -835,6 +842,17 @@ public class GatewayGeminiMessagesCompatService {
 
     private String defaultIfBlank(String value, String fallback) {
         return value == null || value.isBlank() ? fallback : value;
+    }
+
+    private void logUsageFromState(GatewayRuntimeContext ctx, String model, int inputTokens, int outputTokens, int cacheCreationTokens, int cacheReadTokens, boolean stream) {
+        if (ctx == null) {
+            return;
+        }
+        try {
+            usageLoggingService.logUsage(ctx, model, inputTokens, outputTokens, cacheCreationTokens, cacheReadTokens, stream, null);
+        } catch (Exception ex) {
+            // usage logging should not break the response flow
+        }
     }
 
     private record ClaudeCompatRequest(ObjectNode root, String model, boolean stream) {

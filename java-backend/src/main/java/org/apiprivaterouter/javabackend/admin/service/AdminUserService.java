@@ -12,6 +12,7 @@ import org.apiprivaterouter.javabackend.admin.repository.AdminUserRepository;
 import org.apiprivaterouter.javabackend.common.api.PageResponse;
 import org.apiprivaterouter.javabackend.common.security.PasswordHasher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -29,8 +30,8 @@ public class AdminUserService {
         this.passwordHasher = passwordHasher;
     }
 
-    public PageResponse<AdminUserResponse> listUsers(int page, int pageSize, String status, String role, String search) {
-        return adminUserRepository.listUsers(page, pageSize, status, role, search);
+    public PageResponse<AdminUserResponse> listUsers(int page, int pageSize, String status, String role, String search, String groupName, String sortBy, String sortOrder) {
+        return adminUserRepository.listUsers(page, pageSize, status, role, search, groupName, sortBy, sortOrder);
     }
 
     public AdminUserResponse getUser(long id) {
@@ -53,14 +54,19 @@ public class AdminUserService {
         return Map.of("message", "User deleted successfully");
     }
 
-    public AdminUserResponse updateBalance(long id, double balance, String operation) {
-        AdminUserResponse current = getUser(id);
-        double resolvedBalance = switch (operation) {
-            case "add" -> current.balance() + balance;
-            case "subtract" -> current.balance() - balance;
-            default -> balance;
+    @Transactional
+    public AdminUserResponse updateBalance(long id, double balance, String operation, String notes) {
+        double delta = switch (operation) {
+            case "add" -> balance;
+            case "subtract" -> -balance;
+            case "set" -> Double.NaN;
+            default -> throw new IllegalArgumentException("invalid operation: " + operation);
         };
-        adminUserRepository.updateUserBalance(id, resolvedBalance);
+        if (Double.isNaN(delta)) {
+            adminUserRepository.updateUserBalance(id, balance, notes);
+        } else {
+            adminUserRepository.adjustUserBalance(id, delta, notes);
+        }
         return getUser(id);
     }
 
@@ -69,7 +75,7 @@ public class AdminUserService {
     }
 
     public AdminUserUsageResponse getUserUsage(long id, String period) {
-        return adminUserRepository.getUserUsage(id);
+        return adminUserRepository.getUserUsage(id, period);
     }
 
     public AdminUserBalanceHistoryResponse getUserBalanceHistory(long id, int page, int pageSize, String type) {

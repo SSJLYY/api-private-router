@@ -19,8 +19,8 @@
 | 端口 | 5432 |
 | psql 路径 | `C:\Program Files\PostgreSQL\16\bin\psql.exe` |
 | pg_hba.conf | `C:\Program Files\PostgreSQL\16\data\pg_hba.conf` |
-| 数据库凭据 | user=`api-private-router`, password=`api-private-router`, dbname=`api-private-router` |
-| 超级用户 | user=`postgres`, password=`postgres` |
+| 数据库凭据 | user=`api_private_router`, password=<见.env文件>, dbname=`api_private_router` |
+| 超级用户 | user=`postgres`, password=<见.env文件> |
 
 ### Redis
 
@@ -46,9 +46,11 @@ npm install -g pnpm
 
 ## 三、CI/CD 流水线
 
-### GitHub Actions Workflows
+### CI/CD 流水线
 
-| Workflow | 触发条件 | 检查内容 |
+> 注意：当前仓库未包含 `.github/workflows` 配置。如需启用 CI/CD，请参考以下规划。
+
+| Workflow（待配置） | 触发条件 | 检查内容 |
 |----------|----------|----------|
 | **backend-ci.yml** | push, pull_request | Java 后端测试 + 打包 + 前端构建 |
 | **security-scan.yml** | push, pull_request, 每周一 | Java 依赖离线解析 + pnpm audit |
@@ -229,11 +231,12 @@ psql -U api-private-router -h 127.0.0.1 -d api-private-router -f migration.sql
 ### Git 操作
 
 ```bash
-
 # 创建功能分支
 git checkout -b feature/xxx
 
 # Rebase 到最新 main
+git fetch origin
+git rebase origin/main
 ```
 
 ### 前端操作
@@ -280,8 +283,7 @@ api-private-router/
 │   │   └── i18n/            # 国际化
 │   ├── package.json         # 依赖配置
 │   └── pnpm-lock.yaml       # pnpm 锁文件（必须提交）
-└── .claude/
-    └── CLAUDE.md            # 本文档
+└── DEV_GUIDE.md            # 本文档
 ```
 
 ## 七、参考资源

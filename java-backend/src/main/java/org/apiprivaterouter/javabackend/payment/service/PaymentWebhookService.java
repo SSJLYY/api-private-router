@@ -8,6 +8,8 @@ import org.apiprivaterouter.javabackend.payment.model.PaymentWebhookCandidate;
 import org.apiprivaterouter.javabackend.payment.model.PaymentWebhookNotification;
 import org.apiprivaterouter.javabackend.payment.model.PaymentWebhookOrder;
 import org.apiprivaterouter.javabackend.payment.repository.PaymentWebhookRepository;
+import org.apiprivaterouter.javabackend.userfund.model.RechargeRequest;
+import org.apiprivaterouter.javabackend.userfund.service.FundService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -31,17 +33,20 @@ public class PaymentWebhookService {
     private final PaymentWebhookProviderVerifier verifier;
     private final JsonHelper jsonHelper;
     private final TransactionTemplate transactionTemplate;
+    private final FundService fundService;
 
     public PaymentWebhookService(
             PaymentWebhookRepository repository,
             PaymentWebhookProviderVerifier verifier,
             JsonHelper jsonHelper,
-            TransactionTemplate transactionTemplate
+            TransactionTemplate transactionTemplate,
+            FundService fundService
     ) {
         this.repository = repository;
         this.verifier = verifier;
         this.jsonHelper = jsonHelper;
         this.transactionTemplate = transactionTemplate;
+        this.fundService = fundService;
     }
 
     public ResponseEntity<?> handle(String providerKey, HttpServletRequest request, String rawBody, boolean isGet) {
@@ -197,15 +202,10 @@ public class PaymentWebhookService {
                 if (!repository.redeemCodeUsed(rechargeCode)) {
                     repository.findUserBalanceForUpdate(order.userId())
                             .orElseThrow(() -> new IllegalStateException("user not found"));
-                    if (repository.markRedeemCodeUsed(rechargeCode, order.userId()) == 1) {
-                        repository.addBalance(order.userId(), order.amount());
-                    }
+                    repository.markRedeemCodeUsed(rechargeCode, order.userId());
                 }
-            } else {
-                repository.findUserBalanceForUpdate(order.userId())
-                        .orElseThrow(() -> new IllegalStateException("user not found"));
-                repository.addBalance(order.userId(), order.amount());
             }
+            syncFundRecharge(order);
             applyAffiliateRebateForOrder(order);
             repository.markCompleted(order.id());
             writeAudit(order.id(), "RECHARGE_SUCCESS", Map.of(
@@ -218,6 +218,17 @@ public class PaymentWebhookService {
             writeAudit(order.id(), "FULFILLMENT_FAILED", Map.of("reason", ex.getMessage()));
             throw ex;
         }
+    }
+
+    private void syncFundRecharge(PaymentWebhookOrder order) {
+        RechargeRequest req = new RechargeRequest(
+                order.amount(),
+                firstNonBlank(order.paymentType(), "payment"),
+                order.outTradeNo(),
+                "payment order " + order.id()
+        );
+        var rechargeResponse = fundService.createRechargeForSystem(order.userId(), req);
+        fundService.completeRecharge(rechargeResponse.id(), order.userId());
     }
 
     private void applyAffiliateRebateForOrder(PaymentWebhookOrder order) {
@@ -270,6 +281,7 @@ public class PaymentWebhookService {
                     "rebateAmount", rebateAmount
             ));
         } catch (RuntimeException ex) {
+            log.error("affiliate rebate failed for payment order {}: {}", order.id(), ex.getMessage(), ex);
             writeAudit(order.id(), "AFFILIATE_REBATE_FAILED", Map.of("error", ex.getMessage() == null ? "" : ex.getMessage()));
         }
     }
@@ -494,6 +506,13 @@ public class PaymentWebhookService {
 
     private String stringValue(Object value) {
         return value == null ? "" : String.valueOf(value).trim();
+    }
+
+    private String firstNonBlank(String first, String second) {
+        if (first != null && !first.isBlank()) {
+            return first.trim();
+        }
+        return second == null ? "" : second.trim();
     }
 
     private String normalize(String providerKey) {

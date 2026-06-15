@@ -9,6 +9,7 @@ import org.apiprivaterouter.javabackend.usercenter.model.UserProfileResponse;
 import org.apiprivaterouter.javabackend.usercenter.repository.UserCenterRepository;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 
@@ -38,6 +39,9 @@ public class UserCenterService {
             throw new IllegalArgumentException("new_password must be different from old_password");
         }
         String currentHash = userCenterRepository.getPasswordHash(currentUser.userId());
+        if (currentHash == null) {
+            throw new IllegalArgumentException("No password set for this account. Use OAuth or set a password first.");
+        }
         if (!BCrypt.checkpw(request.old_password(), currentHash)) {
             throw new IllegalArgumentException("current password is incorrect");
         }
@@ -50,6 +54,7 @@ public class UserCenterService {
                 .orElse(new AffiliateDetailResponse("", 0.0, 0.0, 0));
     }
 
+    @Transactional
     public Map<String, Object> transferAffiliateQuota(CurrentUser currentUser) {
         double transferred = userCenterRepository.transferAffiliateQuota(currentUser.userId());
         UserProfileResponse profile = getProfile(currentUser);

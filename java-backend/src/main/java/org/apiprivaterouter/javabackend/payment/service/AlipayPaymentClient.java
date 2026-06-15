@@ -127,7 +127,7 @@ public class AlipayPaymentClient {
         model.setOutTradeNo(order.out_trade_no());
         model.setRefundAmount(formatAmount(amount));
         model.setRefundReason(trimToEmpty(reason));
-        model.setOutRequestNo(order.out_trade_no() + "-refund-" + UUID.randomUUID().toString().replace("-", ""));
+        model.setOutRequestNo(order.out_trade_no() + "-refund-" + Math.round(amount * 100));
         request.setBizModel(model);
 
         AlipayTradeRefundResponse response = execute(() -> client.execute(request), "alipay TradeRefund");

@@ -43,6 +43,8 @@ watch(
 )
 
 // Watch for authentication state and manage subscription data + announcements
+let announcementTimer: ReturnType<typeof setTimeout> | null = null
+
 function onVisibilityChange() {
   if (document.visibilityState === 'visible' && authStore.isAuthenticated) {
     announcementStore.fetchAnnouncements()
@@ -62,7 +64,10 @@ watch(
       // Announcements: new login vs page refresh restore
       if (oldValue === false) {
         // New login: delay 3s then force fetch
-        setTimeout(() => announcementStore.fetchAnnouncements(true), 3000)
+        announcementTimer = setTimeout(() => {
+          announcementTimer = null
+          announcementStore.fetchAnnouncements(true)
+        }, 3000)
       } else {
         // Page refresh restore (oldValue was undefined)
         announcementStore.fetchAnnouncements()
@@ -71,6 +76,11 @@ watch(
       // Register visibility change listener
       document.addEventListener('visibilitychange', onVisibilityChange)
     } else {
+      // Cancel pending announcement fetch
+      if (announcementTimer) {
+        clearTimeout(announcementTimer)
+        announcementTimer = null
+      }
       // User logged out: clear data and stop polling
       subscriptionStore.clear()
       announcementStore.reset()
@@ -89,6 +99,10 @@ router.afterEach(() => {
 
 onBeforeUnmount(() => {
   document.removeEventListener('visibilitychange', onVisibilityChange)
+  if (announcementTimer) {
+    clearTimeout(announcementTimer)
+    announcementTimer = null
+  }
 })
 
 onMounted(async () => {

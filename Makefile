@@ -33,6 +33,3 @@ test-frontend-critical:
 
 runtime-guard:
 	@python3 tools/check_java_default_runtime.py
-
-secret-scan:
-	@python3 tools/secret_scan.py

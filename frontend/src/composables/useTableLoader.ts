@@ -93,6 +93,7 @@ export function useTableLoader<T, P extends Record<string, any>>(options: TableL
   }
 
   onUnmounted(() => {
+    debouncedReload.cancel()
     abortController?.abort()
   })
 

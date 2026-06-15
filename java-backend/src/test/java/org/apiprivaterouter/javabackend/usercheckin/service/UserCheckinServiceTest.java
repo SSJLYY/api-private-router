@@ -19,7 +19,7 @@ class UserCheckinServiceTest {
 
     @Test
     void rejectsStakeBelowMinimum() {
-        UserCheckinService service = new UserCheckinService(new FakeRepository(new BigDecimal("10.0")));
+        UserCheckinService service = new UserCheckinService(new FakeRepository(new BigDecimal("10.0")), null);
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> service.checkin(new CurrentUser(1L, "user", "u@test.com", 0L), new UserCheckinRequest(0.001, "UTC")));
@@ -29,7 +29,7 @@ class UserCheckinServiceTest {
 
     @Test
     void rejectsInsufficientBalance() {
-        UserCheckinService service = new UserCheckinService(new FakeRepository(new BigDecimal("5.0")));
+        UserCheckinService service = new UserCheckinService(new FakeRepository(new BigDecimal("5.0")), null);
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> service.checkin(new CurrentUser(1L, "user", "u@test.com", 0L), new UserCheckinRequest(10.0, "UTC")));

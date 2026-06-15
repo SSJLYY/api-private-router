@@ -9,10 +9,15 @@ import org.apiprivaterouter.javabackend.riskcontrol.runtime.repository.GatewayAp
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 
 @Component
 public class GatewayApiKeyAuthFilter extends OncePerRequestFilter {
+
+    private static final Logger log = LoggerFactory.getLogger(GatewayApiKeyAuthFilter.class);
 
     private static final String[] PROTECTED_PREFIXES = {
             "/v1/",
@@ -47,7 +52,13 @@ public class GatewayApiKeyAuthFilter extends OncePerRequestFilter {
         }
         ModerationApiKeyContext apiKeyContext = apiKeyRepository.findByBearerKeyForModeration(inboundApiKey).orElse(null);
         if (apiKeyContext == null || !isActive(apiKeyContext.apiKeyStatus()) || !isActive(apiKeyContext.userStatus())) {
-            filterChain.doFilter(request, response);
+            log.debug("Gateway auth rejected: apiKeyFound={}, keyStatus={}, userStatus={}",
+                    apiKeyContext != null, apiKeyContext != null ? apiKeyContext.apiKeyStatus() : "n/a",
+                    apiKeyContext != null ? apiKeyContext.userStatus() : "n/a");
+            response.setStatus(401);
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().write("{\"error\":{\"message\":\"Invalid API key\"}}");
             return;
         }
         request.setAttribute(GatewayApiKeyContextHolder.ATTR_GATEWAY_API_KEY, new GatewayApiKeyPrincipal(

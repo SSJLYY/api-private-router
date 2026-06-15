@@ -9,6 +9,8 @@ import org.apiprivaterouter.javabackend.admin.antigravity.model.AntigravityAuthU
 import org.apiprivaterouter.javabackend.admin.antigravity.model.AntigravityExchangeCodeRequest;
 import org.apiprivaterouter.javabackend.admin.antigravity.model.AntigravityOAuthTokenResponse;
 import org.apiprivaterouter.javabackend.admin.proxy.repository.AdminProxyRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -40,6 +42,7 @@ import java.util.concurrent.ConcurrentMap;
 @Service
 public class AntigravityOAuthService {
 
+    private static final Logger log = LoggerFactory.getLogger(AntigravityOAuthService.class);
     private static final String AUTHORIZE_URL = "https://accounts.google.com/o/oauth2/v2/auth";
     private static final String TOKEN_URL = "https://oauth2.googleapis.com/token";
     private static final String USER_INFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo";
@@ -155,7 +158,8 @@ public class AntigravityOAuthService {
 
         try {
             email = blankToNull(getUserInfo(token.accessToken(), proxy).email());
-        } catch (Exception ignored) {
+        } catch (Exception ex) {
+            log.warn("Failed to fetch Antigravity user info during token enrichment: {}", ex.getMessage());
         }
 
         try {
@@ -164,7 +168,8 @@ public class AntigravityOAuthService {
                 projectId = blankToNull(projectInfo.projectId());
                 planType = blankToNull(projectInfo.planType());
             }
-        } catch (Exception ignored) {
+        } catch (Exception ex) {
+            log.warn("Failed to fetch Antigravity project info during token enrichment: {}", ex.getMessage());
         }
 
         String privacyMode = setPrivacy(token.accessToken(), projectId, proxy);

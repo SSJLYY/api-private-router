@@ -202,7 +202,7 @@ public class AdminAccountController {
     }
 
     @PutMapping("/{id}")
-    public ApiResponse<AdminAccountResponse> updateAccount(@PathVariable long id, @RequestBody UpdateAccountRequest request) {
+    public ApiResponse<AdminAccountResponse> updateAccount(@PathVariable long id, @Valid @RequestBody UpdateAccountRequest request) {
         currentUserContext.requireAdmin();
         return ApiResponse.success(service.updateAccount(id, request));
     }
@@ -221,7 +221,7 @@ public class AdminAccountController {
 
     @PostMapping("/today-stats/batch")
     public ApiResponse<BatchTodayStatsResponse> getBatchTodayStats(
-            @RequestBody BatchTodayStatsRequest request,
+            @Valid @RequestBody BatchTodayStatsRequest request,
             @RequestParam(required = false) String timezone
     ) {
         currentUserContext.requireAdmin();
@@ -229,7 +229,7 @@ public class AdminAccountController {
     }
 
     @PostMapping("/batch-clear-error")
-    public ApiResponse<BatchOperationResultResponse> batchClearError(@RequestBody BatchClearErrorRequest request) {
+    public ApiResponse<BatchOperationResultResponse> batchClearError(@Valid @RequestBody BatchClearErrorRequest request) {
         currentUserContext.requireAdmin();
         return ApiResponse.success(service.batchClearError(request));
     }
@@ -245,7 +245,7 @@ public class AdminAccountController {
     }
 
     @PostMapping("/batch-refresh")
-    public ApiResponse<BatchRefreshResultResponse> batchRefresh(@RequestBody BatchRefreshRequest request) {
+    public ApiResponse<BatchRefreshResultResponse> batchRefresh(@Valid @RequestBody BatchRefreshRequest request) {
         currentUserContext.requireAdmin();
         return ApiResponse.success(service.batchRefresh(request));
     }
@@ -326,25 +326,25 @@ public class AdminAccountController {
     }
 
     @PostMapping("/batch-refresh-tier")
-    public ApiResponse<BatchOperationResultResponse> batchRefreshTier(@RequestBody(required = false) BatchRefreshTierRequest request) {
+    public ApiResponse<BatchOperationResultResponse> batchRefreshTier(@Valid @RequestBody(required = false) BatchRefreshTierRequest request) {
         currentUserContext.requireAdmin();
         return ApiResponse.success(service.batchRefreshTier(request));
     }
 
     @PostMapping("/batch-update-credentials")
-    public ApiResponse<BulkUpdateAccountsResponse> batchUpdateCredentials(@RequestBody BatchUpdateCredentialsRequest request) {
+    public ApiResponse<BulkUpdateAccountsResponse> batchUpdateCredentials(@Valid @RequestBody BatchUpdateCredentialsRequest request) {
         currentUserContext.requireAdmin();
         return ApiResponse.success(service.batchUpdateCredentials(request));
     }
 
     @PostMapping("/bulk-update")
-    public ApiResponse<BulkUpdateAccountsResponse> bulkUpdate(@RequestBody BulkUpdateAccountsRequest request) {
+    public ApiResponse<BulkUpdateAccountsResponse> bulkUpdate(@Valid @RequestBody BulkUpdateAccountsRequest request) {
         currentUserContext.requireAdmin();
         return ApiResponse.success(service.bulkUpdate(request));
     }
 
     @PostMapping("/{id}/schedulable")
-    public ApiResponse<AdminAccountResponse> setSchedulable(@PathVariable long id, @RequestBody SetSchedulableRequest request) {
+    public ApiResponse<AdminAccountResponse> setSchedulable(@PathVariable long id, @Valid @RequestBody SetSchedulableRequest request) {
         currentUserContext.requireAdmin();
         return ApiResponse.success(service.setSchedulable(id, request));
     }

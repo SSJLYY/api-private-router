@@ -57,6 +57,9 @@ class S3CompatibleBackupStore implements BackupObjectStore {
         this.pathStyle = Boolean.TRUE.equals(config.force_path_style());
     }
 
+    // TODO: Replace readAllBytes with a streaming upload approach (e.g. chunked
+    // transfer or multipart upload) to avoid loading the entire backup file into
+    // memory. Large backups will cause OOM with the current implementation.
     @Override
     public long upload(String key, InputStream body, String contentType) throws IOException, InterruptedException {
         byte[] bytes = readAllBytes(body);

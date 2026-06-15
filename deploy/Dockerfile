@@ -19,7 +19,7 @@ FROM ${NODE_IMAGE} AS frontend-builder
 WORKDIR /app/frontend
 
 # Install pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 
 # Install dependencies first (better caching)
 COPY frontend/package.json frontend/pnpm-lock.yaml ./
@@ -66,6 +66,12 @@ RUN apk add --no-cache \
     tzdata \
     curl \
     su-exec \
+    libpq \
+    zstd-libs \
+    lz4-libs \
+    krb5-libs \
+    libldap \
+    libedit \
     && rm -rf /var/cache/apk/*
 
 # Create non-root user
@@ -76,11 +82,11 @@ RUN addgroup -g 1000 api-private-router && \
 WORKDIR /app
 
 # Copy packaged application
-COPY --from=backend-builder /app/java-backend/target/api-private-router.jar /app/api-private-router.jar
-COPY --from=frontend-builder /app/frontend/dist /app/frontend/dist
+COPY --from=backend-builder --chown=api-private-router:api-private-router /app/java-backend/target/api-private-router.jar /app/api-private-router.jar
+COPY --from=frontend-builder --chown=api-private-router:api-private-router /app/frontend/dist /app/frontend/dist
 
 # Create data directory
-RUN mkdir -p /app/data && chown -R api-private-router:api-private-router /app
+RUN mkdir -p /app/data && chown api-private-router:api-private-router /app/data
 
 # Copy entrypoint script (fixes volume permissions then drops to api-private-router)
 COPY deploy/docker-entrypoint.sh /app/docker-entrypoint.sh

@@ -80,6 +80,7 @@ public class GatewayOpenAiMessagesDispatchService {
     private final AdminProxyRepository proxyRepository;
     private final GatewayOpenAiResponsesService responsesService;
     private final GatewayOpenAiFastPolicyService fastPolicyService;
+    private final GatewayUsageLoggingService usageLoggingService;
     private final ObjectMapper objectMapper;
     private final Map<String, ContinuationBinding> continuationBindings = new ConcurrentHashMap<>();
 
@@ -88,12 +89,14 @@ public class GatewayOpenAiMessagesDispatchService {
             AdminProxyRepository proxyRepository,
             GatewayOpenAiResponsesService responsesService,
             GatewayOpenAiFastPolicyService fastPolicyService,
+            GatewayUsageLoggingService usageLoggingService,
             ObjectMapper objectMapper
     ) {
         this.accountRepository = accountRepository;
         this.proxyRepository = proxyRepository;
         this.responsesService = responsesService;
         this.fastPolicyService = fastPolicyService;
+        this.usageLoggingService = usageLoggingService;
         this.objectMapper = objectMapper;
     }
 
@@ -828,6 +831,10 @@ public class GatewayOpenAiMessagesDispatchService {
         } catch (IOException ex) {
             throw new AnthropicApiErrorException(500, "api_error", "Failed to write Anthropic response");
         }
+        ObjectNode usage = (ObjectNode) anthropic.get("usage");
+        if (usage != null) {
+            logUsageFromNode(runtimeContext, originalModel, usage, false);
+        }
     }
 
     private void streamAnthropicResponse(
@@ -946,6 +953,7 @@ public class GatewayOpenAiMessagesDispatchService {
                     writeSse(output, "message_stop", objectMapper.createObjectNode().put("type", "message_stop"));
                     output.flush();
                     response.flushBuffer();
+                    logUsageFromNode(runtimeContext, originalModel, terminalUsage, true);
                     return;
                 }
             }
@@ -1401,6 +1409,22 @@ public class GatewayOpenAiMessagesDispatchService {
         usage.put("cache_creation_input_tokens", 0);
         usage.put("cache_read_input_tokens", Math.max(0, cachedTokens));
         return usage;
+    }
+
+    private void logUsageFromNode(GatewayRuntimeContext runtimeContext, String model, ObjectNode usage, boolean stream) {
+        if (usage == null || runtimeContext == null) {
+            return;
+        }
+        int inputTokens = usage.path("input_tokens").asInt(0);
+        int outputTokens = usage.path("output_tokens").asInt(0);
+        int cacheReadTokens = usage.path("cache_read_input_tokens").asInt(0);
+        int cacheCreationTokens = usage.path("cache_creation_input_tokens").asInt(0);
+        try {
+            usageLoggingService.logUsage(runtimeContext, model, inputTokens, outputTokens,
+                    cacheCreationTokens, cacheReadTokens, stream, null);
+        } catch (Exception ex) {
+            // usage logging should not fail the request
+        }
     }
 
     private ObjectNode zeroUsage() {

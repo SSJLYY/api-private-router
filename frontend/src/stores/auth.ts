@@ -96,9 +96,14 @@ export const useAuthStore = defineStore('auth', () => {
   // ==================== Actions ====================
 
   /**
-   * Initialize auth state from localStorage
+   * Initialize auth state from localStorage and refresh from backend
    * Call this on app startup to restore session
    * Also starts auto-refresh and immediately fetches latest user data
+   *
+   * NOTE: refreshUser() is intentionally NOT awaited here to avoid blocking
+   * app initialization. The localStorage values are used immediately as a
+   * fast cache, then overwritten by the server response. Components should
+   * handle the brief period where user data may be stale.
    */
   function checkAuth(): void {
     const savedToken = localStorage.getItem(AUTH_TOKEN_KEY)
@@ -397,11 +402,13 @@ export const useAuthStore = defineStore('auth', () => {
    * Clears all authentication state and persisted data
    */
   async function logout(): Promise<void> {
-    // Call API logout (revokes refresh token on server)
-    await authAPI.logout()
-
-    // Clear state
-    clearAuth()
+    try {
+      // Call API logout (revokes refresh token on server)
+      await authAPI.logout()
+    } finally {
+      // Clear state even if API call fails
+      clearAuth()
+    }
   }
 
   /**
@@ -429,7 +436,7 @@ export const useAuthStore = defineStore('auth', () => {
       return userData
     } catch (error) {
       // If refresh fails with 401, clear auth state
-      if ((error as { status?: number }).status === 401) {
+      if ((error as { response?: { status?: number }; status?: number }).response?.status === 401 || (error as { status?: number }).status === 401) {
         clearAuth({ preservePendingAuthSession: pendingAuthSession.value !== null })
       }
       throw error

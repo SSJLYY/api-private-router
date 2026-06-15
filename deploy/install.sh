@@ -485,7 +485,10 @@ download_and_extract() {
         fi
         print_success "$(msg 'checksum_verified')"
     else
-        print_warning "$(msg 'checksum_not_found')"
+        print_error "$(msg 'checksum_not_found')"
+        print_error "Cannot verify package integrity. Installation aborted for security."
+        print_error "Please download again or verify the source manually."
+        exit 1
     fi
 
     print_info "$(msg 'extracting')"
@@ -506,7 +509,7 @@ create_user() {
         print_info "$(msg 'user_exists'): $SERVICE_USER"
     else
         print_info "$(msg 'creating_user') $SERVICE_USER..."
-        useradd -r -s /bin/sh -d "$INSTALL_DIR" "$SERVICE_USER"
+        useradd -r -m -s /bin/sh -d "$INSTALL_DIR" "$SERVICE_USER"
         print_success "$(msg 'user_created')"
     fi
 }

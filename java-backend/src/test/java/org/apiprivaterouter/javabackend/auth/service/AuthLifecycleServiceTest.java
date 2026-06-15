@@ -255,6 +255,10 @@ class AuthLifecycleServiceTest {
                 60,
                 false,
                 true,
+                false,
+                false,
+                false,
+                false,
                 false
         );
     }
@@ -304,6 +308,10 @@ class AuthLifecycleServiceTest {
                 "",
                 false,
                 60,
+                false,
+                false,
+                false,
+                false,
                 false,
                 false,
                 false

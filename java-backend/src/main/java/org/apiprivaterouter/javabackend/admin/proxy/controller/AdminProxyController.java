@@ -89,7 +89,7 @@ public class AdminProxyController {
     }
 
     @PutMapping("/{id}")
-    public ApiResponse<AdminProxyResponse> update(@PathVariable long id, @RequestBody UpdateProxyRequest request) {
+    public ApiResponse<AdminProxyResponse> update(@PathVariable long id, @Valid @RequestBody UpdateProxyRequest request) {
         currentUserContext.requireAdmin();
         return ApiResponse.success(service.updateProxy(id, request));
     }

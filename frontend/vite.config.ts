@@ -107,7 +107,7 @@ export default defineConfig(({ mode }) => {
     }
   },
     server: {
-      host: '0.0.0.0',
+      host: process.env.VITE_DEV_HOST || 'localhost',
       port: devPort,
       strictPort: true,
       proxy: {

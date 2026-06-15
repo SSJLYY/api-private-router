@@ -26,7 +26,7 @@ class AdminUserRepositoryTest {
         when(jdbcTemplate.query(any(String.class), any(MapSqlParameterSource.class), any(RowMapper.class))).thenReturn(List.of());
         AdminUserRepository repository = new AdminUserRepository(jdbcTemplate, mock(JsonHelper.class));
 
-        repository.listUsers(1, 20, null, "", " ");
+        repository.listUsers(1, 20, null, "", " ", null, null, null);
 
         verify(jdbcTemplate).queryForObject(
                 argThat(sql -> sql.contains("where deleted_at is null")
@@ -47,7 +47,7 @@ class AdminUserRepositoryTest {
         when(jdbcTemplate.query(any(String.class), any(MapSqlParameterSource.class), any(RowMapper.class))).thenReturn(List.of());
         AdminUserRepository repository = new AdminUserRepository(jdbcTemplate, mock(JsonHelper.class));
 
-        repository.listUsers(2, 10, "active", "admin", "alice");
+        repository.listUsers(2, 10, "active", "admin", "alice", null, null, null);
 
         verify(jdbcTemplate).queryForObject(
                 argThat(sql -> sql.contains("and status = :status")

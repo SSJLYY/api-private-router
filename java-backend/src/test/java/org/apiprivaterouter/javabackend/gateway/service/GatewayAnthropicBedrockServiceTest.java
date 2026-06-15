@@ -102,6 +102,7 @@ class GatewayAnthropicBedrockServiceTest {
                 accountRepository,
                 messagesService,
                 bedrockService,
+                mock(GatewayUsageLoggingService.class),
                 objectMapper
         );
         GatewayRuntimeContext runtimeContext = new GatewayRuntimeContext(

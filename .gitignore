@@ -1,5 +1,3 @@
-.codex
-
 # ===================
 # 二进制 / 覆盖率
 # ===================
@@ -70,7 +68,6 @@ temp/
 *.bak
 .cache/
 .dev/
-.serena/
 
 # ===================
 # 构建产物
@@ -102,6 +99,7 @@ docs/*
 !docs/PAYMENT.md
 !docs/PAYMENT_CN.md
 !docs/ADMIN_PAYMENT_INTEGRATION_API.md
+!docs/DEPLOY_ROCKY9.md
 .serena/
 .codex/
 frontend/coverage/

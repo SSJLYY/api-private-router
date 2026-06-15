@@ -6,6 +6,8 @@ import org.apiprivaterouter.javabackend.admin.riskcontrol.model.ContentModeratio
 import org.apiprivaterouter.javabackend.admin.riskcontrol.model.ContentModerationTestAuditResult;
 import org.apiprivaterouter.javabackend.admin.riskcontrol.model.TestContentModerationApiKeysRequest;
 import org.apiprivaterouter.javabackend.admin.riskcontrol.model.TestContentModerationApiKeysResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.net.URI;
@@ -21,6 +23,7 @@ import java.util.Map;
 @Service
 public class ContentModerationAuditService {
 
+    private static final Logger log = LoggerFactory.getLogger(ContentModerationAuditService.class);
     private final ObjectMapper objectMapper;
     private final ContentModerationApiKeyHealthTracker apiKeyHealthTracker;
     private final ContentModerationRuntimeService runtimeService;
@@ -194,7 +197,8 @@ public class ContentModerationAuditService {
             if (message != null) {
                 return message;
             }
-        } catch (Exception ignored) {
+        } catch (Exception ex) {
+            log.debug("Failed to parse upstream error JSON for audit: {}", ex.getMessage());
         }
         String compactBody = ContentModerationSupport.trimToNull(body == null ? null : body.replaceAll("\\s+", " "));
         if (compactBody != null) {

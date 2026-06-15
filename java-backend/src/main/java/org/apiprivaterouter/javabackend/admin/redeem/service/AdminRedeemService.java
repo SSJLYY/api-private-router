@@ -38,6 +38,7 @@ public class AdminRedeemService {
         return repository.getCode(id).orElseThrow(() -> new IllegalArgumentException("redeem code not found"));
     }
 
+    @Transactional
     public List<AdminRedeemCodeResponse> generateCodes(GenerateRedeemCodesRequest request) {
         String type = normalizeType(request.type(), false);
         double value = request.value();
@@ -131,6 +132,7 @@ public class AdminRedeemService {
         );
     }
 
+    @Transactional
     public AdminRedeemCodeResponse expireCode(long id) {
         repository.getCode(id).orElseThrow(() -> new IllegalArgumentException("redeem code not found"));
         repository.updateStatus(id, "expired");

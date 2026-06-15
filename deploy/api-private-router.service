@@ -20,14 +20,20 @@ NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true
 PrivateTmp=true
-ReadWritePaths=/opt/api-private-router
+ReadWritePaths=/opt/api-private-router /etc/api-private-router
 
-# Environment - Server configuration
-# Modify these values to change listen address and port
+# Environment - Load from .env file (create /etc/api-private-router/env)
+EnvironmentFile=-/etc/api-private-router/env
+
+# Server configuration (defaults, can be overridden in env file)
 Environment=SERVER_HOST=0.0.0.0
 Environment=SERVER_PORT=8080
 Environment=DATA_DIR=/opt/api-private-router
 Environment=APP_BUILD_TYPE=release
+Environment=DATABASE_HOST=127.0.0.1
+Environment=DATABASE_PORT=5432
+Environment=REDIS_HOST=127.0.0.1
+Environment=REDIS_PORT=6379
 
 [Install]
 WantedBy=multi-user.target

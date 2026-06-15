@@ -37,6 +37,8 @@ make test
 make build
 ```
 
+> **Windows 用户**：Windows 系统没有 `make` 命令，请参考 `DEV_GUIDE.md` 中的替代命令。
+
 ## 运行说明
 
 - 当前支持的数据库为 `PostgreSQL`

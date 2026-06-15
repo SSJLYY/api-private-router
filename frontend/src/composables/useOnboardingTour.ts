@@ -78,10 +78,12 @@ export function useOnboardingTour(options: OnboardingOptions) {
 
   /**
    * 检查元素是否存在，如果不存在则重试
+   * @param signal Optional AbortSignal to cancel polling on unmount
    */
-  const ensureElement = async (selector: string, timeout = 5000): Promise<boolean> => {
+  const ensureElement = async (selector: string, timeout = 5000, signal?: AbortSignal): Promise<boolean> => {
     const startTime = Date.now()
     while (Date.now() - startTime < timeout) {
+      if (signal?.aborted) return false
       const element = document.querySelector(selector)
       if (element && element.getBoundingClientRect().height > 0) {
         return true
@@ -552,6 +554,11 @@ export function useOnboardingTour(options: OnboardingOptions) {
     if (autoStartTimer) {
       clearTimeout(autoStartTimer)
       autoStartTimer = null
+    }
+    // Explicitly remove global keyboard handler
+    if (globalKeyboardHandler) {
+      document.removeEventListener('keydown', globalKeyboardHandler, { capture: true })
+      globalKeyboardHandler = null
     }
     // Fix: destroy driver on unmount to clean up keyboard handler
     if (driverInstance?.isActive()) {

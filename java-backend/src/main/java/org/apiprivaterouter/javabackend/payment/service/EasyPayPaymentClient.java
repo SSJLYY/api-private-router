@@ -121,7 +121,7 @@ public class EasyPayPaymentClient {
         );
         return new EasyPayQueryOrderResult(
                 order.out_trade_no(),
-                response.status() == 1 ? "paid" : "pending",
+                response.status() == 1 ? "paid" : response.status() == 2 ? "refunded" : "pending",
                 parseAmount(response.money())
         );
     }

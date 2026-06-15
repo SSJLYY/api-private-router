@@ -98,6 +98,7 @@ export function useKeyedDebouncedSearch<T>(options: UseKeyedDebouncedSearchOptio
   return {
     trigger,
     clearKey,
+    /** Must be called manually if used outside Vue setup context */
     clearAll
   }
 }

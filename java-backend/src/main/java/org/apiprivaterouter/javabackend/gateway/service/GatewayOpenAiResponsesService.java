@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class GatewayOpenAiResponsesService {
@@ -89,6 +90,9 @@ public class GatewayOpenAiResponsesService {
             "upgrade",
             "content-length"
     );
+
+    private static final ConcurrentHashMap<String, HttpClient> httpClientCache = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, java.util.regex.Pattern> modelMappingPatternCache = new ConcurrentHashMap<>();
 
     private final AdminAccountRepository accountRepository;
     private final AdminProxyRepository proxyRepository;
@@ -515,6 +519,18 @@ public class GatewayOpenAiResponsesService {
         AdminProxyResponse proxy = account.proxy_id() == null || account.proxy_id() <= 0
                 ? null
                 : proxyRepository.getProxy(account.proxy_id()).orElse(null);
+        String cacheKey = buildHttpClientCacheKey(proxy);
+        return httpClientCache.computeIfAbsent(cacheKey, k -> createHttpClient(proxy));
+    }
+
+    private String buildHttpClientCacheKey(AdminProxyResponse proxy) {
+        if (proxy == null || proxy.host() == null || proxy.host().isBlank() || proxy.port() <= 0) {
+            return "direct";
+        }
+        return proxy.protocol() + ":" + proxy.host() + ":" + proxy.port() + ":" + (proxy.username() == null ? "" : proxy.username());
+    }
+
+    private HttpClient createHttpClient(AdminProxyResponse proxy) {
         HttpClient.Builder builder = HttpClient.newBuilder()
                 .connectTimeout(CONNECT_TIMEOUT)
                 .followRedirects(HttpClient.Redirect.NEVER);
@@ -696,8 +712,9 @@ public class GatewayOpenAiResponsesService {
             if (pattern == null || target == null || !pattern.contains("*")) {
                 continue;
             }
-            String regex = java.util.regex.Pattern.quote(pattern).replace("\\*", ".*");
-            if (!requestedModel.matches(regex)) {
+            String regexStr = java.util.regex.Pattern.quote(pattern).replace("\\*", ".*");
+            java.util.regex.Pattern compiledPattern = modelMappingPatternCache.computeIfAbsent(pattern, k -> java.util.regex.Pattern.compile(regexStr));
+            if (!compiledPattern.matcher(requestedModel).matches()) {
                 continue;
             }
             int score = pattern.replace("*", "").length();

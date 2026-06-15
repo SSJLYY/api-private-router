@@ -51,7 +51,7 @@ export function useGeminiOAuth() {
 
     try {
       const payload: Record<string, unknown> = {}
-      if (proxyId) payload.proxy_id = proxyId
+      if (proxyId != null) payload.proxy_id = proxyId
       const trimmedProjectID = projectId?.trim()
       if (trimmedProjectID) payload.project_id = trimmedProjectID
       if (oauthType) payload.oauth_type = oauthType

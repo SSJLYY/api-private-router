@@ -13,6 +13,7 @@ api-private-router includes an integrated payment system for self-service balanc
 - [Provider Instance Management](#provider-instance-management)
 - [Webhook Configuration](#webhook-configuration)
 - [Payment Flow](#payment-flow)
+- [Migration from Separate Payment Service](#migration-from-separate-payment-service)
 
 ---
 

@@ -74,8 +74,12 @@ public class OidcOAuthController {
         response.addHeader(HttpHeaders.SET_COOKIE, result.verifierCookie().toString());
         response.addHeader(HttpHeaders.SET_COOKIE, result.nonceCookie().toString());
         response.addHeader(HttpHeaders.SET_COOKIE, result.bindUserCookie().toString());
-        response.addHeader(HttpHeaders.SET_COOKIE, result.pendingBrowserCookie().toString());
-        response.addHeader(HttpHeaders.SET_COOKIE, result.pendingSessionCookie().toString());
+        if (result.pendingBrowserCookie() != null) {
+            response.addHeader(HttpHeaders.SET_COOKIE, result.pendingBrowserCookie().toString());
+        }
+        if (result.pendingSessionCookie() != null) {
+            response.addHeader(HttpHeaders.SET_COOKIE, result.pendingSessionCookie().toString());
+        }
         response.sendRedirect(result.authorizeUrl());
     }
 }

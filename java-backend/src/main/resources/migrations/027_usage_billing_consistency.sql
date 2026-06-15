@@ -38,7 +38,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_usage_logs_request_id_api_key_unique
 CREATE TABLE IF NOT EXISTS billing_usage_entries (
     id BIGSERIAL PRIMARY KEY,
     usage_log_id BIGINT NOT NULL REFERENCES usage_logs(id) ON DELETE CASCADE,
-    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,  -- TODO: Change to ON DELETE SET NULL to preserve billing records when user is deleted
     api_key_id BIGINT NOT NULL REFERENCES api_keys(id) ON DELETE CASCADE,
     subscription_id BIGINT REFERENCES user_subscriptions(id) ON DELETE SET NULL,
     billing_type SMALLINT NOT NULL,

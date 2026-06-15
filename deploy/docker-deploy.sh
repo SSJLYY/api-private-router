@@ -117,16 +117,20 @@ main() {
     cp .env.example .env
 
     # Update .env with generated secrets (cross-platform compatible)
+    # Escape special characters for sed replacement
+    escaped_jwt=$(printf '%s\n' "$JWT_SECRET" | sed 's/[&/\]/\\&/g')
+    escaped_totp=$(printf '%s\n' "$TOTP_ENCRYPTION_KEY" | sed 's/[&/\]/\\&/g')
+    escaped_pg=$(printf '%s\n' "$POSTGRES_PASSWORD" | sed 's/[&/\]/\\&/g')
     if sed --version >/dev/null 2>&1; then
         # GNU sed (Linux)
-        sed -i "s/^JWT_SECRET=.*/JWT_SECRET=${JWT_SECRET}/" .env
-        sed -i "s/^TOTP_ENCRYPTION_KEY=.*/TOTP_ENCRYPTION_KEY=${TOTP_ENCRYPTION_KEY}/" .env
-        sed -i "s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=${POSTGRES_PASSWORD}/" .env
+        sed -i "s/^JWT_SECRET=.*/JWT_SECRET=${escaped_jwt}/" .env
+        sed -i "s/^TOTP_ENCRYPTION_KEY=.*/TOTP_ENCRYPTION_KEY=${escaped_totp}/" .env
+        sed -i "s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=${escaped_pg}/" .env
     else
         # BSD sed (macOS)
-        sed -i '' "s/^JWT_SECRET=.*/JWT_SECRET=${JWT_SECRET}/" .env
-        sed -i '' "s/^TOTP_ENCRYPTION_KEY=.*/TOTP_ENCRYPTION_KEY=${TOTP_ENCRYPTION_KEY}/" .env
-        sed -i '' "s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=${POSTGRES_PASSWORD}/" .env
+        sed -i '' "s/^JWT_SECRET=.*/JWT_SECRET=${escaped_jwt}/" .env
+        sed -i '' "s/^TOTP_ENCRYPTION_KEY=.*/TOTP_ENCRYPTION_KEY=${escaped_totp}/" .env
+        sed -i '' "s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=${escaped_pg}/" .env
     fi
 
     # Create data directories
@@ -143,13 +147,9 @@ main() {
     echo "  Preparation Complete!"
     echo "=========================================="
     echo ""
-    echo "Generated secure credentials:"
-    echo "  POSTGRES_PASSWORD:     ${POSTGRES_PASSWORD}"
-    echo "  JWT_SECRET:            ${JWT_SECRET}"
-    echo "  TOTP_ENCRYPTION_KEY:   ${TOTP_ENCRYPTION_KEY}"
-    echo ""
-    print_warning "These credentials have been saved to .env file."
-    print_warning "Please keep them secure and do not share publicly!"
+    echo "Generated secure credentials have been saved to .env file."
+    print_warning "SECURITY: Do not share or commit the .env file!"
+    print_warning "View credentials: cat .env | grep -E '(POSTGRES_PASSWORD|JWT_SECRET|TOTP_ENCRYPTION_KEY)'"
     echo ""
     echo "Directory structure:"
     echo "  docker-compose.yml        - Docker Compose configuration"

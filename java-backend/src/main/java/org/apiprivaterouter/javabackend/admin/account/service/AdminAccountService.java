@@ -78,6 +78,12 @@ import java.util.LinkedHashSet;
 @Service
 public class AdminAccountService {
 
+    private static final Set<String> SENSITIVE_CREDENTIAL_KEYS = Set.of(
+            "access_token", "refresh_token", "password", "secret", "api_key",
+            "setup_token", "token", "auth_token", "private_key", "client_secret",
+            "id_token", "proxy_password"
+    );
+
     private static final String DATA_TYPE = "api-private-router-data";
     private static final String LEGACY_DATA_TYPE = "api-private-router-bundle";
     private static final int DATA_VERSION = 1;
@@ -608,7 +614,7 @@ public class AdminAccountService {
                     account.notes(),
                     account.platform(),
                     account.type(),
-                    account.credentials(),
+                    maskCredentials(account.credentials()),
                     account.extra(),
                     proxyKey,
                     account.concurrency(),
@@ -1434,15 +1440,15 @@ public class AdminAccountService {
             String host = proxy.host();
             int port = proxy.port();
             String username = proxy.username();
-            String password = proxy.password();
+            String maskedPassword = maskSensitiveString(proxy.password());
             proxiesById.put(proxyId, new AdminDataProxy(
-                    buildProxyKey(protocol, host, port, username, password),
+                    buildProxyKey(protocol, host, port, username, proxy.password()),
                     proxy.name(),
                     protocol,
                     host,
                     port,
                     username,
-                    password,
+                    maskedPassword,
                     proxy.status()
             ));
         }
@@ -1822,6 +1828,34 @@ public class AdminAccountService {
         }
         String normalized = value.trim();
         return normalized.isEmpty() ? null : normalized;
+    }
+
+    private String maskSensitiveString(String value) {
+        if (value == null || value.isEmpty()) {
+            return value;
+        }
+        if (value.length() > 4) {
+            return value.substring(0, 2) + "****" + value.substring(value.length() - 2);
+        }
+        return "****";
+    }
+
+    private Map<String, Object> maskCredentials(Map<String, Object> credentials) {
+        if (credentials == null) {
+            return null;
+        }
+        Map<String, Object> masked = new LinkedHashMap<>(credentials);
+        for (Map.Entry<String, Object> entry : masked.entrySet()) {
+            if (SENSITIVE_CREDENTIAL_KEYS.contains(entry.getKey()) && entry.getValue() != null) {
+                String value = String.valueOf(entry.getValue());
+                if (value.length() > 4) {
+                    entry.setValue(value.substring(0, 2) + "****" + value.substring(value.length() - 2));
+                } else {
+                    entry.setValue("****");
+                }
+            }
+        }
+        return masked;
     }
 
     private String stringValue(Object value) {

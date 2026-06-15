@@ -1,17 +1,28 @@
 package org.apiprivaterouter.javabackend.riskcontrol.runtime.repository;
 
 import org.apiprivaterouter.javabackend.riskcontrol.runtime.model.ModerationApiKeyContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Repository
 public class GatewayApiKeyRepository {
 
+    private static final Logger log = LoggerFactory.getLogger(GatewayApiKeyRepository.class);
+
     private final NamedParameterJdbcTemplate jdbcTemplate;
+    private final ConcurrentLinkedQueue<Long> pendingTouchUpdates = new ConcurrentLinkedQueue<>();
+    private final AtomicBoolean flushInProgress = new AtomicBoolean(false);
 
     public GatewayApiKeyRepository(NamedParameterJdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
@@ -65,12 +76,43 @@ public class GatewayApiKeyRepository {
     }
 
     public void touchLastUsed(long apiKeyId) {
-        jdbcTemplate.update("""
-                update api_keys
-                set last_used_at = now(),
-                    updated_at = now()
-                where id = :id
-                  and deleted_at is null
-                """, new MapSqlParameterSource("id", apiKeyId));
+        pendingTouchUpdates.offer(apiKeyId);
+        flushIfNeeded();
+    }
+
+    private void flushIfNeeded() {
+        if (pendingTouchUpdates.size() >= 50 || (!pendingTouchUpdates.isEmpty() && flushInProgress.compareAndSet(false, true))) {
+            flushPendingUpdates();
+        }
+    }
+
+    @Scheduled(fixedDelay = 5000)
+    public void scheduledFlush() {
+        flushPendingUpdates();
+    }
+
+    private void flushPendingUpdates() {
+        if (pendingTouchUpdates.isEmpty()) {
+            flushInProgress.set(false);
+            return;
+        }
+        try {
+            List<Long> batch = new ArrayList<>();
+            Long id;
+            while ((id = pendingTouchUpdates.poll()) != null && batch.size() < 100) {
+                batch.add(id);
+            }
+            if (!batch.isEmpty()) {
+                Set<Long> uniqueIds = Set.copyOf(batch);
+                jdbcTemplate.update(
+                        "update api_keys set last_used_at = now(), updated_at = now() where id in (:ids) and deleted_at is null",
+                        new MapSqlParameterSource("ids", uniqueIds)
+                );
+            }
+        } catch (Exception ex) {
+            log.warn("Failed to flush touchLastUsed batch: {}", ex.getMessage());
+        } finally {
+            flushInProgress.set(false);
+        }
     }
 }

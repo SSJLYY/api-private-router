@@ -21,6 +21,7 @@ import org.apiprivaterouter.javabackend.payment.service.PaymentService;
 import org.apiprivaterouter.javabackend.payment.service.StripePaymentClient;
 import org.apiprivaterouter.javabackend.payment.service.WxpayPaymentClient;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.Locale;
@@ -85,6 +86,7 @@ public class AdminPaymentService {
         return payload;
     }
 
+    @Transactional
     public PaymentOrderResponse cancelOrder(long id) {
         PaymentOrderResponse before = repository.getOrder(id).orElseThrow(() -> new IllegalArgumentException("order not found"));
         if (!"PENDING".equalsIgnoreCase(before.status())) {
@@ -113,6 +115,7 @@ public class AdminPaymentService {
         return cancelled;
     }
 
+    @Transactional
     public PaymentOrderResponse retryOrder(long id) {
         PaymentOrderResponse before = repository.getOrder(id).orElseThrow(() -> new IllegalArgumentException("order not found"));
         if (!"FAILED".equalsIgnoreCase(before.status())) {
@@ -174,6 +177,7 @@ public class AdminPaymentService {
         return repository.updatePlan(id, normalizePlan(request, true));
     }
 
+    @Transactional
     public Map<String, String> deletePlan(long id) {
         repository.listPlans().stream()
                 .filter(item -> item.id() == id)
@@ -205,6 +209,7 @@ public class AdminPaymentService {
                 .orElseThrow(() -> new IllegalArgumentException("provider not found"));
     }
 
+    @Transactional
     public Map<String, String> deleteProvider(long id) {
         long activeOrders = repository.countActiveOrdersByProviderId(id);
         if (activeOrders > 0) {
@@ -231,6 +236,7 @@ public class AdminPaymentService {
         return repository.updateChannel(id, merged);
     }
 
+    @Transactional
     public Map<String, String> deleteChannel(long id) {
         long activeOrders = repository.countActiveOrdersByProviderId(id);
         if (activeOrders > 0) {

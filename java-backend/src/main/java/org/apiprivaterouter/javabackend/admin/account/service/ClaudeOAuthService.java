@@ -10,6 +10,7 @@ import org.apiprivaterouter.javabackend.admin.account.model.ExchangeAuthCodeRequ
 import org.apiprivaterouter.javabackend.admin.account.model.GenerateAuthUrlResponse;
 import org.apiprivaterouter.javabackend.admin.proxy.model.AdminProxyResponse;
 import org.apiprivaterouter.javabackend.admin.proxy.repository.AdminProxyRepository;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -58,6 +59,12 @@ public class ClaudeOAuthService {
     public ClaudeOAuthService(AdminProxyRepository proxyRepository, ObjectMapper objectMapper) {
         this.proxyRepository = proxyRepository;
         this.objectMapper = objectMapper;
+    }
+
+    @Scheduled(fixedDelay = 300_000) // every 5 minutes
+    public void evictExpiredSessions() {
+        Instant now = Instant.now();
+        sessions.entrySet().removeIf(entry -> entry.getValue().createdAt().plus(SESSION_TTL).isBefore(now));
     }
 
     public GenerateAuthUrlResponse generateAuthUrl(Long proxyId) {

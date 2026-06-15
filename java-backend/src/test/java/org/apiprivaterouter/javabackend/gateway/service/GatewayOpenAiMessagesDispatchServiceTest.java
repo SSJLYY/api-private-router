@@ -44,6 +44,7 @@ class GatewayOpenAiMessagesDispatchServiceTest {
             null,
             responsesService,
             fastPolicyService,
+            null,
             objectMapper
     );
 

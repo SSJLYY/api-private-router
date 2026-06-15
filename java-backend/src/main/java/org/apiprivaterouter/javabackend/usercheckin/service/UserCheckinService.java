@@ -9,6 +9,9 @@ import org.apiprivaterouter.javabackend.usercheckin.model.UserCheckinRequest;
 import org.apiprivaterouter.javabackend.usercheckin.model.UserCheckinResultResponse;
 import org.apiprivaterouter.javabackend.usercheckin.model.UserCheckinStatusResponse;
 import org.apiprivaterouter.javabackend.usercheckin.repository.UserCheckinRepository;
+import org.apiprivaterouter.javabackend.userfund.service.FundService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +30,7 @@ import java.util.concurrent.ThreadLocalRandom;
 @Service
 public class UserCheckinService {
 
+    private static final Logger log = LoggerFactory.getLogger(UserCheckinService.class);
     private static final BigDecimal MIN_MULTIPLIER = new BigDecimal("0.20");
     private static final BigDecimal MAX_MULTIPLIER = new BigDecimal("2.20");
     private static final BigDecimal MIN_STAKE = new BigDecimal("0.01");
@@ -35,9 +39,11 @@ public class UserCheckinService {
     private static final int MAX_HISTORY_PAGE_SIZE = 100;
 
     private final UserCheckinRepository repository;
+    private final FundService fundService;
 
-    public UserCheckinService(UserCheckinRepository repository) {
+    public UserCheckinService(UserCheckinRepository repository, FundService fundService) {
         this.repository = repository;
+        this.fundService = fundService;
     }
 
     public UserCheckinStatusResponse getStatus(CurrentUser currentUser, String timezone) {
@@ -94,6 +100,7 @@ public class UserCheckinService {
                 checkedInAt
         );
         repository.updateUserBalance(user.id(), balanceAfter);
+        syncFundCheckin(user.id(), stakeAmount, rewardAmount, netChange, checkinDate.toString());
 
         return toResult(record);
     }
@@ -185,5 +192,17 @@ public class UserCheckinService {
 
     private BigDecimal roundMoney(BigDecimal value) {
         return value.setScale(8, RoundingMode.HALF_UP);
+    }
+
+    private void syncFundCheckin(long userId, BigDecimal stakeAmount, BigDecimal rewardAmount,
+                                  BigDecimal netChange, String checkinDate) {
+        long stakeCents = stakeAmount.movePointRight(8).longValue();
+        if (stakeCents > 0) {
+            fundService.recordCheckinStake(userId, stakeCents, checkinDate);
+        }
+        long rewardCents = rewardAmount.movePointRight(8).longValue();
+        if (rewardCents > 0) {
+            fundService.recordCheckinReward(userId, rewardCents, checkinDate);
+        }
     }
 }

@@ -10,12 +10,12 @@ import { i18n, getLocale } from '@/i18n'
  * @param date 日期字符串或 Date 对象
  * @returns 相对时间字符串，如 "5m ago", "2h ago", "3d ago"
  */
-export function formatRelativeTime(date: string | Date | null | undefined): string {
+export function formatRelativeTime(date: string | Date | null | undefined, now?: Date): string {
   if (!date) return i18n.global.t('common.time.never')
 
-  const now = new Date()
+  const currentTime = now ?? new Date()
   const past = new Date(date)
-  const diffMs = now.getTime() - past.getTime()
+  const diffMs = currentTime.getTime() - past.getTime()
 
   // 处理未来时间或无效日期
   if (diffMs < 0 || isNaN(diffMs)) return i18n.global.t('common.time.never')
@@ -87,13 +87,15 @@ export function formatCurrency(amount: number | null | undefined, currency: stri
  * @returns 格式化后的字符串，如 "1.5 MB"
  */
 export function formatBytes(bytes: number, decimals: number = 2): string {
-  if (bytes === 0) return '0 Bytes'
+  if (!Number.isFinite(bytes) || bytes === 0) return '0 Bytes'
+  if (bytes < 0) return '-' + formatBytes(-bytes, decimals)
+  if (bytes < 1) return parseFloat(bytes.toFixed(decimals < 0 ? 0 : decimals)) + ' Bytes'
 
   const k = 1024
   const dm = decimals < 0 ? 0 : decimals
   const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
 
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), sizes.length - 1)
 
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
 }
@@ -157,9 +159,12 @@ export function formatDateTime(
 
 /**
  * 格式化为 datetime-local 控件值（YYYY-MM-DDTHH:mm，使用本地时间）
+ *
+ * 注意：datetime-local 输入控件使用本地时间，与后端 API 交互时需注意时区转换。
+ * 此函数将 UTC 时间戳转换为用户本地时间的 datetime-local 格式。
  */
 export function formatDateTimeLocalInput(timestampSeconds: number | null): string {
-  if (!timestampSeconds) return ''
+  if (timestampSeconds == null) return ''
   const date = new Date(timestampSeconds * 1000)
   if (isNaN(date.getTime())) return ''
   const year = date.getFullYear()

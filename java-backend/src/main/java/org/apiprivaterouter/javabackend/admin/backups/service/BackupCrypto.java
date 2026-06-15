@@ -1,5 +1,7 @@
 package org.apiprivaterouter.javabackend.admin.backups.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -14,21 +16,40 @@ import java.util.Base64;
 @Component
 public class BackupCrypto {
 
+    private static final Logger log = LoggerFactory.getLogger(BackupCrypto.class);
     private static final int GCM_NONCE_LENGTH = 12;
     private static final int GCM_TAG_LENGTH_BITS = 128;
     private static final String PREFIX = "enc:v1:";
 
     private final byte[] key;
+    private final boolean usingDefaultKey;
     private final SecureRandom secureRandom = new SecureRandom();
 
-    public BackupCrypto(@Value("${api-private-router.jwt.secret:}") String secret) {
-        String material = secret == null || secret.isBlank() ? "api-private-router-java-backup-default-key" : secret;
-        this.key = sha256(material);
+    public BackupCrypto(@Value("${api-private-router.backup.encryption-key:${API_PRIVATE_ROUTER_BACKUP_ENCRYPTION_KEY:}}") String encryptionKey) {
+        if (encryptionKey == null || encryptionKey.isBlank()) {
+            // Fail-safe instead of failing startup: derive a per-process random key. Backups are
+            // optional and not used until explicitly configured in the admin UI, so blocking the
+            // entire application boot is disproportionate. A warning is logged so operators know
+            // they must set a fixed key before relying on backups.
+            this.key = randomKey();
+            this.usingDefaultKey = true;
+            log.warn("Backup encryption key is not configured (API_PRIVATE_ROUTER_BACKUP_ENCRYPTION_KEY). "
+                    + "Using an ephemeral random key: previously encrypted backup secrets cannot be decrypted "
+                    + "after a restart. Set a fixed key before using the backup feature.");
+        } else {
+            this.key = sha256(encryptionKey);
+            this.usingDefaultKey = false;
+        }
     }
 
     public String encrypt(String plainText) {
         if (plainText == null || plainText.isBlank()) {
             return plainText;
+        }
+        if (usingDefaultKey) {
+            throw new IllegalStateException(
+                    "Backup encryption key is not configured. Set API_PRIVATE_ROUTER_BACKUP_ENCRYPTION_KEY "
+                            + "before encrypting backup secrets.");
         }
         try {
             byte[] nonce = new byte[GCM_NONCE_LENGTH];
@@ -72,5 +93,11 @@ public class BackupCrypto {
         } catch (Exception ex) {
             throw new IllegalStateException("failed to initialize backup crypto", ex);
         }
+    }
+
+    private static byte[] randomKey() {
+        byte[] key = new byte[32];
+        new SecureRandom().nextBytes(key);
+        return key;
     }
 }

@@ -88,6 +88,7 @@ public class PendingOAuthService {
         this.weChatOAuthRepository = weChatOAuthRepository;
     }
 
+    @Transactional
     public CookieResult<Map<String, Object>> exchange(HttpServletRequest request, PendingOAuthExchangeRequest body) {
         PendingContext context = requirePendingBrowserSession(request);
         PendingOAuthSessionView session = context.session();

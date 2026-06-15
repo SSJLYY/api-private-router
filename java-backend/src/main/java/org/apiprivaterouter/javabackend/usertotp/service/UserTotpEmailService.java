@@ -16,7 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.ThreadLocalRandom;
+import java.security.SecureRandom;
 
 @Service
 public class UserTotpEmailService {
@@ -31,6 +31,7 @@ public class UserTotpEmailService {
             "smtp_use_tls"
     );
 
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private final UserTotpRepository repository;
 
     public UserTotpEmailService(UserTotpRepository repository) {
@@ -38,7 +39,7 @@ public class UserTotpEmailService {
     }
 
     public String generateCode() {
-        int value = ThreadLocalRandom.current().nextInt(0, 1_000_000);
+        int value = SECURE_RANDOM.nextInt(0, 1_000_000);
         return String.format("%06d", value);
     }
 
@@ -118,9 +119,9 @@ public class UserTotpEmailService {
         properties.put("mail.smtp.connectiontimeout", "10000");
         properties.put("mail.smtp.timeout", "20000");
         properties.put("mail.smtp.writetimeout", "20000");
-        properties.put("mail.smtp.starttls.enable", config.useTls() ? "false" : "true");
-        properties.put("mail.smtp.starttls.required", "false");
-        properties.put("mail.smtp.ssl.enable", Boolean.toString(config.useTls()));
+        properties.put("mail.smtp.starttls.enable", config.useTls() ? "true" : "false");
+        properties.put("mail.smtp.starttls.required", config.useTls() ? "true" : "false");
+        properties.put("mail.smtp.ssl.enable", Boolean.toString(!config.useTls() && config.port() == 465));
         properties.put("mail.smtp.ssl.protocols", "TLSv1.2 TLSv1.3");
         return sender;
     }

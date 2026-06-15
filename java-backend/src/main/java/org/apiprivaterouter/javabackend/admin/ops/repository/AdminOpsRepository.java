@@ -86,6 +86,7 @@ public class AdminOpsRepository {
                 from users
                 where deleted_at is null and status = 'active'
                 order by id asc
+                limit 5000
                 """, new MapSqlParameterSource(), (rs, rowNum) -> {
             Map<String, Object> item = new LinkedHashMap<>();
             long maxCapacity = rs.getLong("max_capacity");
@@ -1876,7 +1877,7 @@ public class AdminOpsRepository {
                 .addValue("startTime", timestamp((Instant) source.get("start_time")))
                 .addValue("endTime", timestamp((Instant) source.get("end_time")))
                 .addValue("query", query)
-                .addValue("likeQuery", query == null ? null : "%" + query.toLowerCase(Locale.ROOT) + "%");
+                .addValue("likeQuery", query == null ? null : "%" + escapeLike(query.toLowerCase(Locale.ROOT)) + "%");
     }
 
     private Map<String, Object> mapAlertRule(ResultSet rs) throws SQLException {
@@ -2063,5 +2064,9 @@ public class AdminOpsRepository {
 
     private String defaultString(String value) {
         return value == null ? "" : value;
+    }
+
+    private String escapeLike(String value) {
+        return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
     }
 }

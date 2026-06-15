@@ -140,8 +140,9 @@ public class UserAccountBindingsService {
         return bindEmailIdentityInternal(currentUser, user, email, trimToNull(request.password()));
     }
 
+    // TODO: 此方法完全跳过验证码验证，存在安全风险。应限制为内部调用或添加独立鉴权。
     @Transactional
-    public CurrentUserResponse bindEmailIdentityWithoutVerifyCodeForRuntimeReadyPath(CurrentUser currentUser, BindEmailIdentityRequest request) {
+    private CurrentUserResponse bindEmailIdentityWithoutVerifyCodeForRuntimeReadyPath(CurrentUser currentUser, BindEmailIdentityRequest request) {
         UserAccountBindingsRepository.UserBindingUserRow user = requireActiveCurrentUser(currentUser.userId());
         String email = normalizeEmail(request.email());
         ensureNonReservedEmail(email);

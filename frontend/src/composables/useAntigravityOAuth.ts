@@ -33,7 +33,7 @@ export function useAntigravityOAuth() {
 
     try {
       const payload: Record<string, unknown> = {}
-      if (proxyId) payload.proxy_id = proxyId
+      if (proxyId != null) payload.proxy_id = proxyId
 
       const response = await adminAPI.antigravity.generateAuthUrl(payload as any)
       authUrl.value = response.auth_url

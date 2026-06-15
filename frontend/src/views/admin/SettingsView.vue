@@ -4544,6 +4544,61 @@
                 </p>
               </div>
               <Toggle v-model="form.affiliate_enabled" />
+              </div>
+
+              <!-- Red Packet Center -->
+              <div class="flex items-center justify-between">
+                <div>
+                  <label class="font-medium text-slate-900 dark:text-white">
+                    Red Packet Center
+                  </label>
+                  <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                    Enable the red packet center for users
+                  </p>
+                </div>
+                <Toggle v-model="form.redpacket_enabled" />
+              </div>
+
+              <!-- Game Hall -->
+              <div class="flex items-center justify-between">
+                <div>
+                  <label class="font-medium text-slate-900 dark:text-white">
+                    Game Hall
+                  </label>
+                  <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                    Enable the game hall for users
+                  </p>
+                </div>
+                <Toggle v-model="form.game_hall_enabled" />
+              </div>
+
+              <!-- Transfer -->
+              <div class="flex items-center justify-between">
+                <div>
+                  <label class="font-medium text-slate-900 dark:text-white">
+                    Transfer
+                  </label>
+                  <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                    Enable balance transfer between users
+                  </p>
+                </div>
+                <Toggle v-model="form.transfer_enabled" />
+              </div>
+
+              <!-- Fund Center -->
+              <div class="flex items-center justify-between">
+                <div>
+                  <label class="font-medium text-slate-900 dark:text-white">
+                    Fund Center
+                  </label>
+                  <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                    Enable the unified fund management center
+                  </p>
+                </div>
+                <Toggle v-model="form.fund_center_enabled" />
+              </div>
+
+
             </div>
 
             <div v-if="form.affiliate_enabled" class="space-y-6">
@@ -6192,6 +6247,14 @@ const form = reactive<SettingsForm>({
   available_channels_enabled: false,
   // Affiliate (邀请返利) feature switch
   affiliate_enabled: false,
+    // Red Packet feature switch
+    redpacket_enabled: false,
+    // Game Hall feature switch
+    game_hall_enabled: false,
+    // Transfer feature switch
+    transfer_enabled: false,
+    // Fund Center feature switch
+    fund_center_enabled: false,
 });
 
 const authSourceDefaults = reactive<AuthSourceDefaultsState>(
@@ -7203,6 +7266,10 @@ async function saveSettings() {
       available_channels_enabled: form.available_channels_enabled,
       // Affiliate (邀请返利) feature switch
       affiliate_enabled: form.affiliate_enabled,
+        redpacket_enabled: form.redpacket_enabled,
+        game_hall_enabled: form.game_hall_enabled,
+        transfer_enabled: form.transfer_enabled,
+        fund_center_enabled: form.fund_center_enabled,
     };
 
     // 仅当 openai_fast_policy_settings 已成功从后端加载时才回写，

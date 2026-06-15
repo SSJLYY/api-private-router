@@ -155,11 +155,9 @@ public class AuthRefreshTokenRepository {
     }
 
     private void ensureSchema() {
-        if (schemaInitialized.get()) {
-            return;
+        if (schemaInitialized.compareAndSet(false, true)) {
+            initSchema();
         }
-        initSchema();
-        schemaInitialized.set(true);
     }
     public record RefreshTokenRow(
             String tokenHash,

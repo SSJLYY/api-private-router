@@ -68,7 +68,7 @@ public class WxpayPaymentClient {
     ) {
         WxpayConfig config = loadConfig(provider);
         String mode = resolveCreateMode(request);
-        int totalFen = yuanToFen(order.pay_amount());
+        long totalFen = yuanToFen(order.pay_amount());
 
         return switch (mode) {
             case MODE_JSAPI -> createJsapiOrder(config, order, notifyUrl, totalFen, subject, trimToEmpty(request.openid()), clientIp);
@@ -103,8 +103,8 @@ public class WxpayPaymentClient {
 
     public WxpayRefundResult refund(ProviderInstanceResponse provider, PaymentOrderResponse order, double amount, String reason) {
         WxpayConfig config = loadConfig(provider);
-        int refundFen = yuanToFen(amount);
-        int totalFen = yuanToFen(order.pay_amount());
+        long refundFen = yuanToFen(amount);
+        long totalFen = yuanToFen(order.pay_amount());
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("out_trade_no", order.out_trade_no());
         payload.put("out_refund_no", order.out_trade_no() + "-refund-" + UUID.randomUUID().toString().replace("-", ""));
@@ -133,7 +133,7 @@ public class WxpayPaymentClient {
             WxpayConfig config,
             PaymentOrderResponse order,
             String notifyUrl,
-            int totalFen,
+            long totalFen,
             String subject,
             String openid,
             String clientIp
@@ -191,7 +191,7 @@ public class WxpayPaymentClient {
             WxpayConfig config,
             PaymentOrderResponse order,
             String notifyUrl,
-            int totalFen,
+            long totalFen,
             String subject
     ) {
         Map<String, Object> payload = new LinkedHashMap<>();
@@ -221,7 +221,7 @@ public class WxpayPaymentClient {
             PaymentOrderResponse order,
             String notifyUrl,
             String returnUrl,
-            int totalFen,
+            long totalFen,
             String subject,
             String clientIp
     ) {
@@ -475,8 +475,8 @@ public class WxpayPaymentClient {
         }
     }
 
-    private int yuanToFen(double amount) {
-        return (int) Math.round(amount * 100.0d);
+    private long yuanToFen(double amount) {
+        return Math.round(amount * 100.0d);
     }
 
     private double fenToYuan(long amount) {

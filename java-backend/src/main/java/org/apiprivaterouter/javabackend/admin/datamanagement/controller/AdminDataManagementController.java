@@ -36,27 +36,27 @@ public class AdminDataManagementController {
     @GetMapping("/config")
     public ApiResponse<Map<String, Object>> getConfig() {
         throwDeprecated();
-        return null;
+        throw service.deprecatedError(); // unreachable, satisfies compiler
     }
 
     @PutMapping("/config")
     public ApiResponse<Map<String, Object>> updateConfig(@RequestBody(required = false) Map<String, Object> ignored) {
         throwDeprecated();
-        return null;
+        throw service.deprecatedError();
     }
 
     @GetMapping("/sources/{sourceType}/profiles")
     public ApiResponse<Map<String, Object>> listSourceProfiles(@PathVariable String sourceType) {
         validateSourceType(sourceType);
         throwDeprecated();
-        return null;
+        throw service.deprecatedError();
     }
 
     @PostMapping("/sources/{sourceType}/profiles")
     public ApiResponse<Map<String, Object>> createSourceProfile(@PathVariable String sourceType, @RequestBody(required = false) Map<String, Object> ignored) {
         validateSourceType(sourceType);
         throwDeprecated();
-        return null;
+        throw service.deprecatedError();
     }
 
     @PutMapping("/sources/{sourceType}/profiles/{profileId}")
@@ -68,7 +68,7 @@ public class AdminDataManagementController {
         validateSourceType(sourceType);
         validateNonBlank(profileId, "Invalid profile_id");
         throwDeprecated();
-        return null;
+        throw service.deprecatedError();
     }
 
     @DeleteMapping("/sources/{sourceType}/profiles/{profileId}")
@@ -76,7 +76,7 @@ public class AdminDataManagementController {
         validateSourceType(sourceType);
         validateNonBlank(profileId, "Invalid profile_id");
         throwDeprecated();
-        return null;
+        throw service.deprecatedError();
     }
 
     @PostMapping("/sources/{sourceType}/profiles/{profileId}/activate")
@@ -84,65 +84,65 @@ public class AdminDataManagementController {
         validateSourceType(sourceType);
         validateNonBlank(profileId, "Invalid profile_id");
         throwDeprecated();
-        return null;
+        throw service.deprecatedError();
     }
 
     @PostMapping("/s3/test")
     public ApiResponse<Map<String, Object>> testS3(@RequestBody(required = false) Map<String, Object> ignored) {
         throwDeprecated();
-        return null;
+        throw service.deprecatedError();
     }
 
     @GetMapping("/s3/profiles")
     public ApiResponse<Map<String, Object>> listS3Profiles() {
         throwDeprecated();
-        return null;
+        throw service.deprecatedError();
     }
 
     @PostMapping("/s3/profiles")
     public ApiResponse<Map<String, Object>> createS3Profile(@RequestBody(required = false) Map<String, Object> ignored) {
         throwDeprecated();
-        return null;
+        throw service.deprecatedError();
     }
 
     @PutMapping("/s3/profiles/{profileId}")
     public ApiResponse<Map<String, Object>> updateS3Profile(@PathVariable String profileId, @RequestBody(required = false) Map<String, Object> ignored) {
         validateNonBlank(profileId, "Invalid profile_id");
         throwDeprecated();
-        return null;
+        throw service.deprecatedError();
     }
 
     @DeleteMapping("/s3/profiles/{profileId}")
     public ApiResponse<Map<String, Object>> deleteS3Profile(@PathVariable String profileId) {
         validateNonBlank(profileId, "Invalid profile_id");
         throwDeprecated();
-        return null;
+        throw service.deprecatedError();
     }
 
     @PostMapping("/s3/profiles/{profileId}/activate")
     public ApiResponse<Map<String, Object>> activateS3Profile(@PathVariable String profileId) {
         validateNonBlank(profileId, "Invalid profile_id");
         throwDeprecated();
-        return null;
+        throw service.deprecatedError();
     }
 
     @PostMapping("/backups")
     public ApiResponse<Map<String, Object>> createBackupJob(@RequestBody(required = false) Map<String, Object> ignored) {
         throwDeprecated();
-        return null;
+        throw service.deprecatedError();
     }
 
     @GetMapping("/backups")
     public ApiResponse<Map<String, Object>> listBackupJobs() {
         throwDeprecated();
-        return null;
+        throw service.deprecatedError();
     }
 
     @GetMapping("/backups/{jobId}")
     public ApiResponse<Map<String, Object>> getBackupJob(@PathVariable String jobId) {
         validateNonBlank(jobId, "Invalid backup job ID");
         throwDeprecated();
-        return null;
+        throw service.deprecatedError();
     }
 
     private void throwDeprecated() {

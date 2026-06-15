@@ -277,29 +277,11 @@ public class SetupService {
     private void testDatabaseConnection(DatabaseConfig config) throws SQLException {
         String url = buildJdbcUrl(config, config.dbName());
         log.info("Testing database connection: url={}, user={}, password_length={}", url, config.user(), config.password().length());
-        try {
-            try (Connection ignored = openConnection(config, config.dbName())) {
-                log.info("Database connection successful to: {}", config.dbName());
-                return;
-            }
+        try (Connection ignored = openConnection(config, config.dbName())) {
+            log.info("Database connection successful to: {}", config.dbName());
         } catch (SQLException ex) {
             log.error("Database connection failed: url={}, sqlState={}, message={}", url, ex.getSQLState(), ex.getMessage(), ex);
-            if (!isMissingDatabaseError(ex)) {
-                throw ex;
-            }
-            log.info("Database '{}' does not exist, will try to create it", config.dbName());
-        }
-
-        try (Connection maintenance = openConnection(config, "postgres")) {
-            if (!databaseExists(maintenance, config.dbName())) {
-                try (Statement statement = maintenance.createStatement()) {
-                    statement.execute("CREATE DATABASE " + quoteIdentifier(config.dbName()));
-                }
-            }
-        }
-
-        try (Connection ignored = openConnection(config, config.dbName())) {
-            // Successful reconnect to target database.
+            throw ex;
         }
     }
 

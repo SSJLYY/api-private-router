@@ -16,6 +16,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 @Service
+// TODO: Add caching (e.g. @Cacheable) to avoid hitting the database on every request — settings rarely change
 public class PublicSettingsService {
 
     private static final String KEY_REGISTRATION_ENABLED = "registration_enabled";
@@ -75,6 +76,10 @@ public class PublicSettingsService {
     private static final String KEY_AVAILABLE_CHANNELS_ENABLED = "available_channels_enabled";
     private static final String KEY_AFFILIATE_ENABLED = "affiliate_enabled";
     private static final String KEY_RISK_CONTROL_ENABLED = "risk_control_enabled";
+    private static final String KEY_REDPACKET_ENABLED = "redpacket_enabled";
+    private static final String KEY_GAME_HALL_ENABLED = "game_hall_enabled";
+    private static final String KEY_TRANSFER_ENABLED = "transfer_enabled";
+    private static final String KEY_FUND_CENTER_ENABLED = "fund_center_enabled";
 
     private static final String DEFAULT_VERSION = "";
     private static final String DEFAULT_SITE_NAME = "api-private-router";
@@ -162,7 +167,11 @@ public class PublicSettingsService {
                 KEY_CHANNEL_MONITOR_DEFAULT_INTERVAL_SECONDS,
                 KEY_AVAILABLE_CHANNELS_ENABLED,
                 KEY_AFFILIATE_ENABLED,
-                KEY_RISK_CONTROL_ENABLED
+                KEY_RISK_CONTROL_ENABLED,
+                KEY_REDPACKET_ENABLED,
+                KEY_GAME_HALL_ENABLED,
+                KEY_TRANSFER_ENABLED,
+                KEY_FUND_CENTER_ENABLED
         ));
 
         boolean emailVerifyEnabled = isStrictTrue(settings.get(KEY_EMAIL_VERIFY_ENABLED));
@@ -247,7 +256,11 @@ public class PublicSettingsService {
                 parseChannelMonitorInterval(settings.get(KEY_CHANNEL_MONITOR_DEFAULT_INTERVAL_SECONDS)),
                 isStrictTrue(settings.get(KEY_AVAILABLE_CHANNELS_ENABLED)),
                 isStrictTrue(settings.get(KEY_AFFILIATE_ENABLED)),
-                isStrictTrue(settings.get(KEY_RISK_CONTROL_ENABLED))
+                isStrictTrue(settings.get(KEY_RISK_CONTROL_ENABLED)),
+                isStrictTrue(settings.get(KEY_REDPACKET_ENABLED)),
+                isStrictTrue(settings.get(KEY_GAME_HALL_ENABLED)),
+                isStrictTrue(settings.get(KEY_TRANSFER_ENABLED)),
+                isStrictTrue(settings.get(KEY_FUND_CENTER_ENABLED))
         );
     }
 

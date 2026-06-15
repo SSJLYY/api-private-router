@@ -73,8 +73,12 @@ public class CommunityOAuthController {
         response.addHeader(HttpHeaders.SET_COOKIE, result.verifierCookie().toString());
         response.addHeader(HttpHeaders.SET_COOKIE, result.bindUserCookie().toString());
         response.addHeader(HttpHeaders.SET_COOKIE, result.affiliateCookie().toString());
-        response.addHeader(HttpHeaders.SET_COOKIE, result.browserCookie().toString());
-        response.addHeader(HttpHeaders.SET_COOKIE, result.pendingSessionCookie().toString());
+        if (result.browserCookie() != null) {
+            response.addHeader(HttpHeaders.SET_COOKIE, result.browserCookie().toString());
+        }
+        if (result.pendingSessionCookie() != null) {
+            response.addHeader(HttpHeaders.SET_COOKIE, result.pendingSessionCookie().toString());
+        }
         response.sendRedirect(result.authorizeUrl());
     }
 }

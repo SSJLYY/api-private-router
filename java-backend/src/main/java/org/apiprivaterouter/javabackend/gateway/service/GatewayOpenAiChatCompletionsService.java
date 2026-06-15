@@ -16,6 +16,8 @@ import org.apiprivaterouter.javabackend.common.api.OpenAiApiErrorException;
 import org.apiprivaterouter.javabackend.common.api.OpenAiUpstreamFailoverException;
 import org.apiprivaterouter.javabackend.common.security.UpstreamUrlGuard;
 import org.apiprivaterouter.javabackend.gateway.runtime.model.GatewayRuntimeContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
@@ -42,10 +44,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 
 @Service
 public class GatewayOpenAiChatCompletionsService {
 
+    private static final Logger log = LoggerFactory.getLogger(GatewayOpenAiChatCompletionsService.class);
     private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(15);
     private static final Duration REQUEST_TIMEOUT = Duration.ofMinutes(10);
     private static final String DEFAULT_OPENAI_BASE_URL = "https://api.openai.com";
@@ -75,9 +80,13 @@ public class GatewayOpenAiChatCompletionsService {
     );
     private static final SecureRandom RANDOM = new SecureRandom();
 
+    private static final ConcurrentHashMap<String, HttpClient> httpClientCache = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, Pattern> modelMappingPatternCache = new ConcurrentHashMap<>();
+
     private final AdminAccountRepository accountRepository;
     private final AdminProxyRepository proxyRepository;
     private final GatewayOpenAiResponsesService responsesService;
+    private final GatewayUsageLoggingService usageLoggingService;
     private final ObjectMapper objectMapper;
     private final UpstreamUrlGuard upstreamUrlGuard;
 
@@ -85,12 +94,14 @@ public class GatewayOpenAiChatCompletionsService {
             AdminAccountRepository accountRepository,
             AdminProxyRepository proxyRepository,
             GatewayOpenAiResponsesService responsesService,
+            GatewayUsageLoggingService usageLoggingService,
             ObjectMapper objectMapper,
             UpstreamUrlGuard upstreamUrlGuard
     ) {
         this.accountRepository = accountRepository;
         this.proxyRepository = proxyRepository;
         this.responsesService = responsesService;
+        this.usageLoggingService = usageLoggingService;
         this.objectMapper = objectMapper;
         this.upstreamUrlGuard = upstreamUrlGuard;
     }
@@ -106,15 +117,15 @@ public class GatewayOpenAiChatCompletionsService {
         }
         String type = normalize(account.type());
         if (isOauthLikeType(type)) {
-            forwardCompat(account, request, response, body);
+            forwardCompat(account, runtimeContext, request, response, body);
             return;
         }
         if ("apikey".equals(type)) {
             if (shouldUseCompatForApiKey(account, body)) {
-                forwardCompat(account, request, response, body);
+                forwardCompat(account, runtimeContext, request, response, body);
                 return;
             }
-            forwardRaw(account, request, response, body);
+            forwardRaw(account, runtimeContext, request, response, body);
             return;
         }
         throw new OpenAiApiErrorException(501, "unsupported_error", "OpenAI chat completions forwarding is not supported for this account type yet");
@@ -155,15 +166,15 @@ public class GatewayOpenAiChatCompletionsService {
         return raw == null;
     }
 
-    private void forwardRaw(AdminAccountResponse account, HttpServletRequest request, HttpServletResponse response, byte[] body) {
+    private void forwardRaw(AdminAccountResponse account, GatewayRuntimeContext runtimeContext, HttpServletRequest request, HttpServletResponse response, byte[] body) {
         ChatPayload payload = prepareRawPayload(body, account);
         HttpRequest upstreamRequest = buildRawRequest(account, request, payload.body(), payload.stream());
         HttpResponse<InputStream> upstream = send(account, upstreamRequest);
         throwIfFailoverRequired(upstream);
-        writePassthroughResponse(response, upstream, payload.stream());
+        writePassthroughResponse(runtimeContext, response, upstream, payload.stream(), payload.clientModel());
     }
 
-    private void forwardCompat(AdminAccountResponse account, HttpServletRequest request, HttpServletResponse response, byte[] body) {
+    private void forwardCompat(AdminAccountResponse account, GatewayRuntimeContext runtimeContext, HttpServletRequest request, HttpServletResponse response, byte[] body) {
         CompatChatPayload payload = prepareCompatPayload(body, account);
         HttpRequest upstreamRequest = buildCompatRequest(account, request, payload.responsesBody());
         HttpResponse<InputStream> upstream = send(account, upstreamRequest);
@@ -172,10 +183,10 @@ public class GatewayOpenAiChatCompletionsService {
             throw translateOpenAiError(upstream);
         }
         if (payload.stream()) {
-            streamCompatResponse(response, upstream, payload.clientModel(), payload.includeUsage());
+            streamCompatResponse(runtimeContext, response, upstream, payload.clientModel(), payload.includeUsage());
             return;
         }
-        writeCompatBufferedResponse(response, upstream, payload.clientModel());
+        writeCompatBufferedResponse(runtimeContext, response, upstream, payload.clientModel());
     }
 
     private ChatPayload prepareRawPayload(byte[] body, AdminAccountResponse account) {
@@ -200,7 +211,7 @@ public class GatewayOpenAiChatCompletionsService {
                 streamOptions.put("include_usage", true);
                 objectNode.set("stream_options", streamOptions);
             }
-            return new ChatPayload(objectMapper.writeValueAsBytes(objectNode), stream);
+            return new ChatPayload(objectMapper.writeValueAsBytes(objectNode), stream, requestedModel);
         } catch (OpenAiApiErrorException ex) {
             throw ex;
         } catch (Exception ex) {
@@ -300,7 +311,7 @@ public class GatewayOpenAiChatCompletionsService {
         return builder.build();
     }
 
-    private void writePassthroughResponse(HttpServletResponse response, HttpResponse<InputStream> upstream, boolean requestedStream) {
+    private void writePassthroughResponse(GatewayRuntimeContext runtimeContext, HttpServletResponse response, HttpResponse<InputStream> upstream, boolean requestedStream, String clientModel) {
         response.setStatus(upstream.statusCode());
         copyResponseHeaders(upstream, response);
         if (response.getContentType() == null) {
@@ -313,27 +324,74 @@ public class GatewayOpenAiChatCompletionsService {
         }
         try (InputStream input = upstream.body()) {
             ServletOutputStream output = response.getOutputStream();
-            byte[] buffer = new byte[8192];
-            int read;
-            while ((read = input.read(buffer)) >= 0) {
-                output.write(buffer, 0, read);
-                if (requestedStream) {
-                    output.flush();
+            if (requestedStream) {
+                ObjectNode usage = writeRawStreamingResponse(input, output);
+                response.flushBuffer();
+                if (upstream.statusCode() < 400) {
+                    logUsageFromJson(runtimeContext, clientModel, usage, true);
                 }
+                return;
             }
+            byte[] body = input == null ? new byte[0] : input.readAllBytes();
+            output.write(body);
             response.flushBuffer();
+            if (upstream.statusCode() < 400) {
+                logUsageFromJson(runtimeContext, clientModel, extractOpenAiChatUsage(body), false);
+            }
         } catch (IOException ex) {
             throw new HttpStatusException(500, "failed to write upstream response");
         }
     }
 
-    private void streamCompatResponse(HttpServletResponse response, HttpResponse<InputStream> upstream, String clientModel, boolean includeUsage) {
+    private ObjectNode writeRawStreamingResponse(InputStream input, ServletOutputStream output) throws IOException {
+        ObjectNode usage = null;
+        boolean completed = false;
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                output.write((line + "\n").getBytes(StandardCharsets.UTF_8));
+                if (line.startsWith("data:")) {
+                    ObjectNode currentUsage = extractOpenAiChatUsage(line.substring("data:".length()).trim().getBytes(StandardCharsets.UTF_8));
+                    if (currentUsage != null) {
+                        usage = currentUsage;
+                    }
+                }
+                output.flush();
+            }
+            completed = true;
+        } finally {
+            if (!completed) {
+                try {
+                    output.write("data: [DONE]\n\n".getBytes(StandardCharsets.UTF_8));
+                    output.flush();
+                } catch (IOException ignored) {
+                }
+            }
+        }
+        return usage;
+    }
+
+    private ObjectNode extractOpenAiChatUsage(byte[] body) {
+        if (body == null || body.length == 0) {
+            return null;
+        }
+        try {
+            JsonNode node = objectMapper.readTree(body);
+            JsonNode usage = node == null ? null : node.get("usage");
+            return usage instanceof ObjectNode objectNode ? objectNode : null;
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private void streamCompatResponse(GatewayRuntimeContext runtimeContext, HttpServletResponse response, HttpResponse<InputStream> upstream, String clientModel, boolean includeUsage) {
         response.setStatus(200);
         response.setContentType("text/event-stream");
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("X-Accel-Buffering", "no");
         copyResponseHeaders(upstream, response);
+        boolean completed = false;
         try (InputStream input = upstream.body();
              BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
             ServletOutputStream output = response.getOutputStream();
@@ -410,16 +468,27 @@ public class GatewayOpenAiChatCompletionsService {
                     }
                     writeDone(output);
                     response.flushBuffer();
+                    logUsageFromState(runtimeContext, clientModel, state);
+                    completed = true;
                     return;
                 }
             }
         } catch (IOException ex) {
             throw new OpenAiApiErrorException(502, "api_error", "Failed to stream chat completions response");
+        } finally {
+            if (!completed) {
+                try {
+                    ServletOutputStream output = response.getOutputStream();
+                    output.write("data: [DONE]\n\n".getBytes(StandardCharsets.UTF_8));
+                    output.flush();
+                } catch (IOException ignored) {
+                }
+            }
         }
         throw new OpenAiApiErrorException(502, "api_error", "Upstream stream ended without a terminal response event");
     }
 
-    private void writeCompatBufferedResponse(HttpServletResponse response, HttpResponse<InputStream> upstream, String clientModel) {
+    private void writeCompatBufferedResponse(GatewayRuntimeContext runtimeContext, HttpServletResponse response, HttpResponse<InputStream> upstream, String clientModel) {
         ObjectNode terminal = readCompatTerminalResponse(upstream);
         ObjectNode compat = toChatCompletionsResponse(terminal, clientModel);
         response.setStatus(200);
@@ -430,6 +499,10 @@ public class GatewayOpenAiChatCompletionsService {
             response.flushBuffer();
         } catch (IOException ex) {
             throw new OpenAiApiErrorException(500, "api_error", "Failed to write chat completions response");
+        }
+        ObjectNode usage = (ObjectNode) compat.get("usage");
+        if (usage != null) {
+            logUsageFromJson(runtimeContext, clientModel, usage, false);
         }
     }
 
@@ -590,6 +663,28 @@ public class GatewayOpenAiChatCompletionsService {
         return usage;
     }
 
+    private void logUsageFromState(GatewayRuntimeContext runtimeContext, String model, ChatChunkState state) {
+        if (state.usage == null) {
+            return;
+        }
+        logUsageFromJson(runtimeContext, model, state.usage, true);
+    }
+
+    private void logUsageFromJson(GatewayRuntimeContext runtimeContext, String model, ObjectNode usage, boolean stream) {
+        if (usage == null || runtimeContext == null) {
+            return;
+        }
+        int inputTokens = usage.path("prompt_tokens").asInt(0);
+        int outputTokens = usage.path("completion_tokens").asInt(0);
+        int cachedTokens = usage.path("prompt_tokens_details").path("cached_tokens").asInt(0);
+        try {
+            usageLoggingService.logUsage(runtimeContext, model, inputTokens, outputTokens, 0, cachedTokens, stream, null);
+        } catch (Exception ex) {
+            // usage logging should not fail the request
+            log.warn("usage logging failed for model={}: {}", model, ex.getMessage());
+        }
+    }
+
     private HttpResponse<InputStream> send(AdminAccountResponse account, HttpRequest request) {
         try {
             return buildHttpClient(account).send(request, HttpResponse.BodyHandlers.ofInputStream());
@@ -605,6 +700,18 @@ public class GatewayOpenAiChatCompletionsService {
         AdminProxyResponse proxy = account.proxy_id() == null || account.proxy_id() <= 0
                 ? null
                 : proxyRepository.getProxy(account.proxy_id()).orElse(null);
+        String cacheKey = buildHttpClientCacheKey(proxy);
+        return httpClientCache.computeIfAbsent(cacheKey, k -> createHttpClient(proxy));
+    }
+
+    private String buildHttpClientCacheKey(AdminProxyResponse proxy) {
+        if (proxy == null || proxy.host() == null || proxy.host().isBlank() || proxy.port() <= 0) {
+            return "direct";
+        }
+        return proxy.protocol() + ":" + proxy.host() + ":" + proxy.port() + ":" + (proxy.username() == null ? "" : proxy.username());
+    }
+
+    private HttpClient createHttpClient(AdminProxyResponse proxy) {
         HttpClient.Builder builder = HttpClient.newBuilder()
                 .connectTimeout(CONNECT_TIMEOUT)
                 .followRedirects(HttpClient.Redirect.NEVER);
@@ -1033,8 +1140,9 @@ public class GatewayOpenAiChatCompletionsService {
             if (pattern == null || target == null || !pattern.contains("*")) {
                 continue;
             }
-            String regex = java.util.regex.Pattern.quote(pattern).replace("\\*", ".*");
-            if (!requestedModel.matches(regex)) {
+            String regexStr = java.util.regex.Pattern.quote(pattern).replace("\\*", ".*");
+            Pattern compiledPattern = modelMappingPatternCache.computeIfAbsent(pattern, k -> Pattern.compile(regexStr));
+            if (!compiledPattern.matcher(requestedModel).matches()) {
                 continue;
             }
             int score = pattern.replace("*", "").length();
@@ -1226,7 +1334,7 @@ public class GatewayOpenAiChatCompletionsService {
         return "chatcmpl-" + HexFormat.of().formatHex(bytes);
     }
 
-    private record ChatPayload(byte[] body, boolean stream) {
+    private record ChatPayload(byte[] body, boolean stream, String clientModel) {
     }
 
     private record CompatChatPayload(byte[] responsesBody, String clientModel, boolean stream, boolean includeUsage) {

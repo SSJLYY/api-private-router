@@ -151,7 +151,7 @@ export function useRoutePrefetch(router?: Router) {
 
         if (importFns.length > 0) {
           Promise.all(importFns.map(prefetchComponent)).then(() => {
-            prefetchedRoutes.value.add(routePath)
+            prefetchedRoutes.value = new Set([...prefetchedRoutes.value, routePath])
           })
         }
       },

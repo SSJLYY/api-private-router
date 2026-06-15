@@ -48,6 +48,10 @@ public record PublicSettingsResponse(
         int channel_monitor_default_interval_seconds,
         boolean available_channels_enabled,
         boolean affiliate_enabled,
-        boolean risk_control_enabled
+        boolean risk_control_enabled,
+        boolean redpacket_enabled,
+        boolean game_hall_enabled,
+        boolean transfer_enabled,
+        boolean fund_center_enabled
 ) {
 }

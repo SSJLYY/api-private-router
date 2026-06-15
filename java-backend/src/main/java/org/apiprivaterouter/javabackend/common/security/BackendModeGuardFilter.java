@@ -124,6 +124,14 @@ public class BackendModeGuardFilter extends OncePerRequestFilter {
         return USER_SELF_SERVICE_PREFIXES.stream().anyMatch(prefix -> matchesPathPrefix(path, prefix));
     }
 
+    /**
+     * Check if current user is admin.
+     * Note: This filter runs before RequestAuthInterceptor, so currentUser attribute
+     * may not be set yet. Falls back to database query if needed.
+     * TODO: Add Redis cache for admin role lookups to avoid repeated DB queries in high-traffic scenarios.
+     *       Consider using a TTL-based cache (e.g., 5 min) keyed by userId to reduce database load.
+     *       Monitor cache hit rate to tune TTL appropriately.
+     */
     private boolean isCurrentAdmin(HttpServletRequest request) {
         Object currentUser = request.getAttribute("api-private-router.currentUser");
         if (currentUser instanceof CurrentUser user) {

@@ -114,6 +114,7 @@ export const useSubscriptionStore = defineStore('subscriptions', () => {
     activeSubscriptions.value = []
     loaded.value = false
     lastFetchedAt.value = null
+    loading.value = false
     stopPolling()
   }
 

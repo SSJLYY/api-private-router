@@ -753,6 +753,7 @@ async function handleSubmitTotpChallenge() {
       temp_token: totpTempToken.value,
       totp_code: code
     })
+    persistOAuthTokenContext(completion)
     await authStore.setToken(completion.access_token)
     clearAllAffiliateReferralCodes()
     appStore.showSuccess(t('auth.loginSuccess'))

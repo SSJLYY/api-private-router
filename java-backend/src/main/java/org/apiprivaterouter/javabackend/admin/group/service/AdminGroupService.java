@@ -406,7 +406,7 @@ public class AdminGroupService {
         LinkedHashSet<Long> visited = new LinkedHashSet<>();
         Long nextId = fallbackGroupId;
         while (nextId != null) {
-            if (!visited.add(nextId) || (currentGroupId > 0 && nextId == currentGroupId)) {
+            if (!visited.add(nextId) || (currentGroupId > 0 && nextId.equals(currentGroupId))) {
                 throw new IllegalArgumentException("fallback group cycle detected");
             }
             AdminGroupRepository.GroupSnapshot fallback = repository.findFallbackGroup(nextId)

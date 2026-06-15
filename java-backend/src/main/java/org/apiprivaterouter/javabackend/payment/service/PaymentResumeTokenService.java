@@ -114,9 +114,13 @@ public class PaymentResumeTokenService {
         addIfPresent(rawKeys, environment.getProperty("PAYMENT_RESUME_SIGNING_KEY"));
         addIfPresent(rawKeys, environment.getProperty("payment.resume.signing-key"));
         addIfPresent(rawKeys, environment.getProperty("payment_resume_signing_key"));
-        addIfPresent(rawKeys, environment.getProperty("TOTP_ENCRYPTION_KEY"));
-        addIfPresent(rawKeys, environment.getProperty("totp.encryption-key"));
-        addIfPresent(rawKeys, environment.getProperty("totp_encryption_key"));
+        // Do NOT reuse TOTP_ENCRYPTION_KEY directly — derive a separate domain-specific key
+        String totpKey = environment.getProperty("TOTP_ENCRYPTION_KEY");
+        if (totpKey == null) totpKey = environment.getProperty("totp.encryption-key");
+        if (totpKey == null) totpKey = environment.getProperty("totp_encryption_key");
+        if (totpKey != null && !totpKey.trim().isEmpty()) {
+            rawKeys.add(totpKey.trim() + ":payment-resume-token-hmac");
+        }
 
         List<byte[]> keys = new ArrayList<>();
         for (String rawKey : rawKeys) {

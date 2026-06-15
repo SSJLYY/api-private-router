@@ -92,7 +92,7 @@ class BackendModeGuardFilterTest {
                 "api-private-router", "", "", "", "", "", "", false, false, "", 20, java.util.List.of(10, 20, 50),
                 java.util.List.of(), java.util.List.of(), false, false, false, false, false, false,
                 "OIDC", false, false, false, backendModeEnabled, false, "", false, false,
-                0, "", true, 60, false, false, false
+                0, "", true, 60, false, false, false, false, false, false, false
         );
     }
 }

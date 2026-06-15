@@ -63,6 +63,10 @@ deploy/data/
 deploy/postgres_data/
 deploy/redis_data/
 
+# Dockerfiles (not needed in build context)
+Dockerfile.release
+deploy/Dockerfile
+
 # GitHub
 .github/
 

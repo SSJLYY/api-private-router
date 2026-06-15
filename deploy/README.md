@@ -6,12 +6,18 @@ This directory contains the deployment assets for the Java runtime used by api-p
 
 - `docker-compose.local.yml`: Docker Compose with local directories for state
 - `docker-compose.yml`: Docker Compose with named Docker volumes
+- `docker-compose.dev.yml`: Docker Compose for development (local build)
+- `docker-compose.standalone.yml`: Docker Compose for standalone mode (external DB/Redis)
+- `Dockerfile`: Container build definition
 - `.env.example`: environment template
 - `config.example.yaml`: application config template
 - `install.sh`: Java service installation helper
 - `api-private-router.service`: systemd unit file
 - `docker-entrypoint.sh`: container bootstrap logic
 - `docker-deploy.sh`: local deployment helper script
+- `build_image.sh`: Docker image build script
+- `Makefile`: Deploy-specific make targets
+- `DOCKER.md`: Docker deployment documentation
 
 ## Deployment Paths
 

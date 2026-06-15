@@ -20,6 +20,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
@@ -103,7 +104,9 @@ public class EmailOAuthService {
         }
 
         String expectedState = decodeCookieValue(readCookie(request, COOKIE_STATE));
-        if (expectedState.isBlank() || !expectedState.equals(trimToEmpty(state))) {
+        if (expectedState.isBlank() || !MessageDigest.isEqual(
+                expectedState.getBytes(StandardCharsets.UTF_8),
+                trimToEmpty(state).getBytes(StandardCharsets.UTF_8))) {
             return errorRedirect(frontendCallback, "invalid_state", "invalid oauth state", secure);
         }
         String expectedProvider = decodeCookieValue(readCookie(request, COOKIE_PROVIDER));

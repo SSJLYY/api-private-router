@@ -36,17 +36,20 @@ public class GatewayAnthropicResponsesService {
     private final AdminAccountRepository accountRepository;
     private final GatewayAnthropicMessagesService anthropicMessagesService;
     private final GatewayAnthropicBedrockService bedrockService;
+    private final GatewayUsageLoggingService usageLoggingService;
     private final ObjectMapper objectMapper;
 
     public GatewayAnthropicResponsesService(
             AdminAccountRepository accountRepository,
             GatewayAnthropicMessagesService anthropicMessagesService,
             GatewayAnthropicBedrockService bedrockService,
+            GatewayUsageLoggingService usageLoggingService,
             ObjectMapper objectMapper
     ) {
         this.accountRepository = accountRepository;
         this.anthropicMessagesService = anthropicMessagesService;
         this.bedrockService = bedrockService;
+        this.usageLoggingService = usageLoggingService;
         this.objectMapper = objectMapper;
     }
 
@@ -66,7 +69,7 @@ public class GatewayAnthropicResponsesService {
         String accountType = normalize(account.type());
         PreparedRequest prepared = prepareRequest(body, account);
         if (bedrockService.canHandle(account)) {
-            forwardBedrock(account, request, response, prepared);
+            forwardBedrock(runtimeContext, account, request, response, prepared);
             return;
         }
         if (!"apikey".equals(accountType)
@@ -88,13 +91,14 @@ public class GatewayAnthropicResponsesService {
             throw translateUpstreamError(readBufferedUpstreamError(upstream));
         }
         if (prepared.clientStream()) {
-            streamResponse(response, upstream, prepared.originalModel());
+            streamResponse(runtimeContext, response, upstream, prepared.originalModel());
             return;
         }
-        writeBufferedResponse(response, upstream, prepared.originalModel());
+        writeBufferedResponse(runtimeContext, response, upstream, prepared.originalModel());
     }
 
     private void forwardBedrock(
+            GatewayRuntimeContext runtimeContext,
             AdminAccountResponse account,
             HttpServletRequest request,
             HttpServletResponse response,
@@ -112,6 +116,11 @@ public class GatewayAnthropicResponsesService {
             return;
         }
         ObjectNode payload = bedrockService.readResponsesPayload(upstream);
+        JsonNode usage = payload == null ? null : payload.get("usage");
+        int inputTokens = usage == null ? 0 : usage.path("input_tokens").asInt(0);
+        int outputTokens = usage == null ? 0 : usage.path("output_tokens").asInt(0);
+        int cacheReadTokens = usage == null ? 0 : usage.path("cache_read_input_tokens").asInt(0);
+        logUsageFromState(runtimeContext, prepared.originalModel(), inputTokens, outputTokens, 0, cacheReadTokens, false);
         response.setStatus(200);
         response.setContentType("application/json");
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
@@ -654,10 +663,11 @@ public class GatewayAnthropicResponsesService {
         return new OpenAiApiErrorException(upstreamError.statusCode() <= 0 ? 502 : upstreamError.statusCode(), "invalid_request_error", upstreamError.message());
     }
 
-    private void writeBufferedResponse(HttpServletResponse response, HttpResponse<InputStream> upstream, String originalModel) {
+    private void writeBufferedResponse(GatewayRuntimeContext runtimeContext, HttpServletResponse response, HttpResponse<InputStream> upstream, String originalModel) {
         copyResponseHeaders(response, upstream);
         BufferedAnthropicResponse buffered = readBufferedAnthropicResponse(upstream);
         ObjectNode payload = toResponsesJson(buffered, originalModel);
+        logUsageFromState(runtimeContext, originalModel, buffered.inputTokens, buffered.outputTokens, 0, buffered.cacheReadInputTokens, false);
         response.setStatus(200);
         response.setContentType("application/json");
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
@@ -902,7 +912,7 @@ public class GatewayAnthropicResponsesService {
         return toResponsesJson(buffered, originalModel);
     }
 
-    private void streamResponse(HttpServletResponse response, HttpResponse<InputStream> upstream, String originalModel) {
+    private void streamResponse(GatewayRuntimeContext runtimeContext, HttpServletResponse response, HttpResponse<InputStream> upstream, String originalModel) {
         copyResponseHeaders(response, upstream);
         response.setStatus(200);
         response.setContentType("text/event-stream");
@@ -928,8 +938,9 @@ public class GatewayAnthropicResponsesService {
                     continue;
                 }
                 processStreamEvent(output, state, event);
+                logCompletedStreamUsage(runtimeContext, originalModel, state);
             }
-            finalizeStream(output, state);
+            finalizeStream(runtimeContext, originalModel, output, state);
             response.flushBuffer();
         } catch (IOException ex) {
             throw new OpenAiApiErrorException(502, "server_error", "Failed to stream responses payload");
@@ -1110,13 +1121,14 @@ public class GatewayAnthropicResponsesService {
         state.completedSent = true;
     }
 
-    private void finalizeStream(ServletOutputStream output, StreamingState state) throws IOException {
+    private void finalizeStream(GatewayRuntimeContext runtimeContext, String originalModel, ServletOutputStream output, StreamingState state) throws IOException {
         if (!state.createdSent || state.completedSent) {
             return;
         }
         closeCurrentItem(output, state);
         writeCompletedEvent(output, state);
         state.completedSent = true;
+        logCompletedStreamUsage(runtimeContext, originalModel, state);
     }
 
     private void writeCompletedEvent(ServletOutputStream output, StreamingState state) throws IOException {
@@ -1265,6 +1277,25 @@ public class GatewayAnthropicResponsesService {
         private final Map<Integer, StringBuilder> inputJson = new LinkedHashMap<>();
     }
 
+    private void logCompletedStreamUsage(GatewayRuntimeContext ctx, String model, StreamingState state) {
+        if (state.usageLogged) {
+            return;
+        }
+        logUsageFromState(ctx, model, state.inputTokens, state.outputTokens, 0, state.cacheReadInputTokens, true);
+        state.usageLogged = true;
+    }
+
+    private void logUsageFromState(GatewayRuntimeContext ctx, String model, int inputTokens, int outputTokens, int cacheCreationTokens, int cacheReadTokens, boolean stream) {
+        if (ctx == null) {
+            return;
+        }
+        try {
+            usageLoggingService.logUsage(ctx, model, inputTokens, outputTokens, cacheCreationTokens, cacheReadTokens, stream, null);
+        } catch (Exception ex) {
+            // usage logging should not break the response flow
+        }
+    }
+
     private static final class StreamingState {
         private final String originalModel;
         private String responseId = "";
@@ -1272,6 +1303,7 @@ public class GatewayAnthropicResponsesService {
         private int sequence;
         private boolean createdSent;
         private boolean completedSent;
+        private boolean usageLogged;
         private int outputIndex;
         private String currentItemId = "";
         private String currentItemType = "";

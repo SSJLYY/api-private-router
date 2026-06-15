@@ -11,4 +11,8 @@ public class PasswordHasher {
     public String hash(String rawPassword) {
         return encoder.encode(rawPassword);
     }
+
+    public boolean verify(String rawPassword, String hashedPassword) {
+        return encoder.matches(rawPassword, hashedPassword);
+    }
 }

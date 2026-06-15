@@ -37,6 +37,8 @@ make test
 make build
 ```
 
+> **Windows Note**: `make` is not available on Windows. See `DEV_GUIDE.md` for alternative commands.
+
 ## Runtime Notes
 
 - PostgreSQL is the supported database.

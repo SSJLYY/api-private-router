@@ -1,13 +1,16 @@
 package org.apiprivaterouter.javabackend.usertotp.service;
 
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
+// TODO: ConcurrentHashMap不支持集群部署，生产环境应迁移到Redis存储
 public class UserTotpSessionStore {
 
     private final Map<Long, SetupSession> setupSessions = new ConcurrentHashMap<>();
@@ -89,6 +92,22 @@ public class UserTotpSessionStore {
 
     public void deleteEmailCode(String email) {
         emailCodes.remove(normalizeEmail(email));
+    }
+
+    @Scheduled(fixedDelay = 300_000) // every 5 minutes
+    public void evictExpired() {
+        Instant now = Instant.now();
+        setupSessions.entrySet().removeIf(e -> e.getValue().expiresAt().isBefore(now));
+        loginSessions.entrySet().removeIf(e -> e.getValue().tokenExpiry().isBefore(now));
+        verifyAttemptExpiries.entrySet().removeIf(e -> e.getValue().isBefore(now));
+        // Remove verify attempts for users whose expiry was removed
+        Iterator<Long> it = verifyAttempts.keySet().iterator();
+        while (it.hasNext()) {
+            if (!verifyAttemptExpiries.containsKey(it.next())) {
+                it.remove();
+            }
+        }
+        emailCodes.entrySet().removeIf(e -> e.getValue().expiresAt().isBefore(now));
     }
 
     private String normalizeEmail(String email) {

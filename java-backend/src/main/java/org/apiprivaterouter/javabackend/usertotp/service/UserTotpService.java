@@ -35,6 +35,7 @@ public class UserTotpService {
     private static final int MAX_VERIFY_ATTEMPTS = 5;
     private static final int MAX_EMAIL_CODE_ATTEMPTS = 5;
     private static final String ISSUER = "api-private-router";
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final UserTotpRepository repository;
     private final UserTotpCrypto crypto;
@@ -149,12 +150,18 @@ public class UserTotpService {
         sessionStore.clearVerifyAttempts(user.id());
     }
 
-    public void disable(CurrentUser currentUser, String emailCode, String password) {
+    public void disable(CurrentUser currentUser, String emailCode, String password, String totpCode) {
         UserTotpRepository.TotpUserRow user = requireUser(currentUser.userId());
         if (!user.totp_enabled()) {
             throw new HttpStatusException(400, "totp is not set up for this account");
         }
         verifyIdentity(user, trimToNull(emailCode), trimToNull(password));
+        if (trimToNull(totpCode) == null) {
+            throw new HttpStatusException(400, "totp_code is required to disable TOTP");
+        }
+        if (!verifyLoginCode(user.id(), totpCode)) {
+            throw new HttpStatusException(400, "invalid totp code");
+        }
         repository.disableTotp(user.id());
         sessionStore.clearVerifyAttempts(user.id());
     }
@@ -354,7 +361,7 @@ public class UserTotpService {
 
     private String randomHex(int bytes) {
         byte[] raw = new byte[bytes];
-        new SecureRandom().nextBytes(raw);
+        SECURE_RANDOM.nextBytes(raw);
         StringBuilder builder = new StringBuilder(raw.length * 2);
         for (byte b : raw) {
             builder.append(String.format(Locale.ROOT, "%02x", b));

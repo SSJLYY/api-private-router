@@ -30,7 +30,7 @@ export const usePaymentStore = defineStore('payment', () => {
     if (configPromise && !force) return configPromise
 
     configLoading.value = true
-    configPromise = (async () => {
+    const requestPromise = (async () => {
       try {
         const response = await paymentAPI.getConfig()
         config.value = response.data
@@ -41,9 +41,12 @@ export const usePaymentStore = defineStore('payment', () => {
         return null
       } finally {
         configLoading.value = false
-        configPromise = null
+        if (configPromise === requestPromise) {
+          configPromise = null
+        }
       }
     })()
+    configPromise = requestPromise
     return configPromise
   }
 
@@ -91,6 +94,15 @@ export const usePaymentStore = defineStore('payment', () => {
     currentOrder.value = null
   }
 
+  function reset() {
+    config.value = null
+    currentOrder.value = null
+    plans.value = []
+    configLoading.value = false
+    configLoaded.value = false
+    configPromise = null
+  }
+
   return {
     config,
     currentOrder,
@@ -103,14 +115,5 @@ export const usePaymentStore = defineStore('payment', () => {
     pollOrderStatus,
     clearCurrentOrder,
     reset
-  }
-
-  function reset() {
-    config.value = null
-    currentOrder.value = null
-    plans.value = []
-    configLoading.value = false
-    configLoaded.value = false
-    configPromise = null
   }
 })

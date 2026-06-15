@@ -11,8 +11,12 @@ import org.apiprivaterouter.javabackend.admin.backups.repository.AdminBackupsRep
 import org.apiprivaterouter.javabackend.common.api.StructuredApiErrorException;
 import org.apiprivaterouter.javabackend.common.db.JsonHelper;
 import org.apiprivaterouter.javabackend.common.security.CurrentUser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+
+import jakarta.annotation.PreDestroy;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,12 +35,16 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.GZIPOutputStream;
 
 @Service
 public class AdminBackupsService {
 
+    private static final Logger log = LoggerFactory.getLogger(AdminBackupsService.class);
     private static final String KEY_S3_CONFIG = "backup_s3_config";
     private static final String KEY_SCHEDULE = "backup_schedule";
     private static final String KEY_RECORDS = "backup_records";
@@ -54,6 +62,16 @@ public class AdminBackupsService {
     private final Object recordsLock = new Object();
     private final AtomicBoolean backingUp = new AtomicBoolean(false);
     private final AtomicBoolean restoring = new AtomicBoolean(false);
+    private final ExecutorService backupExecutor = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "admin-backup-worker");
+        t.setDaemon(true);
+        return t;
+    });
+    private final ExecutorService restoreExecutor = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "admin-backup-restore");
+        t.setDaemon(true);
+        return t;
+    });
 
     public AdminBackupsService(
             AdminBackupsRepository repository,
@@ -69,6 +87,12 @@ public class AdminBackupsService {
         this.cronSupport = cronSupport;
         this.storeFactory = storeFactory;
         this.postgresCommandSupport = postgresCommandSupport;
+    }
+
+    @PreDestroy
+    public void destroy() {
+        backupExecutor.shutdownNow();
+        restoreExecutor.shutdownNow();
     }
 
     public BackupS3Config getS3Config() {
@@ -139,34 +163,39 @@ public class AdminBackupsService {
             }
             backingUp.set(true);
         }
-        BackupS3Config config = requireS3Configured();
-        String fileName = buildFileName(postgresCommandSupport.connectionInfo().database());
-        BackupRecord initial = new BackupRecord(
-                shortId(),
-                "running",
-                "postgres",
-                fileName,
-                buildS3Key(config, fileName),
-                0L,
-                "manual",
-                null,
-                now(),
-                null,
-                expireDays > 0 ? OffsetDateTime.now(ZoneOffset.UTC).plusDays(expireDays).format(RFC3339) : null,
-                "pending",
-                null,
-                null,
-                null
-        );
-        saveRecord(initial);
-        new Thread(() -> {
-            try {
-                runBackup(initial, config);
-            } finally {
-                backingUp.set(false);
-            }
-        }, "admin-backup-create").start();
-        return initial;
+        try {
+            BackupS3Config config = requireS3Configured();
+            String fileName = buildFileName(postgresCommandSupport.connectionInfo().database());
+            BackupRecord initial = new BackupRecord(
+                    shortId(),
+                    "running",
+                    "postgres",
+                    fileName,
+                    buildS3Key(config, fileName),
+                    0L,
+                    "manual",
+                    null,
+                    now(),
+                    null,
+                    expireDays > 0 ? OffsetDateTime.now(ZoneOffset.UTC).plusDays(expireDays).format(RFC3339) : null,
+                    "pending",
+                    null,
+                    null,
+                    null
+            );
+            saveRecord(initial);
+            backupExecutor.execute(() -> {
+                try {
+                    runBackup(initial, config);
+                } finally {
+                    backingUp.set(false);
+                }
+            });
+            return initial;
+        } catch (Exception ex) {
+            backingUp.set(false);
+            throw ex;
+        }
     }
 
     public BackupListResponse listBackups() {
@@ -200,7 +229,8 @@ public class AdminBackupsService {
             if ("completed".equals(found.status()) && trimToNull(found.s3_key()) != null) {
                 try {
                     storeFactory.create(requireS3Configured()).delete(found.s3_key());
-                } catch (Exception ignored) {
+                } catch (Exception ex) {
+                    log.warn("Failed to delete S3 backup object for record {}: {}", found.id(), ex.getMessage());
                 }
             }
             saveRecordsLocked(remaining);
@@ -224,26 +254,30 @@ public class AdminBackupsService {
             }
             restoring.set(true);
         }
-        BackupRecord record = getBackup(id);
-        if (!"completed".equals(record.status())) {
-            restoring.set(false);
-            throw new StructuredApiErrorException(400, "BACKUP_NOT_COMPLETED", "can only restore from a completed backup");
-        }
-        BackupRecord restoringRecord = copy(record, overrides(
-                "restore_status", "running",
-                "restore_error", null,
-                "restored_at", null
-        ));
-        saveRecord(restoringRecord);
-        BackupS3Config config = requireS3Configured();
-        new Thread(() -> {
-            try {
-                runRestore(restoringRecord, config);
-            } finally {
-                restoring.set(false);
+        try {
+            BackupRecord record = getBackup(id);
+            if (!"completed".equals(record.status())) {
+                throw new StructuredApiErrorException(400, "BACKUP_NOT_COMPLETED", "can only restore from a completed backup");
             }
-        }, "admin-backup-restore").start();
-        return restoringRecord;
+            BackupRecord restoringRecord = copy(record, overrides(
+                    "restore_status", "running",
+                    "restore_error", null,
+                    "restored_at", null
+            ));
+            saveRecord(restoringRecord);
+            BackupS3Config config = requireS3Configured();
+            restoreExecutor.execute(() -> {
+                try {
+                    runRestore(restoringRecord, config);
+                } finally {
+                    restoring.set(false);
+                }
+            });
+            return restoringRecord;
+        } catch (Exception ex) {
+            restoring.set(false);
+            throw ex;
+        }
     }
 
     @Scheduled(cron = "0 * * * * *")
@@ -283,14 +317,14 @@ public class AdminBackupsService {
                         null
                 );
                 saveRecord(initial);
-                new Thread(() -> {
+                backupExecutor.execute(() -> {
                     try {
                         runBackup(initial, config);
                         cleanupExpiredBackups(schedule);
                     } finally {
                         backingUp.set(false);
                     }
-                }, "admin-backup-scheduled").start();
+                });
             } catch (Exception ex) {
                 backingUp.set(false);
             }
@@ -327,7 +361,8 @@ public class AdminBackupsService {
                 for (BackupRecord record : delete) {
                     try {
                         store.delete(record.s3_key());
-                    } catch (Exception ignored) {
+                    } catch (Exception ex) {
+                        log.warn("Failed to delete expired S3 backup object {}: {}", record.s3_key(), ex.getMessage());
                     }
                 }
             }
@@ -348,16 +383,31 @@ public class AdminBackupsService {
                 "--no-privileges"
         );
         pb.environment().put("PGPASSWORD", defaultString(db.password()));
+        Process process = null;
         try {
-            Process process = pb.start();
+            process = pb.start();
+            Process startedProcess = process;
             saveRecord(copy(record, overrides("progress", "uploading")));
             Path tempFile = Files.createTempFile("api-private-router-backup-", ".sql.gz");
             try (InputStream dump = process.getInputStream();
                  GZIPOutputStream gzip = new GZIPOutputStream(Files.newOutputStream(tempFile))) {
                 dump.transferTo(gzip);
             }
-            int exit = process.waitFor();
-            String error = new String(process.getErrorStream().readAllBytes(), StandardCharsets.UTF_8);
+            java.util.concurrent.CompletableFuture<String> stderrFuture = java.util.concurrent.CompletableFuture.supplyAsync(() -> {
+                try {
+                    return new String(startedProcess.getErrorStream().readAllBytes(), StandardCharsets.UTF_8);
+                } catch (IOException e) {
+                    return e.getMessage();
+                }
+            });
+            boolean finished = process.waitFor(30, TimeUnit.MINUTES);
+            String error = stderrFuture.get(5, TimeUnit.MINUTES);
+            if (!finished) {
+                process.destroyForcibly();
+                Files.deleteIfExists(tempFile);
+                throw new IOException("pg_dump timed out after 30 minutes");
+            }
+            int exit = process.exitValue();
             if (exit != 0) {
                 Files.deleteIfExists(tempFile);
                 throw new IOException("pg_dump failed: " + error);
@@ -382,6 +432,10 @@ public class AdminBackupsService {
                     "finished_at", now(),
                     "error_message", ex.getMessage()
             )));
+        } finally {
+            if (process != null) {
+                process.destroyForcibly();
+            }
         }
     }
 
@@ -395,14 +449,28 @@ public class AdminBackupsService {
                 "-d", db.database()
         );
         pb.environment().put("PGPASSWORD", defaultString(db.password()));
+        Process process = null;
         try (InputStream remote = storeFactory.create(config).download(record.s3_key());
              InputStream gzip = new java.util.zip.GZIPInputStream(remote)) {
-            Process process = pb.start();
+            process = pb.start();
+            Process startedProcess = process;
+            java.util.concurrent.CompletableFuture<String> stderrFuture = java.util.concurrent.CompletableFuture.supplyAsync(() -> {
+                try {
+                    return new String(startedProcess.getErrorStream().readAllBytes(), StandardCharsets.UTF_8);
+                } catch (IOException e) {
+                    return e.getMessage();
+                }
+            });
             try (OutputStream stdin = process.getOutputStream()) {
                 gzip.transferTo(stdin);
             }
-            int exit = process.waitFor();
-            String error = new String(process.getErrorStream().readAllBytes(), StandardCharsets.UTF_8);
+            boolean finished = process.waitFor(30, TimeUnit.MINUTES);
+            String error = stderrFuture.get(5, TimeUnit.MINUTES);
+            if (!finished) {
+                process.destroyForcibly();
+                throw new IOException("psql restore timed out after 30 minutes");
+            }
+            int exit = process.exitValue();
             if (exit != 0) {
                 throw new IOException("psql restore failed: " + error);
             }
@@ -416,6 +484,10 @@ public class AdminBackupsService {
                     "restore_status", "failed",
                     "restore_error", ex.getMessage()
             )));
+        } finally {
+            if (process != null) {
+                process.destroyForcibly();
+            }
         }
     }
 

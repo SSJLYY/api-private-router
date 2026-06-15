@@ -64,7 +64,7 @@ public class UserTotpController {
     @PostMapping("/disable")
     public ApiResponse<TotpSuccessResponse> disable(@RequestBody TotpDisableRequest request) {
         CurrentUser user = currentUserContext.requireUser();
-        userTotpService.disable(user, request == null ? null : request.email_code(), request == null ? null : request.password());
+        userTotpService.disable(user, request == null ? null : request.email_code(), request == null ? null : request.password(), request == null ? null : request.totp_code());
         return ApiResponse.success(new TotpSuccessResponse(true));
     }
 }

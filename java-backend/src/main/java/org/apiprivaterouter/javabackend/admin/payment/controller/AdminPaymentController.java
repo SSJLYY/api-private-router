@@ -1,5 +1,7 @@
 package org.apiprivaterouter.javabackend.admin.payment.controller;
 
+import jakarta.validation.Valid;
+
 import org.apiprivaterouter.javabackend.admin.payment.model.AdminPaymentConfigResponse;
 import org.apiprivaterouter.javabackend.admin.payment.model.AdminPaymentDashboardResponse;
 import org.apiprivaterouter.javabackend.admin.payment.model.AdminRefundOrderRequest;
@@ -47,7 +49,7 @@ public class AdminPaymentController {
     }
 
     @PutMapping("/config")
-    public ApiResponse<Map<String, String>> updateConfig(@RequestBody UpdateAdminPaymentConfigRequest request) {
+    public ApiResponse<Map<String, String>> updateConfig(@Valid @RequestBody UpdateAdminPaymentConfigRequest request) {
         currentUserContext.requireAdmin();
         return ApiResponse.success(service.updateConfig(request));
     }
@@ -91,7 +93,7 @@ public class AdminPaymentController {
     }
 
     @PostMapping("/orders/{id}/refund")
-    public ApiResponse<AdminRefundOrderResponse> refundOrder(@PathVariable long id, @RequestBody AdminRefundOrderRequest request) {
+    public ApiResponse<AdminRefundOrderResponse> refundOrder(@PathVariable long id, @Valid @RequestBody AdminRefundOrderRequest request) {
         currentUserContext.requireAdmin();
         return ApiResponse.success(service.refundOrder(id, request));
     }
@@ -103,13 +105,13 @@ public class AdminPaymentController {
     }
 
     @PostMapping("/plans")
-    public ApiResponse<SubscriptionPlanResponse> createPlan(@RequestBody PlanUpsertRequest request) {
+    public ApiResponse<SubscriptionPlanResponse> createPlan(@Valid @RequestBody PlanUpsertRequest request) {
         currentUserContext.requireAdmin();
         return ApiResponse.success(service.createPlan(request));
     }
 
     @PutMapping("/plans/{id}")
-    public ApiResponse<SubscriptionPlanResponse> updatePlan(@PathVariable long id, @RequestBody PlanUpsertRequest request) {
+    public ApiResponse<SubscriptionPlanResponse> updatePlan(@PathVariable long id, @Valid @RequestBody PlanUpsertRequest request) {
         currentUserContext.requireAdmin();
         return ApiResponse.success(service.updatePlan(id, request));
     }
@@ -127,13 +129,13 @@ public class AdminPaymentController {
     }
 
     @PostMapping("/providers")
-    public ApiResponse<ProviderInstanceResponse> createProvider(@RequestBody ProviderUpsertRequest request) {
+    public ApiResponse<ProviderInstanceResponse> createProvider(@Valid @RequestBody ProviderUpsertRequest request) {
         currentUserContext.requireAdmin();
         return ApiResponse.success(service.createProvider(request));
     }
 
     @PutMapping("/providers/{id}")
-    public ApiResponse<ProviderInstanceResponse> updateProvider(@PathVariable long id, @RequestBody ProviderUpsertRequest request) {
+    public ApiResponse<ProviderInstanceResponse> updateProvider(@PathVariable long id, @Valid @RequestBody ProviderUpsertRequest request) {
         currentUserContext.requireAdmin();
         return ApiResponse.success(service.updateProvider(id, request));
     }
@@ -151,13 +153,13 @@ public class AdminPaymentController {
     }
 
     @PostMapping("/channels")
-    public ApiResponse<PaymentChannelResponse> createChannel(@RequestBody ProviderUpsertRequest request) {
+    public ApiResponse<PaymentChannelResponse> createChannel(@Valid @RequestBody ProviderUpsertRequest request) {
         currentUserContext.requireAdmin();
         return ApiResponse.success(service.createChannel(request));
     }
 
     @PutMapping("/channels/{id}")
-    public ApiResponse<PaymentChannelResponse> updateChannel(@PathVariable long id, @RequestBody ProviderUpsertRequest request) {
+    public ApiResponse<PaymentChannelResponse> updateChannel(@PathVariable long id, @Valid @RequestBody ProviderUpsertRequest request) {
         currentUserContext.requireAdmin();
         return ApiResponse.success(service.updateChannel(id, request));
     }

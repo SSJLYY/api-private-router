@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Admin Settings API endpoints
  * Handles system settings management for administrators
  */
@@ -514,6 +514,10 @@ export interface SystemSettings {
 
   // Affiliate (邀请返利) feature switch
   affiliate_enabled: boolean;
+  redpacket_enabled: boolean;
+  game_hall_enabled: boolean;
+  transfer_enabled: boolean;
+  fund_center_enabled: boolean;
 
   // OpenAI fast/flex policy
   openai_fast_policy_settings?: OpenAIFastPolicySettings;
@@ -703,6 +707,10 @@ export interface UpdateSettingsRequest {
 
   // Affiliate (邀请返利) feature switch
   affiliate_enabled?: boolean;
+  redpacket_enabled?: boolean;
+  game_hall_enabled?: boolean;
+  transfer_enabled?: boolean;
+  fund_center_enabled?: boolean;
 
   // OpenAI fast/flex policy
   openai_fast_policy_settings?: OpenAIFastPolicySettings;

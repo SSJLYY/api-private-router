@@ -184,7 +184,7 @@ public class UserNotifyEmailService {
 
     private void incrementRateLimit(long userId, Instant now) {
         NotifyEmailRateLimitSession existing = repository.findRateLimitSession(userId);
-        if (existing == null) {
+        if (existing == null || existing.expiresAt().isBefore(now)) {
             repository.saveRateLimitSession(userId, new NotifyEmailRateLimitSession(
                     1,
                     now.plus(NOTIFY_CODE_USER_RATE_WINDOW)

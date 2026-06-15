@@ -1,5 +1,7 @@
 package org.apiprivaterouter.javabackend.auth.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -41,6 +43,8 @@ import java.util.Locale;
 
 @Service
 public class AuthLifecycleService {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthLifecycleService.class);
 
     private static final String REFRESH_TOKEN_PREFIX = "rt_";
     private static final String TOKEN_TYPE = "Bearer";
@@ -380,17 +384,13 @@ public class AuthLifecycleService {
             return forgotPasswordSuccess();
         }
 
-        AuthPublicEmailRepository.PasswordResetTokenSession existingToken =
-                authPublicEmailRepository.findPasswordResetTokenSession(normalizedEmail);
-        String token = existingToken == null ? randomHex(32) : existingToken.token();
         Instant now = Instant.now();
-        if (existingToken == null) {
-            authPublicEmailRepository.savePasswordResetTokenSession(normalizedEmail, new AuthPublicEmailRepository.PasswordResetTokenSession(
-                    token,
-                    now,
-                    now.plus(PASSWORD_RESET_TOKEN_TTL)
-            ));
-        }
+        String token = randomHex(32);
+        authPublicEmailRepository.savePasswordResetTokenSession(normalizedEmail, new AuthPublicEmailRepository.PasswordResetTokenSession(
+                token,
+                now,
+                now.plus(PASSWORD_RESET_TOKEN_TTL)
+        ));
 
         String resetUrl = frontendUrl.endsWith("/") ? frontendUrl.substring(0, frontendUrl.length() - 1) : frontendUrl;
         resetUrl = resetUrl + "/reset-password?email=" + urlEncode(normalizedEmail) + "&token=" + urlEncode(token);
@@ -401,7 +401,7 @@ public class AuthLifecycleService {
                     now.plus(PASSWORD_RESET_EMAIL_COOLDOWN)
             ));
         } catch (RuntimeException ignored) {
-            // Silent success prevents email enumeration while keeping the public contract stable.
+            log.warn("Password reset email failed to send for user_id={}: {}", user.id(), ignored.getMessage());
         }
         return forgotPasswordSuccess();
     }
@@ -581,7 +581,7 @@ public class AuthLifecycleService {
 
         String normalizedEmail = normalizeEmail(email);
         if (!isReservedEmail(normalizedEmail)) {
-            throw new ApiErrorException(400, "EMAIL_RESERVED", "email is reserved");
+            throw new ApiErrorException(400, "EMAIL_NOT_RESERVED", "Email must be a reserved synthetic email for OAuth registration");
         }
 
         AuthPublicEmailRepository.RedeemCodeRow invitation = null;
@@ -634,6 +634,7 @@ public class AuthLifecycleService {
         return issueAuthTokenResponse(user, null);
     }
 
+    @Transactional
     public void applyProviderDefaultSettingsOnFirstBind(long userId, String providerType) {
         if (userId <= 0) {
             return;
@@ -743,7 +744,7 @@ public class AuthLifecycleService {
             }
             authPublicEmailRepository.applyPromoCode(promo.id(), userId, promo.bonusAmount());
         } catch (RuntimeException ignored) {
-            // Promo apply failures must not block registration.
+            log.warn("Promo code apply failed for user_id={}, code={}: {}", userId, promoCode, ignored.getMessage());
         }
     }
 
@@ -770,7 +771,7 @@ public class AuthLifecycleService {
             authPublicEmailRepository.ensureUserAffiliate(inviterId);
             authPublicEmailRepository.bindAffiliateInviter(userId, inviterId);
         } catch (RuntimeException ignored) {
-            // Keep registration successful when optional affiliate binding fails.
+            log.warn("Affiliate inviter binding failed for user_id={}, code={}: {}", userId, code, ignored.getMessage());
         }
     }
 

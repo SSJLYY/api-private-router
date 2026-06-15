@@ -151,7 +151,7 @@ public class LinuxDoOAuthService {
         }
 
         String expectedState = decodeCookieValue(readCookie(request, COOKIE_STATE));
-        if (expectedState.isBlank() || !expectedState.equals(trimToEmpty(state))) {
+        if (expectedState.isBlank() || !MessageDigest.isEqual(expectedState.getBytes(), trimToEmpty(state).getBytes())) {
             return errorRedirect(frontendCallback, "invalid_state", "invalid oauth state", secure);
         }
         String browserSessionKey = pendingOAuthCookieService.readPendingBrowserSessionKey(request);

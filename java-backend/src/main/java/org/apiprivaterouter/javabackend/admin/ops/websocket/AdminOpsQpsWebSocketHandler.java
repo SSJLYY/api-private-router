@@ -7,6 +7,9 @@ import org.apiprivaterouter.javabackend.common.security.AuthUserRepository;
 import org.apiprivaterouter.javabackend.common.security.CurrentUser;
 import org.apiprivaterouter.javabackend.common.security.JwtService;
 import org.apiprivaterouter.javabackend.common.security.JwtUserPrincipal;
+import jakarta.annotation.PreDestroy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.SubProtocolCapable;
@@ -28,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class AdminOpsQpsWebSocketHandler extends TextWebSocketHandler implements SubProtocolCapable {
 
+    private static final Logger log = LoggerFactory.getLogger(AdminOpsQpsWebSocketHandler.class);
     public static final int CLOSE_REALTIME_DISABLED = 4001;
 
     private final AdminSettingsRepository settingsRepository;
@@ -69,7 +73,8 @@ public class AdminOpsQpsWebSocketHandler extends TextWebSocketHandler implements
                 if (session.isOpen()) {
                     sendUpdate(session);
                 }
-            } catch (Exception ignored) {
+            } catch (Exception ex) {
+                log.warn("QPS WebSocket sendUpdate failed for session {}: {}", session.getId(), ex.getMessage());
             }
         }, 2, 2, TimeUnit.SECONDS);
         session.getAttributes().put("api-private-router.qpsFuture", future);
@@ -81,6 +86,11 @@ public class AdminOpsQpsWebSocketHandler extends TextWebSocketHandler implements
         if (future instanceof ScheduledFuture<?> scheduledFuture) {
             scheduledFuture.cancel(true);
         }
+    }
+
+    @PreDestroy
+    public void destroy() {
+        scheduler.shutdownNow();
     }
 
     @Override

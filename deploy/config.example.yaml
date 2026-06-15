@@ -107,10 +107,10 @@ security:
     crs_hosts: []
     # Allow localhost/private IPs for upstream/pricing/remote sync sources (use only in trusted networks)
     # 允许本地/私有 IP 地址用于上游/定价/远端同步源（仅在可信网络中使用）
-    allow_private_hosts: true
+    allow_private_hosts: false
     # Allow http:// URLs when allowlist is disabled (default: false, require https)
     # 白名单禁用时是否允许 http:// URL（默认: false，要求 https）
-    allow_insecure_http: true
+    allow_insecure_http: false
   response_headers:
     # Enable configurable response header filtering (default: true)
     # 启用可配置的响应头过滤（默认启用，过滤上游敏感响应头）
@@ -825,10 +825,10 @@ ops:
 # JWT 配置
 # =============================================================================
 jwt:
-  # IMPORTANT: Change this to a random string in production!
-  # 重要：生产环境中请更改为随机字符串！
+  # IMPORTANT: Set a random string in production! Application will fail to start without it.
+  # 重要：生产环境中请设置随机字符串！未设置时应用将无法启动。
   # Generate with / 生成命令: openssl rand -hex 32
-  secret: "change-this-to-a-secure-random-string"
+  secret: ""
   # Token expiration time in hours (max 168)
   # 令牌过期时间（小时，最大 168）
   expire_hour: 24
@@ -926,7 +926,8 @@ default:
   # Initial admin account (created on first run)
   # 初始管理员账户（首次运行时创建）
   admin_email: "admin@example.com"
-  admin_password: "admin123"
+  # SECURITY: You MUST change this password before first run!
+  admin_password: ""
 
   # Default settings for new users
   # 新用户默认设置

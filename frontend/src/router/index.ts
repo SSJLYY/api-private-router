@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Vue Router configuration for api-private-router frontend
  * Defines all application routes with lazy loading and navigation guards
  */
@@ -195,6 +195,28 @@ const routes: RouteRecordRaw[] = [
       title: 'Daily Check-In',
       titleKey: 'checkin.title',
       descriptionKey: 'checkin.heroDescription'
+    }
+  },
+  {
+    path: '/redpacket',
+    name: 'RedPacket',
+    component: () => import('@/views/user/RedPacketView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'Red Packet',
+      titleKey: 'nav.redpacket'
+    }
+  },
+  {
+    path: '/fund',
+    name: 'FundCenter',
+    component: () => import('@/views/user/FundCenterView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'Fund Center',
+      titleKey: 'nav.fund'
     }
   },
   {
@@ -665,9 +687,16 @@ const router = createRouter({
  */
 let authInitialized = false
 
-// 鍒濆鍖栧鑸姞杞界姸鎬佸拰棰勫姞杞?const navigationLoading = useNavigationLoadingState()
+// Reset on HMR for development
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    authInitialized = false
+  })
+}
+
+// Initialize navigation loading state
 const navigationLoading = useNavigationLoadingState()
-// 寤惰繜鍒濆鍖栭鍔犺浇锛屼紶鍏?router 瀹炰緥
+// Delay prefetch initialization, pass router instance
 let routePrefetch: ReturnType<typeof useRoutePrefetch> | null = null
 const BACKEND_MODE_ALLOWED_PATHS = ['/login', '/key-usage', '/setup', '/payment/result']
 const BACKEND_MODE_CALLBACK_PATHS = [
@@ -860,7 +889,7 @@ router.onError((error) => {
     const now = Date.now()
 
     // Allow reload if never attempted or more than 10 seconds ago
-    if (!lastReload || now - parseInt(lastReload) > 10000) {
+    if (!lastReload || now - (parseInt(lastReload, 10) || 0) > 10000) {
       sessionStorage.setItem(reloadKey, now.toString())
       console.warn('Chunk load error detected, reloading page to fetch latest version...')
       window.location.reload()

@@ -13,8 +13,10 @@ spring:
     name: api-private-router-java-backend
   datasource:
     url: ${API_PRIVATE_ROUTER_DB_URL:${DATABASE_URL:jdbc:postgresql://${DATABASE_HOST:${database.host:127.0.0.1}}:${DATABASE_PORT:${database.port:5432}}/${DATABASE_DBNAME:${database.dbname:api_private_router}}?sslmode=${DATABASE_SSLMODE:${database.sslmode:disable}}}}
+    # TODO: Production MUST enable SSL (sslmode=verify-full or require) — current default "disable" is insecure
     username: ${API_PRIVATE_ROUTER_DB_USERNAME:${DATABASE_USER:${database.user:api_private_router}}}
-    password: ${API_PRIVATE_ROUTER_DB_PASSWORD:${DATABASE_PASSWORD:${database.password:api_private_router}}}
+    password: ${API_PRIVATE_ROUTER_DB_PASSWORD:${DATABASE_PASSWORD:${database.password:}}}
+    # Production MUST set API_PRIVATE_ROUTER_DB_PASSWORD or DATABASE_PASSWORD env var
     driver-class-name: org.postgresql.Driver
     hikari:
       initialization-fail-timeout: -1
@@ -25,6 +27,8 @@ api-private-router:
     dir: ${API_PRIVATE_ROUTER_DATA_DIR:${DATA_DIR:./data}}
   frontend:
     dist-dir: ${API_PRIVATE_ROUTER_FRONTEND_DIST_DIR:}
+  backup:
+    encryption-key: ${API_PRIVATE_ROUTER_BACKUP_ENCRYPTION_KEY:}
   jwt:
     secret: ${API_PRIVATE_ROUTER_JWT_SECRET:${JWT_SECRET:${jwt.secret:}}}
     access-token-expire-minutes: ${API_PRIVATE_ROUTER_JWT_ACCESS_TOKEN_EXPIRE_MINUTES:0}

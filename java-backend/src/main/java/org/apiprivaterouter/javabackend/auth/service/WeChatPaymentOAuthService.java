@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
+import java.security.MessageDigest;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
@@ -98,7 +99,7 @@ public class WeChatPaymentOAuthService {
         }
 
         String expectedState = decodeCookieValue(readCookie(request, COOKIE_STATE));
-        if (expectedState.isEmpty() || !expectedState.equals(normalizedState)) {
+        if (expectedState.isEmpty() || !MessageDigest.isEqual(expectedState.getBytes(StandardCharsets.UTF_8), normalizedState.getBytes(StandardCharsets.UTF_8))) {
             throw new StructuredApiErrorException(400, "invalid_state", "invalid oauth state");
         }
 
@@ -165,7 +166,7 @@ public class WeChatPaymentOAuthService {
         if (value.isEmpty()) {
             return DEFAULT_REDIRECT;
         }
-        if (!value.startsWith("/") || value.startsWith("//") || value.contains("://")) {
+        if (!value.startsWith("/") || value.startsWith("//") || value.contains("://") || value.contains("\n") || value.contains("\r")) {
             return DEFAULT_REDIRECT;
         }
         if ("/payment".equals(value)) {

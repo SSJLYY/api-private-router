@@ -49,7 +49,11 @@ public class SetupAutoConfigurationRunner implements ApplicationRunner {
         String adminPassword = env("ADMIN_PASSWORD", null, "");
         if (adminPassword.isBlank()) {
             adminPassword = generateSecret(16);
-            log.warn("ADMIN_PASSWORD is blank, generated one-time admin password: {}", adminPassword);
+            log.warn("ADMIN_PASSWORD is blank, generated a random password. Please change it immediately after first login.");
+            System.out.println("==========================================================");
+            System.out.println("  AUTO-GENERATED ADMIN PASSWORD (change immediately):");
+            System.out.println("  " + adminPassword);
+            System.out.println("==========================================================");
         }
         return new SetupInstallRequest(
                 new SetupDatabaseRequest(

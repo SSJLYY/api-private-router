@@ -153,7 +153,7 @@ public class WeChatOAuthService {
         }
 
         String expectedState = decodeCookieValue(readCookie(request, COOKIE_STATE));
-        if (expectedState.isBlank() || !expectedState.equals(trimToEmpty(state))) {
+        if (expectedState.isBlank() || !MessageDigest.isEqual(expectedState.getBytes(), trimToEmpty(state).getBytes())) {
             return errorRedirect(frontendCallback, "invalid_state", "invalid oauth state", "", secure);
         }
 
@@ -655,6 +655,12 @@ public class WeChatOAuthService {
         };
     }
 
+    /**
+     * Resolve callback URL for OAuth.
+     * Priority: config.redirectUrl > config.apiBaseUrl > request headers
+     *
+     * SECURITY: Always configure apiBaseUrl in production to prevent X-Forwarded header spoofing.
+     */
     private String resolveCallbackUrl(WeChatConnectConfigService.WeChatConnectConfig config, HttpServletRequest request) {
         if (config.redirectUrl() != null && !config.redirectUrl().isBlank()) {
             return config.redirectUrl().trim();
@@ -674,6 +680,7 @@ public class WeChatOAuthService {
                 // Fall through to request-derived URL.
             }
         }
+        // Fallback: use request headers (less secure, configure apiBaseUrl in production)
         String scheme = firstNonBlank(request.getHeader("X-Forwarded-Proto"), request.getScheme(), "http");
         String host = firstNonBlank(request.getHeader("X-Forwarded-Host"), request.getHeader("Host"), request.getServerName());
         return scheme + "://" + host + "/api/v1/auth/oauth/wechat/callback";
@@ -852,7 +859,7 @@ public class WeChatOAuthService {
 
     private String normalizeRedirectPath(String path) {
         String value = trimToEmpty(path);
-        if (value.isBlank() || !value.startsWith("/") || value.startsWith("//") || value.contains("://")) {
+        if (value.isBlank() || !value.startsWith("/") || value.startsWith("//") || value.contains("://") || value.contains("\n") || value.contains("\r")) {
             return DEFAULT_REDIRECT;
         }
         return value;

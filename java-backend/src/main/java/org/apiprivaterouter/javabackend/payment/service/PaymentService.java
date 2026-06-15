@@ -19,8 +19,12 @@ import org.apiprivaterouter.javabackend.payment.model.SubscriptionPlanResponse;
 import org.apiprivaterouter.javabackend.payment.model.VerifyOrderRequest;
 import org.apiprivaterouter.javabackend.payment.model.WechatOAuthInfo;
 import org.apiprivaterouter.javabackend.payment.repository.PaymentRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
@@ -31,8 +35,12 @@ import java.util.Map;
 import java.util.LinkedHashMap;
 import java.util.Set;
 
+import org.springframework.transaction.annotation.Transactional;
+
 @Service
 public class PaymentService {
+
+    private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
 
     private final PaymentRepository paymentRepository;
     private final PaymentResumeTokenService paymentResumeTokenService;
@@ -303,6 +311,7 @@ public class PaymentService {
         return reconcileOrder(order);
     }
 
+    @Transactional
     public PaymentOrderResponse cancelOrder(CurrentUser currentUser, long id) {
         PaymentOrderResponse order = paymentRepository.loadOrderByUserAndId(currentUser.userId(), id)
                 .orElseThrow(() -> new IllegalArgumentException("order not found"));
@@ -310,12 +319,16 @@ public class PaymentService {
         if (!"PENDING".equalsIgnoreCase(order.status())) {
             throw new StructuredApiErrorException(400, "INVALID_STATUS", "order cannot be cancelled in current status");
         }
-        if ("stripe".equalsIgnoreCase(order.provider_key()) || "stripe".equalsIgnoreCase(order.payment_type())) {
-            stripePaymentClient.cancelPayment(resolveOrderProvider(order), order);
-        } else if ("alipay".equalsIgnoreCase(order.provider_key()) || "alipay".equalsIgnoreCase(order.payment_type())) {
-            alipayPaymentClient.cancelPayment(resolveOrderProvider(order), order);
-        } else if ("wxpay".equalsIgnoreCase(order.provider_key()) || "wxpay".equalsIgnoreCase(order.payment_type())) {
-            wxpayPaymentClient.cancelPayment(resolveOrderProvider(order), order);
+        try {
+            if ("stripe".equalsIgnoreCase(order.provider_key()) || "stripe".equalsIgnoreCase(order.payment_type())) {
+                stripePaymentClient.cancelPayment(resolveOrderProvider(order), order);
+            } else if ("alipay".equalsIgnoreCase(order.provider_key()) || "alipay".equalsIgnoreCase(order.payment_type())) {
+                alipayPaymentClient.cancelPayment(resolveOrderProvider(order), order);
+            } else if ("wxpay".equalsIgnoreCase(order.provider_key()) || "wxpay".equalsIgnoreCase(order.payment_type())) {
+                wxpayPaymentClient.cancelPayment(resolveOrderProvider(order), order);
+            }
+        } catch (Exception ex) {
+            log.warn("gateway cancel failed for order {}: {}", order.out_trade_no(), ex.getMessage());
         }
         PaymentOrderResponse cancelled = paymentRepository.cancelPendingOrder(currentUser.userId(), id)
                 .orElseThrow(() -> new IllegalArgumentException("order not found"));
@@ -323,6 +336,7 @@ public class PaymentService {
         return cancelled;
     }
 
+    @Transactional
     public PaymentOrderResponse requestRefund(CurrentUser currentUser, long id, RefundRequest request) {
         PaymentOrderResponse order = paymentRepository.loadOrderByUserAndId(currentUser.userId(), id)
                 .orElseThrow(() -> new IllegalArgumentException("order not found"));
@@ -338,7 +352,7 @@ public class PaymentService {
         }
         double balance = paymentRepository.findUserBalance(currentUser.userId())
                 .orElseThrow(() -> new StructuredApiErrorException(404, "NOT_FOUND", "user not found"));
-        if (balance + 0.00000001d < order.amount()) {
+        if (BigDecimal.valueOf(balance).compareTo(BigDecimal.valueOf(order.amount())) < 0) {
             throw new StructuredApiErrorException(400, "BALANCE_NOT_ENOUGH", "refund amount exceeds balance");
         }
         String reason = request.reason() == null ? "" : request.reason().trim();
@@ -482,9 +496,14 @@ public class PaymentService {
         }
         try {
             double parsed = Double.parseDouble(rawAmount.trim());
-            if (parsed > 0) {
-                return parsed;
+            if (parsed <= 0) {
+                throw new StructuredApiErrorException(
+                        400,
+                        "INVALID_WECHAT_PAYMENT_RESUME_TOKEN",
+                        "resume amount must be positive, got: " + rawAmount.trim()
+                );
             }
+            return parsed;
         } catch (NumberFormatException ignored) {
             throw new StructuredApiErrorException(
                     400,
@@ -492,7 +511,6 @@ public class PaymentService {
                     "invalid resume amount: " + rawAmount.trim()
             );
         }
-        return fallback == null ? 0.0 : fallback;
     }
 
     private boolean isWechatBrowser(HttpServletRequest request) {
@@ -600,7 +618,10 @@ public class PaymentService {
         }
         double amount = request.amount() == null ? 0.0 : request.amount();
         if ("balance".equals(normalizeOrderType(null, request.order_type()))) {
-            return roundAmount(amount * Math.max(config.balance_recharge_multiplier(), 0.0));
+            BigDecimal multiplier = BigDecimal.valueOf(Math.max(config.balance_recharge_multiplier(), 0.0));
+            return BigDecimal.valueOf(amount).multiply(multiplier)
+                    .setScale(2, RoundingMode.HALF_UP)
+                    .doubleValue();
         }
         return amount;
     }
@@ -624,12 +645,13 @@ public class PaymentService {
         if ("subscription".equals(orderType) && plan == null) {
             throw new StructuredApiErrorException(400, "INVALID_INPUT", "subscription order requires a plan");
         }
-        if (Double.isNaN(limitAmount) || Double.isInfinite(limitAmount) || limitAmount <= 0) {
+        BigDecimal bdAmount = BigDecimal.valueOf(limitAmount);
+        if (Double.isNaN(limitAmount) || Double.isInfinite(limitAmount) || bdAmount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new StructuredApiErrorException(400, "INVALID_AMOUNT", "amount must be a positive number");
         }
         if ("balance".equals(orderType)
-                && ((config.min_amount() > 0 && limitAmount < config.min_amount())
-                || (config.max_amount() > 0 && limitAmount > config.max_amount()))) {
+                && ((config.min_amount() > 0 && bdAmount.compareTo(BigDecimal.valueOf(config.min_amount())) < 0)
+                || (config.max_amount() > 0 && bdAmount.compareTo(BigDecimal.valueOf(config.max_amount())) > 0))) {
             throw new StructuredApiErrorException(400, "INVALID_AMOUNT", "amount out of range");
         }
         Set<String> enabledTypes = normalizeEnabledPaymentTypes(config.enabled_payment_types());
@@ -646,8 +668,12 @@ public class PaymentService {
         if (paymentRepository.countPendingOrders(userId) >= maxPending) {
             throw new StructuredApiErrorException(429, "TOO_MANY_PENDING", "too_many_pending");
         }
-        if (config.daily_limit() > 0 && paymentRepository.sumUserPaidAmountToday(userId) + limitAmount > config.daily_limit()) {
-            throw new StructuredApiErrorException(429, "DAILY_LIMIT_EXCEEDED", "daily_limit_exceeded");
+        if (config.daily_limit() > 0) {
+            double paidToday = paymentRepository.sumUserPaidAmountToday(userId);
+            if (BigDecimal.valueOf(paidToday).add(BigDecimal.valueOf(limitAmount))
+                    .compareTo(BigDecimal.valueOf(config.daily_limit())) > 0) {
+                throw new StructuredApiErrorException(429, "DAILY_LIMIT_EXCEEDED", "daily_limit_exceeded");
+            }
         }
     }
 
@@ -663,11 +689,17 @@ public class PaymentService {
     }
 
     private double calculatePayAmount(double amount, PaymentConfigResponse config, String orderType) {
-        return Math.round(amount * (1.0 + feeRateForOrder(config, orderType)) * 100.0) / 100.0;
+        BigDecimal base = BigDecimal.valueOf(amount);
+        BigDecimal feeRate = BigDecimal.valueOf(feeRateForOrder(config, orderType));
+        return base.multiply(BigDecimal.ONE.add(feeRate))
+                .setScale(2, RoundingMode.HALF_UP)
+                .doubleValue();
     }
 
     private double roundAmount(double amount) {
-        return Math.round(amount * 100.0) / 100.0;
+        return BigDecimal.valueOf(amount)
+                .setScale(2, RoundingMode.HALF_UP)
+                .doubleValue();
     }
 
     private double feeRateForOrder(PaymentConfigResponse config, String orderType) {

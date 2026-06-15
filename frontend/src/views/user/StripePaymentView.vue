@@ -173,10 +173,6 @@ onMounted(async () => {
   }
 })
 
-onUnmounted(() => {
-  if (redirectTimer) clearTimeout(redirectTimer)
-})
-
 async function confirmAlipay(stripe: Stripe, clientSecret: string, orderId: number) {
   redirecting.value = true
   const returnUrl = window.location.origin + '/payment/result?order_id=' + orderId + '&status=success'

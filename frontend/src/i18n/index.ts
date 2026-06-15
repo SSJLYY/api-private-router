@@ -39,9 +39,8 @@ export const i18n = createI18n({
     en: { monthYear: { year: 'numeric', month: 'long' } },
     zh: { monthYear: { year: 'numeric', month: 'long' } }
   },
-  // disable HTML message warnings - guide steps use rich text (driver.js supports HTML)
-  // These are internally defined, no XSS risk
-  warnHtmlMessage: false
+  // Enable HTML message warnings for security (can be disabled per-message if needed)
+  warnHtmlMessage: true
 })
 
 const loadedLocales = new Set<LocaleCode>()

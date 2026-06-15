@@ -55,7 +55,7 @@ services:
     networks:
       - api-private-router-network
     healthcheck:
-      test: ["CMD", "wget", "-q", "-T", "5", "-O", "/dev/null", "http://localhost:8080/health"]
+      test: ["CMD-SHELL", "wget -q -T 5 -O /dev/null http://localhost:${SERVER_PORT:-8080}/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -90,11 +90,11 @@ services:
       - ./redis_data:/data
     command: >
         sh -c '
-          redis-server
-          --save 60 1
-          --appendonly yes
-          --appendfsync everysec
-          ${REDIS_PASSWORD:+--requirepass "$REDIS_PASSWORD"}'
+          ARGS="--save 60 1 --appendonly yes --appendfsync everysec"
+          if [ -n "$$REDIS_PASSWORD" ]; then
+            ARGS="$$ARGS --requirepass $$REDIS_PASSWORD"
+          fi
+          redis-server $$ARGS'
     environment:
       - TZ=${TZ:-Asia/Shanghai}
       - REDISCLI_AUTH=${REDIS_PASSWORD:-}

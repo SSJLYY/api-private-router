@@ -1,5 +1,7 @@
 package org.apiprivaterouter.javabackend.admin.settings.controller;
 
+import jakarta.validation.Valid;
+
 import org.apiprivaterouter.javabackend.admin.settings.model.AdminApiKeyStatusResponse;
 import org.apiprivaterouter.javabackend.admin.settings.model.BetaPolicySettingsResponse;
 import org.apiprivaterouter.javabackend.admin.settings.model.OverloadCooldownSettingsResponse;
@@ -50,13 +52,13 @@ public class AdminSettingsController {
     }
 
     @PostMapping("/test-smtp")
-    public ApiResponse<Map<String, String>> testSmtp(@RequestBody TestSmtpRequest request) {
+    public ApiResponse<Map<String, String>> testSmtp(@Valid @RequestBody TestSmtpRequest request) {
         currentUserContext.requireAdmin();
         return ApiResponse.success(service.testSmtpConnection(request));
     }
 
     @PostMapping("/send-test-email")
-    public ApiResponse<Map<String, String>> sendTestEmail(@RequestBody SendTestEmailRequest request) {
+    public ApiResponse<Map<String, String>> sendTestEmail(@Valid @RequestBody SendTestEmailRequest request) {
         currentUserContext.requireAdmin();
         return ApiResponse.success(service.sendTestEmail(request));
     }

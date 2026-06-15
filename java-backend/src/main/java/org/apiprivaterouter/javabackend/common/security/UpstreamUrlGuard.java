@@ -252,8 +252,21 @@ public class UpstreamUrlGuard {
         }
         if (bytes.length == 16) {
             int first = Byte.toUnsignedInt(bytes[0]);
+            // IPv6 ULA (fc00::/7)
             if ((first & 0xfe) == 0xfc) {
                 return true;
+            }
+            // IPv4-mapped IPv6 (::ffff:0:0/96)
+            if (first == 0xff && bytes[1] == (byte) 0xff) {
+                int third = Byte.toUnsignedInt(bytes[2]);
+                int fourth = Byte.toUnsignedInt(bytes[3]);
+                // Check embedded IPv4 for private ranges
+                if (third == 0 || third == 10 || third == 127
+                        || (third == 169 && fourth == 254)
+                        || (third == 172 && fourth >= 16 && fourth <= 31)
+                        || (third == 192 && fourth == 168)) {
+                    return true;
+                }
             }
         }
         return false;

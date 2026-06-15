@@ -627,15 +627,7 @@ public class AdminSettingsService {
             updates.put(dbKey, serialized);
         }
 
-        if (!updates.containsKey(KEY_SMTP_HOST) && trimToNull(existing.get(KEY_SMTP_HOST)) != null && request.containsKey("smtp_host")
-                && trimToNull(stringValue(request.get("smtp_host"))) == null) {
-            updates.put(KEY_SMTP_HOST, existing.get(KEY_SMTP_HOST));
-            updates.put(KEY_SMTP_PORT, firstNonBlank(existing.get(KEY_SMTP_PORT), Integer.toString(DEFAULT_SMTP_PORT)));
-            updates.put(KEY_SMTP_USERNAME, defaultString(existing.get(KEY_SMTP_USERNAME)));
-            updates.put(KEY_SMTP_FROM, defaultString(existing.get(KEY_SMTP_FROM)));
-            updates.put(KEY_SMTP_FROM_NAME, defaultString(existing.get(KEY_SMTP_FROM_NAME)));
-            updates.put(KEY_SMTP_USE_TLS, defaultString(existing.get(KEY_SMTP_USE_TLS)));
-        }
+
 
         repository.upsertSettingValues(updates);
         return getSettingsOverview();
@@ -1083,9 +1075,13 @@ public class AdminSettingsService {
         properties.put("mail.smtp.connectiontimeout", "10000");
         properties.put("mail.smtp.timeout", "20000");
         properties.put("mail.smtp.writetimeout", "20000");
-        properties.put("mail.smtp.starttls.enable", config.useTls() ? "false" : "true");
-        properties.put("mail.smtp.starttls.required", "false");
-        properties.put("mail.smtp.ssl.enable", Boolean.toString(config.useTls()));
+        // useTls=true enables opportunistic+required STARTTLS (the common port 587 case);
+        // useTls=false sends plaintext (port 25). Implicit SSL on port 465 is not currently
+        // supported — to add it, infer the mode from the configured port rather than reusing
+        // the useTls flag, which historically meant "secure transport" and was inverted.
+        properties.put("mail.smtp.starttls.enable", config.useTls() ? "true" : "false");
+        properties.put("mail.smtp.starttls.required", Boolean.toString(config.useTls()));
+        properties.put("mail.smtp.ssl.enable", "false");
         properties.put("mail.smtp.ssl.protocols", "TLSv1.2 TLSv1.3");
         return sender;
     }
@@ -1436,169 +1432,6 @@ public class AdminSettingsService {
             return "";
         }
         return value.length() <= 300 ? value : value.substring(0, 300);
-    }
-
-    private static Set<String> initJsonListKeys() {
-        return Set.of(
-                KEY_REGISTRATION_EMAIL_SUFFIX_WHITELIST,
-                KEY_TABLE_PAGE_SIZE_OPTIONS,
-                KEY_CUSTOM_MENU_ITEMS,
-                KEY_CUSTOM_ENDPOINTS,
-                KEY_DEFAULT_SUBSCRIPTIONS,
-                KEY_ACCOUNT_QUOTA_NOTIFY_EMAILS,
-                KEY_PAYMENT_ENABLED_TYPES
-        );
-    }
-
-    private static Set<String> initAllSettingsKeys() {
-        return Set.of(
-                KEY_REGISTRATION_ENABLED,
-                KEY_EMAIL_VERIFY_ENABLED,
-                KEY_REGISTRATION_EMAIL_SUFFIX_WHITELIST,
-                KEY_PROMO_CODE_ENABLED,
-                KEY_PASSWORD_RESET_ENABLED,
-                KEY_FRONTEND_URL,
-                KEY_INVITATION_CODE_ENABLED,
-                KEY_TOTP_ENABLED,
-                KEY_DEFAULT_BALANCE,
-                KEY_AFFILIATE_REBATE_RATE,
-                KEY_AFFILIATE_REBATE_FREEZE_HOURS,
-                KEY_AFFILIATE_REBATE_DURATION_DAYS,
-                KEY_AFFILIATE_REBATE_PER_INVITEE_CAP,
-                KEY_DEFAULT_CONCURRENCY,
-                KEY_DEFAULT_USER_RPM_LIMIT,
-                KEY_DEFAULT_SUBSCRIPTIONS,
-                KEY_FORCE_EMAIL_ON_THIRD_PARTY_SIGNUP,
-                KEY_SITE_NAME,
-                KEY_SITE_LOGO,
-                KEY_SITE_SUBTITLE,
-                KEY_API_BASE_URL,
-                KEY_CONTACT_INFO,
-                KEY_DOC_URL,
-                KEY_HOME_CONTENT,
-                KEY_HIDE_CCS_IMPORT_BUTTON,
-                KEY_TABLE_DEFAULT_PAGE_SIZE,
-                KEY_TABLE_PAGE_SIZE_OPTIONS,
-                KEY_BACKEND_MODE_ENABLED,
-                KEY_CUSTOM_MENU_ITEMS,
-                KEY_CUSTOM_ENDPOINTS,
-                KEY_SMTP_HOST,
-                KEY_SMTP_PORT,
-                KEY_SMTP_USERNAME,
-                KEY_SMTP_PASSWORD,
-                KEY_SMTP_FROM,
-                KEY_SMTP_FROM_NAME,
-                KEY_SMTP_USE_TLS,
-                KEY_TURNSTILE_ENABLED,
-                KEY_TURNSTILE_SITE_KEY,
-                KEY_TURNSTILE_SECRET_KEY,
-                KEY_LINUXDO_CONNECT_ENABLED,
-                KEY_LINUXDO_CONNECT_CLIENT_ID,
-                KEY_LINUXDO_CONNECT_CLIENT_SECRET,
-                KEY_LINUXDO_CONNECT_REDIRECT_URL,
-                KEY_WECHAT_CONNECT_ENABLED,
-                KEY_WECHAT_CONNECT_APP_ID,
-                KEY_WECHAT_CONNECT_APP_SECRET,
-                KEY_WECHAT_CONNECT_OPEN_APP_ID,
-                KEY_WECHAT_CONNECT_OPEN_APP_SECRET,
-                KEY_WECHAT_CONNECT_MP_APP_ID,
-                KEY_WECHAT_CONNECT_MP_APP_SECRET,
-                KEY_WECHAT_CONNECT_MOBILE_APP_ID,
-                KEY_WECHAT_CONNECT_MOBILE_APP_SECRET,
-                KEY_WECHAT_CONNECT_OPEN_ENABLED,
-                KEY_WECHAT_CONNECT_MP_ENABLED,
-                KEY_WECHAT_CONNECT_MOBILE_ENABLED,
-                KEY_WECHAT_CONNECT_MODE,
-                KEY_WECHAT_CONNECT_SCOPES,
-                KEY_WECHAT_CONNECT_REDIRECT_URL,
-                KEY_WECHAT_CONNECT_FRONTEND_REDIRECT_URL,
-                KEY_OIDC_CONNECT_ENABLED,
-                KEY_OIDC_CONNECT_PROVIDER_NAME,
-                KEY_OIDC_CONNECT_CLIENT_ID,
-                KEY_OIDC_CONNECT_CLIENT_SECRET,
-                KEY_OIDC_CONNECT_ISSUER_URL,
-                KEY_OIDC_CONNECT_DISCOVERY_URL,
-                KEY_OIDC_CONNECT_AUTHORIZE_URL,
-                KEY_OIDC_CONNECT_TOKEN_URL,
-                KEY_OIDC_CONNECT_USERINFO_URL,
-                KEY_OIDC_CONNECT_JWKS_URL,
-                KEY_OIDC_CONNECT_SCOPES,
-                KEY_OIDC_CONNECT_REDIRECT_URL,
-                KEY_OIDC_CONNECT_FRONTEND_REDIRECT_URL,
-                KEY_OIDC_CONNECT_TOKEN_AUTH_METHOD,
-                KEY_OIDC_CONNECT_USE_PKCE,
-                KEY_OIDC_CONNECT_VALIDATE_ID_TOKEN,
-                KEY_OIDC_CONNECT_ALLOWED_SIGNING_ALGS,
-                KEY_OIDC_CONNECT_CLOCK_SKEW_SECONDS,
-                KEY_OIDC_CONNECT_REQUIRE_EMAIL_VERIFIED,
-                KEY_OIDC_CONNECT_USERINFO_EMAIL_PATH,
-                KEY_OIDC_CONNECT_USERINFO_ID_PATH,
-                KEY_OIDC_CONNECT_USERINFO_USERNAME_PATH,
-                KEY_GITHUB_OAUTH_ENABLED,
-                KEY_GITHUB_OAUTH_CLIENT_ID,
-                KEY_GITHUB_OAUTH_CLIENT_SECRET,
-                KEY_GITHUB_OAUTH_REDIRECT_URL,
-                KEY_GITHUB_OAUTH_FRONTEND_REDIRECT_URL,
-                KEY_GOOGLE_OAUTH_ENABLED,
-                KEY_GOOGLE_OAUTH_CLIENT_ID,
-                KEY_GOOGLE_OAUTH_CLIENT_SECRET,
-                KEY_GOOGLE_OAUTH_REDIRECT_URL,
-                KEY_GOOGLE_OAUTH_FRONTEND_REDIRECT_URL,
-                KEY_ENABLE_MODEL_FALLBACK,
-                KEY_FALLBACK_MODEL_ANTHROPIC,
-                KEY_FALLBACK_MODEL_OPENAI,
-                KEY_FALLBACK_MODEL_GEMINI,
-                KEY_FALLBACK_MODEL_ANTIGRAVITY,
-                KEY_ENABLE_IDENTITY_PATCH,
-                KEY_IDENTITY_PATCH_PROMPT,
-                KEY_OPS_MONITORING_ENABLED,
-                KEY_OPS_REALTIME_MONITORING_ENABLED,
-                KEY_OPS_QUERY_MODE_DEFAULT,
-                KEY_OPS_METRICS_INTERVAL_SECONDS,
-                KEY_MIN_CLAUDE_CODE_VERSION,
-                KEY_MAX_CLAUDE_CODE_VERSION,
-                KEY_ALLOW_UNGROUPED_KEY_SCHEDULING,
-                KEY_ENABLE_FINGERPRINT_UNIFICATION,
-                KEY_ENABLE_METADATA_PASSTHROUGH,
-                KEY_ENABLE_CCH_SIGNING,
-                KEY_ENABLE_ANTHROPIC_CACHE_TTL_1H_INJECTION,
-                KEY_PAYMENT_ENABLED,
-                KEY_RISK_CONTROL_ENABLED,
-                KEY_PAYMENT_MIN_AMOUNT,
-                KEY_PAYMENT_MAX_AMOUNT,
-                KEY_PAYMENT_DAILY_LIMIT,
-                KEY_PAYMENT_ORDER_TIMEOUT_MINUTES,
-                KEY_PAYMENT_MAX_PENDING_ORDERS,
-                KEY_PAYMENT_ENABLED_TYPES,
-                KEY_PAYMENT_BALANCE_DISABLED,
-                KEY_PAYMENT_BALANCE_RECHARGE_MULTIPLIER,
-                KEY_PAYMENT_RECHARGE_FEE_RATE,
-                KEY_PAYMENT_LOAD_BALANCE_STRATEGY,
-                KEY_PAYMENT_PRODUCT_NAME_PREFIX,
-                KEY_PAYMENT_PRODUCT_NAME_SUFFIX,
-                KEY_PAYMENT_HELP_IMAGE_URL,
-                KEY_PAYMENT_HELP_TEXT,
-                KEY_PAYMENT_CANCEL_RATE_LIMIT_ENABLED,
-                KEY_PAYMENT_CANCEL_RATE_LIMIT_MAX,
-                KEY_PAYMENT_CANCEL_RATE_LIMIT_WINDOW,
-                KEY_PAYMENT_CANCEL_RATE_LIMIT_UNIT,
-                KEY_PAYMENT_CANCEL_RATE_LIMIT_WINDOW_MODE,
-                KEY_PAYMENT_VISIBLE_METHOD_ALIPAY_SOURCE,
-                KEY_PAYMENT_VISIBLE_METHOD_WXPAY_SOURCE,
-                KEY_PAYMENT_VISIBLE_METHOD_ALIPAY_ENABLED,
-                KEY_PAYMENT_VISIBLE_METHOD_WXPAY_ENABLED,
-                KEY_OPENAI_ADVANCED_SCHEDULER_ENABLED,
-                KEY_BALANCE_LOW_NOTIFY_ENABLED,
-                KEY_BALANCE_LOW_NOTIFY_THRESHOLD,
-                KEY_BALANCE_LOW_NOTIFY_RECHARGE_URL,
-                KEY_ACCOUNT_QUOTA_NOTIFY_ENABLED,
-                KEY_ACCOUNT_QUOTA_NOTIFY_EMAILS,
-                KEY_CHANNEL_MONITOR_ENABLED,
-                KEY_CHANNEL_MONITOR_DEFAULT_INTERVAL_SECONDS,
-                KEY_AVAILABLE_CHANNELS_ENABLED,
-                KEY_AFFILIATE_ENABLED,
-                KEY_OPENAI_FAST_POLICY_SETTINGS
-        );
     }
 
     private String maskAdminApiKey(String key) {

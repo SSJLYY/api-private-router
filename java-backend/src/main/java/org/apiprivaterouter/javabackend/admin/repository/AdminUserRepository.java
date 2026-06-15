@@ -13,6 +13,8 @@ import org.apiprivaterouter.javabackend.common.api.HttpStatusException;
 import org.apiprivaterouter.javabackend.common.api.PageResponse;
 import org.apiprivaterouter.javabackend.common.db.JsonHelper;
 import org.apiprivaterouter.javabackend.usercenter.model.NotifyEmailEntry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -33,6 +35,8 @@ import java.util.Optional;
 @Repository
 public class AdminUserRepository {
 
+    private static final Logger log = LoggerFactory.getLogger(AdminUserRepository.class);
+
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final JsonHelper jsonHelper;
 
@@ -41,9 +45,25 @@ public class AdminUserRepository {
         this.jsonHelper = jsonHelper;
     }
 
-    public PageResponse<AdminUserResponse> listUsers(int page, int pageSize, String status, String role, String search) {
+    private static final java.util.Map<String, String> USER_SORT_COLUMNS = java.util.Map.of(
+            "id", "id",
+            "email", "email",
+            "username", "username",
+            "role", "role",
+            "status", "status",
+            "balance", "balance",
+            "concurrency", "concurrency",
+            "created_at", "created_at",
+            "updated_at", "updated_at",
+            "last_active_at", "last_active_at"
+    );
+
+    public PageResponse<AdminUserResponse> listUsers(int page, int pageSize, String status, String role, String search,
+                                                      String groupName, String sortBy, String sortOrder) {
         int offset = Math.max(page - 1, 0) * pageSize;
-        String whereClause = buildUserListWhereClause(status, role, search);
+        String whereClause = buildUserListWhereClause(status, role, search, groupName);
+        String safeSortCol = normalizeUserSortColumn(sortBy);
+        String safeSortDir = normalizeSortDirection(sortOrder);
         String countSql = """
                 select count(*)
                 from users
@@ -54,13 +74,13 @@ public class AdminUserRepository {
                        last_active_at, created_at, updated_at
                 from users
                 """ + whereClause + """
-                order by created_at desc
+                order by """ + safeSortCol + " " + safeSortDir + """
                 limit :pageSize offset :offset
                 """;
         MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("pageSize", pageSize)
                 .addValue("offset", offset);
-        applyUserListFilters(params, status, role, search);
+        applyUserListFilters(params, status, role, search, groupName);
         Long total = jdbcTemplate.queryForObject(countSql, params, Long.class);
         List<AdminUserResponse> items = jdbcTemplate.query(dataSql, params, (rs, rowNum) -> mapAdminUser(rs));
         return new PageResponse<>(items, total == null ? 0 : total, page, pageSize);
@@ -78,7 +98,7 @@ public class AdminUserRepository {
         return rows.stream().findFirst();
     }
 
-    private void applyUserListFilters(MapSqlParameterSource params, String status, String role, String search) {
+    private void applyUserListFilters(MapSqlParameterSource params, String status, String role, String search, String groupName) {
         String normalizedStatus = blankToNull(status);
         if (normalizedStatus != null) {
             params.addValue("status", normalizedStatus);
@@ -89,11 +109,15 @@ public class AdminUserRepository {
         }
         String normalizedSearch = blankToNull(search);
         if (normalizedSearch != null) {
-            params.addValue("likeSearch", "%" + normalizedSearch + "%");
+            params.addValue("likeSearch", "%" + escapeLike(normalizedSearch) + "%");
+        }
+        String normalizedGroupName = blankToNull(groupName);
+        if (normalizedGroupName != null) {
+            params.addValue("groupName", normalizedGroupName);
         }
     }
 
-    private String buildUserListWhereClause(String status, String role, String search) {
+    private String buildUserListWhereClause(String status, String role, String search, String groupName) {
         StringBuilder sql = new StringBuilder("""
                 where deleted_at is null
                 """);
@@ -106,8 +130,26 @@ public class AdminUserRepository {
         if (blankToNull(search) != null) {
             sql.append("\n  and (email ilike :likeSearch or username ilike :likeSearch)");
         }
+        if (blankToNull(groupName) != null) {
+            sql.append("\n  and id in (select user_id from user_allowed_groups where group_id in (select id from groups where name ilike :groupName))");
+        }
         sql.append('\n');
         return sql.toString();
+    }
+
+    private String normalizeUserSortColumn(String sortBy) {
+        if (sortBy == null || sortBy.isBlank()) {
+            return "created_at";
+        }
+        String col = USER_SORT_COLUMNS.get(sortBy.trim().toLowerCase());
+        return col != null ? col : "created_at";
+    }
+
+    private String normalizeSortDirection(String sortOrder) {
+        if (sortOrder != null && "asc".equalsIgnoreCase(sortOrder.trim())) {
+            return "asc";
+        }
+        return "desc";
     }
 
     private AdminUserResponse mapAdminUser(java.sql.ResultSet rs) throws java.sql.SQLException {
@@ -133,6 +175,7 @@ public class AdminUserRepository {
         );
     }
 
+    @Transactional
     public long createUser(CreateAdminUserRequest request, String passwordHash) {
         String sql = """
                 insert into users (
@@ -165,6 +208,7 @@ public class AdminUserRepository {
         return userId;
     }
 
+    @Transactional
     public void updateUser(long id, UpdateAdminUserRequest request, String passwordHash) {
         String sql = """
                 update users
@@ -203,7 +247,7 @@ public class AdminUserRepository {
                 """, new MapSqlParameterSource("id", id));
     }
 
-    public void updateUserBalance(long id, double newBalance) {
+    public void updateUserBalance(long id, double newBalance, String notes) {
         jdbcTemplate.update("""
                 update users
                 set balance = :balance, updated_at = now()
@@ -211,6 +255,40 @@ public class AdminUserRepository {
                 """, new MapSqlParameterSource()
                 .addValue("id", id)
                 .addValue("balance", newBalance));
+        insertBalanceHistory(id, newBalance, notes);
+    }
+
+    public double adjustUserBalance(long id, double delta, String notes) {
+        jdbcTemplate.update("""
+                update users
+                set balance = balance + :delta, updated_at = now()
+                where id = :id and deleted_at is null
+                """, new MapSqlParameterSource()
+                .addValue("id", id)
+                .addValue("delta", delta));
+        Number balance = jdbcTemplate.queryForObject(
+                "select balance from users where id = :id and deleted_at is null",
+                new MapSqlParameterSource("id", id),
+                Double.class
+        );
+        double newBalance = balance == null ? 0.0 : balance.doubleValue();
+        insertBalanceHistory(id, newBalance, notes);
+        return newBalance;
+    }
+
+    private void insertBalanceHistory(long userId, double amount, String notes) {
+        String trimmedNotes = notes == null || notes.isBlank() ? "admin balance adjustment" : notes.trim();
+        try {
+            jdbcTemplate.update("""
+                    insert into balance_history (user_id, type, amount, description, created_at)
+                    values (:userId, 'admin_balance', :amount, :description, now())
+                    """, new MapSqlParameterSource()
+                    .addValue("userId", userId)
+                    .addValue("amount", amount)
+                    .addValue("description", trimmedNotes));
+        } catch (Exception ex) {
+            log.warn("failed to insert balance history for userId={}: {}", userId, ex.getMessage());
+        }
     }
 
     public List<Long> getAllowedGroupIds(long userId) {
@@ -251,15 +329,27 @@ public class AdminUserRepository {
         return new PageResponse<>(items, total == null ? 0 : total, page, pageSize);
     }
 
-    public AdminUserUsageResponse getUserUsage(long userId) {
+    public AdminUserUsageResponse getUserUsage(long userId, String period) {
+        var params = new MapSqlParameterSource("userId", userId);
+        String periodFilter = "";
+        if ("today".equalsIgnoreCase(period)) {
+            periodFilter = " and created_at >= date_trunc('day', now())";
+        } else if ("week".equalsIgnoreCase(period)) {
+            periodFilter = " and created_at >= date_trunc('week', now())";
+        } else if ("month".equalsIgnoreCase(period) || period == null || period.isBlank()) {
+            periodFilter = " and created_at >= date_trunc('month', now())";
+        } else if ("all".equalsIgnoreCase(period)) {
+            periodFilter = "";
+        } else if ("year".equalsIgnoreCase(period)) {
+            periodFilter = " and created_at >= date_trunc('year', now())";
+        }
         String sql = """
                 select count(*) as total_requests,
                        coalesce(sum(cost), 0) as total_cost,
                        coalesce(sum(total_tokens), 0) as total_tokens
                 from usage_logs
-                where user_id = :userId
-                """;
-        return jdbcTemplate.queryForObject(sql, new MapSqlParameterSource("userId", userId), (rs, rowNum) ->
+                where user_id = :userId""" + periodFilter;
+        return jdbcTemplate.queryForObject(sql, params, (rs, rowNum) ->
                 new AdminUserUsageResponse(
                         rs.getLong("total_requests"),
                         rs.getDouble("total_cost"),
@@ -352,6 +442,7 @@ public class AdminUserRepository {
                 from users
                 where deleted_at is null
                 order by id asc
+                limit 50000
                 """, new MapSqlParameterSource(), (rs, rowNum) -> rs.getLong("id"));
     }
 
@@ -1043,6 +1134,10 @@ public class AdminUserRepository {
 
     private String defaultString(String value) {
         return value == null ? "" : value;
+    }
+
+    private String escapeLike(String value) {
+        return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
     }
 
     private record AuthIdentityRow(

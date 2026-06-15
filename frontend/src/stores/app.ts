@@ -44,6 +44,7 @@ export const useAppStore = defineStore('app', () => {
 
   // Auto-incrementing ID for toasts
   let toastIdCounter = 0
+  const toastTimers = new Map<string, ReturnType<typeof setTimeout>>()
 
   // ==================== Computed ====================
 
@@ -118,9 +119,11 @@ export const useAppStore = defineStore('app', () => {
 
     // Auto-dismiss if duration is specified
     if (duration !== undefined) {
-      setTimeout(() => {
+      const timer = setTimeout(() => {
+        toastTimers.delete(id)
         hideToast(id)
       }, duration)
+      toastTimers.set(id, timer)
     }
 
     return id
@@ -177,6 +180,8 @@ export const useAppStore = defineStore('app', () => {
    * Clear all toasts
    */
   function clearAllToasts(): void {
+    toastTimers.forEach(timer => clearTimeout(timer))
+    toastTimers.clear()
     toasts.value = []
   }
 
@@ -227,9 +232,26 @@ export const useAppStore = defineStore('app', () => {
    */
   function reset(): void {
     sidebarCollapsed.value = false
+    mobileOpen.value = false
     loading.value = false
     loadingCount.value = 0
     toasts.value = []
+    publicSettingsLoaded.value = false
+    publicSettingsLoading.value = false
+    cachedPublicSettings.value = null
+    siteName.value = 'api-private-router'
+    siteLogo.value = ''
+    siteVersion.value = ''
+    contactInfo.value = ''
+    apiBaseUrl.value = ''
+    docUrl.value = ''
+    versionLoaded.value = false
+    versionLoading.value = false
+    currentVersion.value = ''
+    latestVersion.value = ''
+    hasUpdate.value = false
+    buildType.value = 'source'
+    releaseInfo.value = null
   }
 
   // ==================== Version Management ====================
@@ -359,6 +381,10 @@ export const useAppStore = defineStore('app', () => {
         available_channels_enabled: false,
         risk_control_enabled: false,
         affiliate_enabled: false,
+        redpacket_enabled: false,
+        game_hall_enabled: false,
+        transfer_enabled: false,
+        fund_center_enabled: false,
       }
     }
 

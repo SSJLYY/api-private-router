@@ -58,6 +58,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { extractI18nErrorMessage } from '@/utils/apiError'
 import { isMobileDevice } from '@/utils/device'
+import { usePaymentStore } from '@/stores/payment'
 
 interface StripeWithWechatPay {
   confirmWechatPayPayment(clientSecret: string, options: Record<string, unknown>): Promise<{ error?: { message?: string }; paymentIntent?: { status: string } }>
@@ -71,6 +72,7 @@ const DEFAULT_METHOD_COLOR = '#635bff'
 
 const { t } = useI18n()
 const route = useRoute()
+const paymentStore = usePaymentStore()
 
 const orderId = String(route.query.order_id || '')
 const method = String(route.query.method || 'alipay')
@@ -83,6 +85,7 @@ const success = ref(false)
 const hint = ref(t('payment.stripePopup.redirecting'))
 
 let pollTimer: ReturnType<typeof setInterval> | null = null
+let timeoutTimer: ReturnType<typeof setTimeout> | null = null
 
 function closeWindow() { window.close() }
 
@@ -99,7 +102,7 @@ onMounted(() => {
     window.opener.postMessage({ type: 'STRIPE_POPUP_READY' }, window.location.origin)
   }
 
-  setTimeout(() => {
+  timeoutTimer = setTimeout(() => {
     if (!error.value && !success.value) {
       error.value = t('payment.stripePopup.timeout')
     }
@@ -108,6 +111,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (pollTimer) clearInterval(pollTimer)
+  if (timeoutTimer) clearTimeout(timeoutTimer)
 })
 
 async function initStripe(clientSecret: string, publishableKey: string) {
@@ -150,16 +154,9 @@ async function initStripe(clientSecret: string, publishableKey: string) {
 function startPolling() {
   pollTimer = setInterval(async () => {
     try {
-      const token = document.cookie.split('; ').find(c => c.startsWith('token='))?.split('=')[1]
-        || localStorage.getItem('token') || ''
-      const res = await fetch('/api/v1/payment/orders/' + orderId, {
-        headers: token ? { Authorization: 'Bearer ' + token } : {},
-        credentials: 'include',
-      })
-      if (!res.ok) return
-      const data = await res.json()
-      const status = data?.data?.status
-      if (status === 'COMPLETED' || status === 'PAID') {
+      const o = await paymentStore.pollOrderStatus(orderId)
+      if (!o) return
+      if (o.status === 'COMPLETED' || o.status === 'PAID') {
         if (pollTimer) { clearInterval(pollTimer); pollTimer = null }
         success.value = true
         setTimeout(closeWindow, 2000)

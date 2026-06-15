@@ -46,10 +46,13 @@ public class AdminUserController {
             @RequestParam(name = "page_size", defaultValue = "20") int pageSize,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String role,
-            @RequestParam(required = false) String search
+            @RequestParam(required = false) String search,
+            @RequestParam(name = "group_name", required = false) String groupName,
+            @RequestParam(name = "sort_by", required = false) String sortBy,
+            @RequestParam(name = "sort_order", required = false) String sortOrder
     ) {
         currentUserContext.requireAdmin();
-        return ApiResponse.success(adminUserService.listUsers(page, pageSize, status, role, search));
+        return ApiResponse.success(adminUserService.listUsers(page, pageSize, status, role, search, groupName, sortBy, sortOrder));
     }
 
     @GetMapping("/{id}")
@@ -65,7 +68,7 @@ public class AdminUserController {
     }
 
     @PutMapping("/{id}")
-    public ApiResponse<AdminUserResponse> updateUser(@PathVariable long id, @RequestBody UpdateAdminUserRequest request) {
+    public ApiResponse<AdminUserResponse> updateUser(@PathVariable long id, @Valid @RequestBody UpdateAdminUserRequest request) {
         currentUserContext.requireAdmin();
         return ApiResponse.success(adminUserService.updateUser(id, request));
     }
@@ -79,7 +82,7 @@ public class AdminUserController {
     @PostMapping("/{id}/balance")
     public ApiResponse<AdminUserResponse> updateBalance(@PathVariable long id, @Valid @RequestBody UpdateBalanceRequest request) {
         currentUserContext.requireAdmin();
-        return ApiResponse.success(adminUserService.updateBalance(id, request.balance(), request.operation()));
+        return ApiResponse.success(adminUserService.updateBalance(id, request.balance(), request.operation(), request.notes()));
     }
 
     @GetMapping("/{id}/api-keys")

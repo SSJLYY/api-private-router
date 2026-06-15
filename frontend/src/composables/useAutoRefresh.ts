@@ -1,4 +1,4 @@
-﻿import { ref, onBeforeUnmount, type Ref } from 'vue'
+import { ref, onBeforeUnmount, getCurrentInstance, type Ref } from 'vue'
 
 export interface UseAutoRefreshOptions {
   storageKey: string
@@ -23,7 +23,7 @@ export function useAutoRefresh(options: UseAutoRefreshOptions) {
   const countdown = ref(0)
   const fetching = ref(false)
 
-  let timerId: number | undefined
+  let timerId: ReturnType<typeof setInterval> | undefined
 
   function loadFromStorage() {
     try {
@@ -61,7 +61,7 @@ export function useAutoRefresh(options: UseAutoRefreshOptions) {
 
   function start() {
     if (timerId !== undefined) return
-    timerId = setInterval(tick, 1000) as unknown as number
+    timerId = setInterval(tick, 1000)
   }
 
   function stop() {
@@ -99,7 +99,9 @@ export function useAutoRefresh(options: UseAutoRefreshOptions) {
     start()
   }
 
-  onBeforeUnmount(stop)
+  if (getCurrentInstance()) {
+    onBeforeUnmount(stop)
+  }
 
   return {
     enabled: enabled as Ref<boolean>,
@@ -111,6 +113,7 @@ export function useAutoRefresh(options: UseAutoRefreshOptions) {
     setInterval: setInterval_,
     resetCountdown,
     start,
+    /** Must be called manually if used outside Vue setup context */
     stop,
   }
 }

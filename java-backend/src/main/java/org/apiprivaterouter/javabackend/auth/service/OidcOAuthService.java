@@ -32,6 +32,8 @@ import java.security.AlgorithmParameters;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.MessageDigest;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
@@ -100,7 +102,7 @@ public class OidcOAuthService {
         this.jwtProperties = jwtProperties;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(15))
-                .followRedirects(HttpClient.Redirect.NORMAL)
+                .followRedirects(HttpClient.Redirect.NEVER)
                 .build();
     }
 
@@ -148,7 +150,7 @@ public class OidcOAuthService {
         }
 
         String expectedState = decodeCookieValue(readCookie(request, COOKIE_STATE));
-        if (expectedState.isBlank() || !expectedState.equals(trimToEmpty(state))) {
+        if (expectedState.isBlank() || !MessageDigest.isEqual(expectedState.getBytes(), trimToEmpty(state).getBytes())) {
             return errorRedirect(frontendCallback, "invalid_state", "invalid oauth state", "", secure);
         }
 
@@ -728,8 +730,9 @@ public class OidcOAuthService {
             throw new IllegalStateException("jwt secret is not configured");
         }
         try {
-            byte[] digest = MessageDigest.getInstance("SHA-256")
-                    .digest((SIGNING_CONTEXT + "\n" + payload + "\n" + secret).getBytes(StandardCharsets.UTF_8));
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            byte[] digest = mac.doFinal((SIGNING_CONTEXT + "\n" + payload).getBytes(StandardCharsets.UTF_8));
             return base64UrlNoPad(digest);
         } catch (Exception ex) {
             throw new IllegalStateException("failed to sign oidc bind payload", ex);
