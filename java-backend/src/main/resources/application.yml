@@ -11,12 +11,24 @@ spring:
       - optional:file:../data/config.yaml
   application:
     name: api-private-router-java-backend
+  data:
+    redis:
+      host: ${REDIS_HOST:${redis.host:127.0.0.1}}
+      port: ${REDIS_PORT:${redis.port:6379}}
+      password: ${REDIS_PASSWORD:${redis.password:}}
+      database: ${REDIS_DB:${redis.db:0}}
+      ssl:
+        enabled: ${REDIS_ENABLE_TLS:${redis.enable_tls:false}}
+      timeout: 5000
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+          min-idle: 2
   datasource:
     url: ${API_PRIVATE_ROUTER_DB_URL:${DATABASE_URL:jdbc:postgresql://${DATABASE_HOST:${database.host:127.0.0.1}}:${DATABASE_PORT:${database.port:5432}}/${DATABASE_DBNAME:${database.dbname:api_private_router}}?sslmode=${DATABASE_SSLMODE:${database.sslmode:disable}}}}
-    # TODO: Production MUST enable SSL (sslmode=verify-full or require) — current default "disable" is insecure
     username: ${API_PRIVATE_ROUTER_DB_USERNAME:${DATABASE_USER:${database.user:api_private_router}}}
     password: ${API_PRIVATE_ROUTER_DB_PASSWORD:${DATABASE_PASSWORD:${database.password:}}}
-    # Production MUST set API_PRIVATE_ROUTER_DB_PASSWORD or DATABASE_PASSWORD env var
     driver-class-name: org.postgresql.Driver
     hikari:
       initialization-fail-timeout: -1
@@ -36,6 +48,16 @@ api-private-router:
     refresh-token-expire-days: ${API_PRIVATE_ROUTER_JWT_REFRESH_TOKEN_EXPIRE_DAYS:30}
   auto-setup:
     enabled: ${API_PRIVATE_ROUTER_AUTO_SETUP_ENABLED:${AUTO_SETUP:false}}
+
+gateway:
+  openai:
+    base-url: ${GATEWAY_OPENAI_BASE_URL:https://api.openai.com}
+    api-key: ${GATEWAY_OPENAI_API_KEY:}
+    proxy-host: ${GATEWAY_OPENAI_PROXY_HOST:}
+    proxy-port: ${GATEWAY_OPENAI_PROXY_PORT:0}
+    ws:
+      http-bridge-enabled: ${GATEWAY_OPENAI_WS_HTTP_BRIDGE_ENABLED:true}
+      http-bridge-threshold-bytes: ${GATEWAY_OPENAI_WS_HTTP_BRIDGE_THRESHOLD:15728640}
 
 management:
   endpoints:

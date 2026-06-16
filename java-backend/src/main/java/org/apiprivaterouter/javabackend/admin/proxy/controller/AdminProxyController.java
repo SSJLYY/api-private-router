@@ -16,6 +16,7 @@ import org.apiprivaterouter.javabackend.admin.proxy.model.ProxyStatsResponse;
 import org.apiprivaterouter.javabackend.admin.proxy.model.TestProxyResponse;
 import org.apiprivaterouter.javabackend.admin.proxy.model.UpdateProxyRequest;
 import org.apiprivaterouter.javabackend.admin.proxy.service.AdminProxyService;
+import org.apiprivaterouter.javabackend.admin.proxy.service.ProxyExpiryService;
 import org.apiprivaterouter.javabackend.common.api.ApiResponse;
 import org.apiprivaterouter.javabackend.common.api.PageResponse;
 import org.apiprivaterouter.javabackend.common.security.CurrentUserContext;
@@ -41,10 +42,12 @@ public class AdminProxyController {
     private static final Logger log = LoggerFactory.getLogger(AdminProxyController.class);
 
     private final AdminProxyService service;
+    private final ProxyExpiryService proxyExpiryService;
     private final CurrentUserContext currentUserContext;
 
-    public AdminProxyController(AdminProxyService service, CurrentUserContext currentUserContext) {
+    public AdminProxyController(AdminProxyService service, ProxyExpiryService proxyExpiryService, CurrentUserContext currentUserContext) {
         this.service = service;
+        this.proxyExpiryService = proxyExpiryService;
         this.currentUserContext = currentUserContext;
     }
 

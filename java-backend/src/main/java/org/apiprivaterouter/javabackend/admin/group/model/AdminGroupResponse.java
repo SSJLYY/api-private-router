@@ -34,6 +34,7 @@ public record AdminGroupResponse(
         boolean model_routing_enabled,
         boolean mcp_xml_inject,
         List<String> supported_model_scopes,
+        GroupModelsListConfig models_list_config,
         long account_count,
         long active_account_count,
         long rate_limited_account_count,

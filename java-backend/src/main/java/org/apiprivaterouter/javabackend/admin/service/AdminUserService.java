@@ -31,7 +31,11 @@ public class AdminUserService {
     }
 
     public PageResponse<AdminUserResponse> listUsers(int page, int pageSize, String status, String role, String search, String groupName, String sortBy, String sortOrder) {
-        return adminUserRepository.listUsers(page, pageSize, status, role, search, groupName, sortBy, sortOrder);
+        return adminUserRepository.listUsers(page, pageSize, status, role, search, groupName, null, sortBy, sortOrder);
+    }
+
+    public PageResponse<AdminUserResponse> listUsers(int page, int pageSize, String status, String role, String search, String groupName, Long apiKeyGroup, String sortBy, String sortOrder) {
+        return adminUserRepository.listUsers(page, pageSize, status, role, search, groupName, apiKeyGroup, sortBy, sortOrder);
     }
 
     public AdminUserResponse getUser(long id) {

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apiprivaterouter.javabackend.admin.riskcontrol.model.ContentModerationApiKeyStatus;
 import org.apiprivaterouter.javabackend.admin.riskcontrol.model.ContentModerationConfigResponse;
+import org.apiprivaterouter.javabackend.admin.riskcontrol.model.ContentModerationModelFilterResponse;
 import org.apiprivaterouter.javabackend.admin.riskcontrol.repository.ContentModerationHashRepository;
 import org.apiprivaterouter.javabackend.admin.riskcontrol.repository.ContentModerationRepository;
 import org.apiprivaterouter.javabackend.admin.settings.repository.AdminSettingsRepository;
@@ -130,6 +131,10 @@ public class ContentModerationRuntimeService {
             return allow;
         }
 
+        if (config.modelFilter() != null && input.model() != null && !config.modelFilter().appliesToModel(input.model())) {
+            return allow;
+        }
+
         ContentModerationInput content = inputExtractor.extract(input.protocol(), input.body());
         if (content.isEmpty()) {
             return allow;
@@ -151,7 +156,30 @@ public class ContentModerationRuntimeService {
             );
         }
 
-        if (!config.shouldSample(hash) || config.apiKeys().isEmpty()) {
+        if (config.isKeywordBlockingEnabled() && content.text() != null && !content.text().isEmpty()) {
+            String normalizedContent = content.text().toLowerCase();
+            for (String keyword : config.blockedKeywords()) {
+                if (keyword != null && !keyword.isEmpty() && normalizedContent.contains(keyword.toLowerCase())) {
+                    return new ContentModerationDecision(
+                            false,
+                            true,
+                            true,
+                            appendKeywordToMessage(config.blockMessage(), keyword),
+                            config.blockStatus(),
+                            hash,
+                            keyword,
+                            1.0,
+                            Map.of("keyword", 1.0),
+                            "keyword_block"
+                    );
+                }
+            }
+            if ("keyword_only".equals(config.keywordBlockingMode())) {
+                return allow;
+            }
+        }
+
+        if (!config.shouldSample(hash) || config.apiKeys().isEmpty() || !config.shouldCallModerationApi()) {
             return allow;
         }
 
@@ -293,7 +321,10 @@ public class ContentModerationRuntimeService {
                 normalizeHitRetentionDays(readInteger(settings.get("hit_retention_days"))),
                 normalizeNonHitRetentionDays(readInteger(settings.get("non_hit_retention_days"))),
                 readBoolean(settings.get("pre_hash_check_enabled"), false),
-                normalizeThresholds(settings.get("thresholds"))
+                normalizeThresholds(settings.get("thresholds")),
+                normalizeBlockedKeywords(settings.get("blocked_keywords")),
+                normalizeKeywordBlockingMode(readString(settings.get("keyword_blocking_mode"), null)),
+                normalizeModelFilter(settings.get("model_filter"))
         );
     }
 
@@ -325,7 +356,13 @@ public class ContentModerationRuntimeService {
                 snapshot.retryCount(),
                 snapshot.hitRetentionDays(),
                 snapshot.nonHitRetentionDays(),
-                snapshot.preHashCheckEnabled()
+                snapshot.preHashCheckEnabled(),
+                snapshot.blockedKeywords(),
+                snapshot.keywordBlockingMode(),
+                snapshot.thresholds(),
+                snapshot.modelFilter() != null
+                        ? new ContentModerationModelFilterResponse(snapshot.modelFilter().mode(), snapshot.modelFilter().models())
+                        : null
         );
     }
 
@@ -679,6 +716,13 @@ public class ContentModerationRuntimeService {
         return message + " (hash: " + hash + ")";
     }
 
+    private String appendKeywordToMessage(String message, String keyword) {
+        if (message == null || message.isBlank()) {
+            return "content moderation blocked this request (keyword matched)";
+        }
+        return message + " (keyword matched)";
+    }
+
     private List<String> normalizeApiKeys(List<String> apiKeys) {
         if (apiKeys == null) {
             return List.of();
@@ -985,5 +1029,36 @@ public class ContentModerationRuntimeService {
         private ApiKeyRuntimeState(String masked) {
             this.masked = masked;
         }
+    }
+
+    private List<String> normalizeBlockedKeywords(Object raw) {
+        if (raw instanceof List<?> list) {
+            return list.stream()
+                    .filter(item -> item instanceof String)
+                    .map(item -> (String) item)
+                    .filter(s -> !s.isBlank())
+                    .limit(10000)
+                    .toList();
+        }
+        return List.of();
+    }
+
+    private String normalizeKeywordBlockingMode(String mode) {
+        if (mode == null || mode.isBlank()) return null;
+        return switch (mode.toLowerCase()) {
+            case "keyword_only", "keyword_and_api", "api_only" -> mode.toLowerCase();
+            default -> null;
+        };
+    }
+
+    private ContentModerationConfigSnapshot.ContentModerationModelFilter normalizeModelFilter(Object raw) {
+        if (raw instanceof Map<?, ?> map) {
+            String mode = map.get("mode") instanceof String s ? s : "all";
+            List<String> models = map.get("models") instanceof List<?> list
+                    ? list.stream().filter(item -> item instanceof String).map(item -> (String) item).limit(1000).toList()
+                    : List.of();
+            return new ContentModerationConfigSnapshot.ContentModerationModelFilter(mode, models);
+        }
+        return ContentModerationConfigSnapshot.ContentModerationModelFilter.all();
     }
 }

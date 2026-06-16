@@ -23,6 +23,10 @@ public record AdminProxyResponse(
         String quality_grade,
         String quality_summary,
         Long quality_checked,
+        String expires_at,
+        String fallback_mode,
+        Long backup_proxy_id,
+        Integer expiry_warn_days,
         String created_at,
         String updated_at
 ) {

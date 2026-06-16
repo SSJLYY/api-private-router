@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-// TODO: redpackets.code字段需要添加UNIQUE约束，防止生成重复code
 public class RedpacketRepository {
 
     private final NamedParameterJdbcTemplate jdbcTemplate;

@@ -1,6 +1,7 @@
 package org.apiprivaterouter.javabackend.admin.riskcontrol.service;
 
 import org.apiprivaterouter.javabackend.admin.riskcontrol.model.ContentModerationConfigResponse;
+import org.apiprivaterouter.javabackend.admin.riskcontrol.model.ContentModerationModelFilterResponse;
 import org.apiprivaterouter.javabackend.admin.riskcontrol.model.UpdateContentModerationConfigRequest;
 import org.apiprivaterouter.javabackend.admin.riskcontrol.repository.ContentModerationHashRepository;
 import org.apiprivaterouter.javabackend.admin.settings.repository.AdminSettingsRepository;
@@ -72,7 +73,11 @@ public class ContentModerationConfigService {
                 ContentModerationSupport.normalizeRetryCount(ContentModerationSupport.readInteger(settings.get("retry_count"))),
                 ContentModerationSupport.normalizeHitRetentionDays(ContentModerationSupport.readInteger(settings.get("hit_retention_days"))),
                 ContentModerationSupport.normalizeNonHitRetentionDays(ContentModerationSupport.readInteger(settings.get("non_hit_retention_days"))),
-                ContentModerationSupport.readBoolean(settings.get("pre_hash_check_enabled"), false)
+                ContentModerationSupport.readBoolean(settings.get("pre_hash_check_enabled"), false),
+                ContentModerationSupport.normalizeBlockedKeywords(settings.get("blocked_keywords")),
+                ContentModerationSupport.normalizeKeywordBlockingMode(settings.get("keyword_blocking_mode")),
+                thresholds,
+                ContentModerationSupport.normalizeModelFilter(settings.get("model_filter"))
         );
         ContentModerationLoadedConfig config = new ContentModerationLoadedConfig(settings, response, apiKeys, thresholds);
         runtimeService.syncConfig(config);
@@ -119,6 +124,15 @@ public class ContentModerationConfigService {
         putIfPresent(settings, "hit_retention_days", request.hit_retention_days());
         putIfPresent(settings, "non_hit_retention_days", request.non_hit_retention_days());
         putIfPresent(settings, "pre_hash_check_enabled", request.pre_hash_check_enabled());
+        if (request.blocked_keywords() != null) {
+            settings.put("blocked_keywords", request.blocked_keywords());
+        }
+        if (request.keyword_blocking_mode() != null) {
+            settings.put("keyword_blocking_mode", request.keyword_blocking_mode());
+        }
+        if (request.model_filter() != null) {
+            settings.put("model_filter", request.model_filter());
+        }
         ContentModerationSupport.normalizeConfigMap(settings);
         settingsRepository.upsertSettingValue(ContentModerationSupport.CONFIG_KEY, jsonHelper.writeJson(settings));
         return loadConfig().response();

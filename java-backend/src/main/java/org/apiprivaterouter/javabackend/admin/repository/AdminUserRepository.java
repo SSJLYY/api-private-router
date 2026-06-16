@@ -60,8 +60,13 @@ public class AdminUserRepository {
 
     public PageResponse<AdminUserResponse> listUsers(int page, int pageSize, String status, String role, String search,
                                                       String groupName, String sortBy, String sortOrder) {
+        return listUsers(page, pageSize, status, role, search, groupName, null, sortBy, sortOrder);
+    }
+
+    public PageResponse<AdminUserResponse> listUsers(int page, int pageSize, String status, String role, String search,
+                                                      String groupName, Long apiKeyGroup, String sortBy, String sortOrder) {
         int offset = Math.max(page - 1, 0) * pageSize;
-        String whereClause = buildUserListWhereClause(status, role, search, groupName);
+        String whereClause = buildUserListWhereClause(status, role, search, groupName, apiKeyGroup);
         String safeSortCol = normalizeUserSortColumn(sortBy);
         String safeSortDir = normalizeSortDirection(sortOrder);
         String countSql = """
@@ -80,7 +85,7 @@ public class AdminUserRepository {
         MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("pageSize", pageSize)
                 .addValue("offset", offset);
-        applyUserListFilters(params, status, role, search, groupName);
+        applyUserListFilters(params, status, role, search, groupName, apiKeyGroup);
         Long total = jdbcTemplate.queryForObject(countSql, params, Long.class);
         List<AdminUserResponse> items = jdbcTemplate.query(dataSql, params, (rs, rowNum) -> mapAdminUser(rs));
         return new PageResponse<>(items, total == null ? 0 : total, page, pageSize);
@@ -98,7 +103,7 @@ public class AdminUserRepository {
         return rows.stream().findFirst();
     }
 
-    private void applyUserListFilters(MapSqlParameterSource params, String status, String role, String search, String groupName) {
+    private void applyUserListFilters(MapSqlParameterSource params, String status, String role, String search, String groupName, Long apiKeyGroup) {
         String normalizedStatus = blankToNull(status);
         if (normalizedStatus != null) {
             params.addValue("status", normalizedStatus);
@@ -115,9 +120,12 @@ public class AdminUserRepository {
         if (normalizedGroupName != null) {
             params.addValue("groupName", normalizedGroupName);
         }
+        if (apiKeyGroup != null) {
+            params.addValue("apiKeyGroup", apiKeyGroup);
+        }
     }
 
-    private String buildUserListWhereClause(String status, String role, String search, String groupName) {
+    private String buildUserListWhereClause(String status, String role, String search, String groupName, Long apiKeyGroup) {
         StringBuilder sql = new StringBuilder("""
                 where deleted_at is null
                 """);
@@ -132,6 +140,9 @@ public class AdminUserRepository {
         }
         if (blankToNull(groupName) != null) {
             sql.append("\n  and id in (select user_id from user_allowed_groups where group_id in (select id from groups where name ilike :groupName))");
+        }
+        if (apiKeyGroup != null) {
+            sql.append("\n  and id in (select distinct user_id from api_keys where group_id = :apiKeyGroup and deleted_at is null)");
         }
         sql.append('\n');
         return sql.toString();

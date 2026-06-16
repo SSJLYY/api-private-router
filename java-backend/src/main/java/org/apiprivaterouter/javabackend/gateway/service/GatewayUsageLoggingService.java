@@ -25,11 +25,33 @@ public class GatewayUsageLoggingService {
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final FundService fundService;
     private final ObjectMapper objectMapper;
+    private final BillingCircuitBreaker circuitBreaker;
 
-    public GatewayUsageLoggingService(NamedParameterJdbcTemplate jdbcTemplate, FundService fundService, ObjectMapper objectMapper) {
+    public GatewayUsageLoggingService(NamedParameterJdbcTemplate jdbcTemplate, FundService fundService,
+                                      ObjectMapper objectMapper, BillingCircuitBreaker circuitBreaker) {
         this.jdbcTemplate = jdbcTemplate;
         this.fundService = fundService;
         this.objectMapper = objectMapper;
+        this.circuitBreaker = circuitBreaker;
+    }
+
+    public void logUsage(Long accountId, long userId, String model, String upstreamModel,
+                         long inputTokens, long outputTokens, long cacheReadTokens, long cacheCreationTokens,
+                         boolean stream, long durationMs, String platform, String endpoint) {
+        if (userId <= 0) return;
+        try {
+            insertUsageLog(userId, 0, accountId != null ? accountId : 0L, UUID.randomUUID().toString(),
+                    upstreamModel != null ? upstreamModel : model,
+                    (int) Math.min(inputTokens, Integer.MAX_VALUE),
+                    (int) Math.min(outputTokens, Integer.MAX_VALUE),
+                    (int) Math.min(cacheCreationTokens, Integer.MAX_VALUE),
+                    (int) Math.min(cacheReadTokens, Integer.MAX_VALUE),
+                    BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+                    BigDecimal.ZERO, BigDecimal.ZERO,
+                    BigDecimal.ONE, BigDecimal.ONE, stream, null);
+        } catch (Exception ex) {
+            log.warn("simplified usage log failed for userId={}: {}", userId, ex.getMessage());
+        }
     }
 
     public void logUsage(GatewayRuntimeContext ctx, String model, int inputTokens, int outputTokens,
@@ -43,8 +65,31 @@ public class GatewayUsageLoggingService {
         long accountId = ctx.account().id();
         Long groupId = ctx.apiKey().groupId();
 
-        PricingResult pricing = lookupPricing(userId, accountId, groupId, ctx.account().platform(), model,
-                inputTokens, outputTokens, cacheCreationTokens, cacheReadTokens);
+        if (!circuitBreaker.allow()) {
+            log.warn("billing circuit breaker is OPEN, skipping billing for userId={}", userId);
+            try {
+                insertUsageLog(userId, apiKeyId, accountId, requestId, model,
+                        inputTokens, outputTokens, cacheCreationTokens, cacheReadTokens,
+                        BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+                        BigDecimal.ZERO, BigDecimal.ZERO,
+                        BigDecimal.ONE, BigDecimal.ONE, stream, groupId);
+                circuitBreaker.onSuccess();
+            } catch (Exception ex) {
+                circuitBreaker.onFailure(ex);
+                log.warn("usage log insert failed while circuit breaker open for userId={}: {}", userId, ex.getMessage());
+            }
+            return;
+        }
+
+        PricingResult pricing;
+        try {
+            pricing = lookupPricing(userId, accountId, groupId, ctx.account().platform(), model,
+                    inputTokens, outputTokens, cacheCreationTokens, cacheReadTokens);
+        } catch (Exception ex) {
+            circuitBreaker.onFailure(ex);
+            log.error("pricing lookup failed for userId={}: {}", userId, ex.getMessage(), ex);
+            return;
+        }
 
         BigDecimal inputCost = BigDecimal.valueOf(inputTokens).multiply(pricing.inputPrice());
         BigDecimal outputCost = BigDecimal.valueOf(outputTokens).multiply(pricing.outputPrice());
@@ -58,21 +103,27 @@ public class GatewayUsageLoggingService {
         BigDecimal actualCost = totalCost.multiply(groupMultiplier).multiply(accountMultiplier)
                 .setScale(10, RoundingMode.HALF_UP);
 
-        long usageLogId = insertUsageLog(userId, apiKeyId, accountId, requestId, model,
-                inputTokens, outputTokens, cacheCreationTokens, cacheReadTokens,
-                inputCost, outputCost, cacheCreationCost, cacheReadCost, totalCost, actualCost,
-                groupMultiplier, accountMultiplier, stream, groupId);
+        try {
+            long usageLogId = insertUsageLog(userId, apiKeyId, accountId, requestId, model,
+                    inputTokens, outputTokens, cacheCreationTokens, cacheReadTokens,
+                    inputCost, outputCost, cacheCreationCost, cacheReadCost, totalCost, actualCost,
+                    groupMultiplier, accountMultiplier, stream, groupId);
+            circuitBreaker.onSuccess();
 
-        if (actualCost.compareTo(BigDecimal.ZERO) > 0) {
-            try {
-                long amountInCents = actualCost.movePointRight(8).setScale(0, RoundingMode.HALF_UP).longValue();
-                if (amountInCents > 0) {
-                    fundService.deductApiUsage(userId, amountInCents, "usage_log", usageLogId,
-                            "API usage: " + model);
+            if (actualCost.compareTo(BigDecimal.ZERO) > 0) {
+                try {
+                    long amountInCents = actualCost.movePointRight(8).setScale(0, RoundingMode.HALF_UP).longValue();
+                    if (amountInCents > 0) {
+                        fundService.deductApiUsage(userId, amountInCents, "usage_log", usageLogId,
+                                "API usage: " + model);
+                    }
+                } catch (Exception ex) {
+                    log.error("fund deduction failed for userId={} usageLogId={}: {}", userId, usageLogId, ex.getMessage(), ex);
                 }
-            } catch (Exception ex) {
-                log.error("fund deduction failed for userId={} usageLogId={}: {}", userId, usageLogId, ex.getMessage(), ex);
             }
+        } catch (Exception ex) {
+            circuitBreaker.onFailure(ex);
+            log.error("usage log insert failed for userId={}: {}", userId, ex.getMessage(), ex);
         }
     }
 

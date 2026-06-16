@@ -25,6 +25,10 @@ public class CurrentUserContext {
         throw new UnauthorizedException("Admin authentication required");
     }
 
+    public CurrentUser getCurrent() {
+        return resolveFromRequest();
+    }
+
     private CurrentUser resolveFromRequest() {
         ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         if (attributes == null) {

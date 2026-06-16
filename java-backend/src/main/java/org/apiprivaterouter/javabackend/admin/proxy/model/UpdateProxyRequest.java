@@ -14,6 +14,10 @@ public class UpdateProxyRequest {
     private String username;
     private String password;
     private String status;
+    private String expires_at;
+    private String fallback_mode;
+    private Long backup_proxy_id;
+    private Integer expiry_warn_days;
 
     @JsonIgnore
     private boolean namePresent;
@@ -29,6 +33,14 @@ public class UpdateProxyRequest {
     private boolean passwordPresent;
     @JsonIgnore
     private boolean statusPresent;
+    @JsonIgnore
+    private boolean expiresAtPresent;
+    @JsonIgnore
+    private boolean fallbackModePresent;
+    @JsonIgnore
+    private boolean backupProxyIdPresent;
+    @JsonIgnore
+    private boolean expiryWarnDaysPresent;
 
     public String getName() {
         return name;
@@ -86,6 +98,68 @@ public class UpdateProxyRequest {
         return statusPresent;
     }
 
+    public String getExpires_at() {
+        return expires_at;
+    }
+
+    public String getFallback_mode() {
+        return fallback_mode;
+    }
+
+    public Long getBackup_proxy_id() {
+        return backup_proxy_id;
+    }
+
+    public Integer getExpiry_warn_days() {
+        return expiry_warn_days;
+    }
+
+    public boolean isExpiresAtPresent() {
+        return expiresAtPresent;
+    }
+
+    public boolean isFallbackModePresent() {
+        return fallbackModePresent;
+    }
+
+    public boolean isBackupProxyIdPresent() {
+        return backupProxyIdPresent;
+    }
+
+    public boolean isExpiryWarnDaysPresent() {
+        return expiryWarnDaysPresent;
+    }
+
+    @JsonSetter("status")
+    public void setStatus(String status) {
+        this.status = status;
+        this.statusPresent = true;
+    }
+
+    @JsonSetter("expires_at")
+    public void setExpires_at(String expires_at) {
+        this.expires_at = expires_at;
+        this.expiresAtPresent = true;
+    }
+
+    @JsonSetter("fallback_mode")
+    public void setFallback_mode(String fallback_mode) {
+        this.fallback_mode = fallback_mode;
+        this.fallbackModePresent = true;
+    }
+
+    @JsonSetter("backup_proxy_id")
+    public void setBackup_proxy_id(Long backup_proxy_id) {
+        this.backup_proxy_id = backup_proxy_id;
+        this.backupProxyIdPresent = true;
+    }
+
+    @JsonSetter("expiry_warn_days")
+    public void setExpiry_warn_days(Integer expiry_warn_days) {
+        this.expiry_warn_days = expiry_warn_days;
+        this.expiryWarnDaysPresent = true;
+    }
+
     @JsonSetter("name")
     public void setName(String name) {
         this.name = name;
@@ -120,11 +194,5 @@ public class UpdateProxyRequest {
     public void setPassword(String password) {
         this.password = password;
         this.passwordPresent = true;
-    }
-
-    @JsonSetter("status")
-    public void setStatus(String status) {
-        this.status = status;
-        this.statusPresent = true;
     }
 }

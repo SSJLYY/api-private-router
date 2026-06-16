@@ -6,6 +6,7 @@ import org.apiprivaterouter.javabackend.publicsettings.model.CustomMenuItem;
 import org.apiprivaterouter.javabackend.publicsettings.model.PublicSettingsResponse;
 import org.apiprivaterouter.javabackend.publicsettings.repository.PublicSettingsRepository;
 import org.springframework.core.env.Environment;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -13,11 +14,14 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 @Service
-// TODO: Add caching (e.g. @Cacheable) to avoid hitting the database on every request — settings rarely change
 public class PublicSettingsService {
+
+    private static final String CACHE_KEY = "cache:public_settings";
+    private static final long CACHE_TTL_SECONDS = 300;
 
     private static final String KEY_REGISTRATION_ENABLED = "registration_enabled";
     private static final String KEY_EMAIL_VERIFY_ENABLED = "email_verify_enabled";
@@ -98,18 +102,45 @@ public class PublicSettingsService {
     private final PublicSettingsRepository repository;
     private final JsonHelper jsonHelper;
     private final Environment environment;
+    private final StringRedisTemplate redis;
 
     public PublicSettingsService(
             PublicSettingsRepository repository,
             JsonHelper jsonHelper,
-            Environment environment
+            Environment environment,
+            StringRedisTemplate redis
     ) {
         this.repository = repository;
         this.jsonHelper = jsonHelper;
         this.environment = environment;
+        this.redis = redis;
     }
 
     public PublicSettingsResponse getPublicSettings() {
+        try {
+            String cached = redis.opsForValue().get(CACHE_KEY);
+            if (cached != null) {
+                return jsonHelper.objectMapper().readValue(cached, PublicSettingsResponse.class);
+            }
+        } catch (Exception ignored) {
+        }
+
+        PublicSettingsResponse response = loadPublicSettings();
+
+        try {
+            String json = jsonHelper.objectMapper().writeValueAsString(response);
+            redis.opsForValue().set(CACHE_KEY, json, CACHE_TTL_SECONDS, TimeUnit.SECONDS);
+        } catch (Exception ignored) {
+        }
+
+        return response;
+    }
+
+    public void invalidateCache() {
+        redis.delete(CACHE_KEY);
+    }
+
+    private PublicSettingsResponse loadPublicSettings() {
         Map<String, String> settings = repository.getValues(List.of(
                 KEY_REGISTRATION_ENABLED,
                 KEY_EMAIL_VERIFY_ENABLED,

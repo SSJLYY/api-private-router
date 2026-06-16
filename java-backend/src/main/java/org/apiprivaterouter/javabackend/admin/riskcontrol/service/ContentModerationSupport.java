@@ -1,5 +1,7 @@
 package org.apiprivaterouter.javabackend.admin.riskcontrol.service;
 
+import org.apiprivaterouter.javabackend.admin.riskcontrol.model.ContentModerationModelFilterResponse;
+
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -93,6 +95,9 @@ final class ContentModerationSupport {
         settings.put("hit_retention_days", normalizeHitRetentionDays(readInteger(settings.get("hit_retention_days"))));
         settings.put("non_hit_retention_days", normalizeNonHitRetentionDays(readInteger(settings.get("non_hit_retention_days"))));
         settings.put("pre_hash_check_enabled", readBoolean(settings.get("pre_hash_check_enabled"), false));
+        settings.put("blocked_keywords", normalizeBlockedKeywords(settings.get("blocked_keywords")));
+        settings.put("keyword_blocking_mode", normalizeKeywordBlockingMode(settings.get("keyword_blocking_mode")));
+        settings.put("model_filter", settings.get("model_filter"));
         settings.put("thresholds", normalizeThresholds(settings.get("thresholds")));
     }
 
@@ -354,6 +359,38 @@ final class ContentModerationSupport {
             }
         }
         return normalized;
+    }
+
+    static List<String> normalizeBlockedKeywords(Object raw) {
+        if (raw instanceof List<?> list) {
+            return list.stream()
+                    .map(item -> item instanceof String s ? s.trim() : "")
+                    .filter(s -> !s.isEmpty())
+                    .distinct()
+                    .toList();
+        }
+        return List.of();
+    }
+
+    static String normalizeKeywordBlockingMode(Object raw) {
+        if (raw instanceof String s) {
+            String mode = s.trim().toLowerCase();
+            if ("block_request".equals(mode) || "append_warning".equals(mode) || "off".equals(mode)) {
+                return mode;
+            }
+        }
+        return "block_request";
+    }
+
+    static ContentModerationModelFilterResponse normalizeModelFilter(Object raw) {
+        if (raw instanceof Map<?, ?> map) {
+            String mode = map.get("mode") instanceof String s ? s : "all";
+            List<String> models = map.get("models") instanceof List<?> list
+                    ? list.stream().filter(item -> item instanceof String).map(item -> (String) item).limit(1000).toList()
+                    : List.of();
+            return new ContentModerationModelFilterResponse(mode, models);
+        }
+        return new ContentModerationModelFilterResponse("all", List.of());
     }
 
     static String trimToNull(String value) {

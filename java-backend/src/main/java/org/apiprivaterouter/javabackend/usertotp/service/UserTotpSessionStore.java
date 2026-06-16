@@ -1,113 +1,136 @@
 package org.apiprivaterouter.javabackend.usertotp.service;
 
-import org.springframework.scheduling.annotation.Scheduled;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 @Component
-// TODO: ConcurrentHashMap不支持集群部署，生产环境应迁移到Redis存储
 public class UserTotpSessionStore {
 
-    private final Map<Long, SetupSession> setupSessions = new ConcurrentHashMap<>();
-    private final Map<String, LoginSession> loginSessions = new ConcurrentHashMap<>();
-    private final Map<Long, Integer> verifyAttempts = new ConcurrentHashMap<>();
-    private final Map<Long, Instant> verifyAttemptExpiries = new ConcurrentHashMap<>();
-    private final Map<String, EmailCodeSession> emailCodes = new ConcurrentHashMap<>();
+    private static final Logger log = LoggerFactory.getLogger(UserTotpSessionStore.class);
+
+    private static final String SETUP_PREFIX = "totp:setup:";
+    private static final String LOGIN_PREFIX = "totp:login:";
+    private static final String VERIFY_ATTEMPTS_PREFIX = "totp:verify:attempts:";
+    private static final String EMAIL_CODE_PREFIX = "totp:email:code:";
+
+    private final StringRedisTemplate redis;
+    private final ObjectMapper objectMapper;
+
+    public UserTotpSessionStore(StringRedisTemplate redis, ObjectMapper objectMapper) {
+        this.redis = redis;
+        this.objectMapper = objectMapper;
+    }
 
     public SetupSession getSetupSession(long userId) {
-        SetupSession session = setupSessions.get(userId);
-        if (session == null || session.expiresAt().isBefore(Instant.now())) {
-            setupSessions.remove(userId);
-            return null;
-        }
-        return session;
+        return getJson(SETUP_PREFIX + userId, SetupSession.class, session ->
+                session.expiresAt().isBefore(Instant.now()) ? null : session);
     }
 
     public void saveSetupSession(long userId, SetupSession session) {
-        setupSessions.put(userId, session);
+        long ttl = Math.max(1, session.expiresAt().getEpochSecond() - Instant.now().getEpochSecond());
+        setJson(SETUP_PREFIX + userId, session, ttl);
     }
 
     public void deleteSetupSession(long userId) {
-        setupSessions.remove(userId);
+        redis.delete(SETUP_PREFIX + userId);
     }
 
     public LoginSession getLoginSession(String tempToken) {
         String normalizedToken = normalizeToken(tempToken);
-        LoginSession session = loginSessions.get(normalizedToken);
-        if (session == null || session.tokenExpiry().isBefore(Instant.now())) {
-            loginSessions.remove(normalizedToken);
-            return null;
-        }
-        return session;
+        return getJson(LOGIN_PREFIX + normalizedToken, LoginSession.class, session ->
+                session.tokenExpiry().isBefore(Instant.now()) ? null : session);
     }
 
     public void saveLoginSession(String tempToken, LoginSession session) {
-        loginSessions.put(normalizeToken(tempToken), session);
+        String normalizedToken = normalizeToken(tempToken);
+        long ttl = Math.max(1, session.tokenExpiry().getEpochSecond() - Instant.now().getEpochSecond());
+        setJson(LOGIN_PREFIX + normalizedToken, session, ttl);
     }
 
     public void deleteLoginSession(String tempToken) {
-        loginSessions.remove(normalizeToken(tempToken));
+        redis.delete(LOGIN_PREFIX + normalizeToken(tempToken));
     }
 
     public int getVerifyAttempts(long userId) {
-        Instant expiresAt = verifyAttemptExpiries.get(userId);
-        if (expiresAt == null || expiresAt.isBefore(Instant.now())) {
-            verifyAttempts.remove(userId);
-            verifyAttemptExpiries.remove(userId);
+        String key = VERIFY_ATTEMPTS_PREFIX + userId;
+        String val = redis.opsForValue().get(key);
+        if (val == null) {
             return 0;
         }
-        return verifyAttempts.getOrDefault(userId, 0);
+        Long ttl = redis.getExpire(key, TimeUnit.SECONDS);
+        if (ttl == null || ttl <= 0) {
+            redis.delete(key);
+            return 0;
+        }
+        try {
+            return Integer.parseInt(val);
+        } catch (NumberFormatException e) {
+            redis.delete(key);
+            return 0;
+        }
     }
 
     public int incrementVerifyAttempts(long userId, Duration ttl) {
-        Instant expiresAt = Instant.now().plus(ttl);
-        verifyAttemptExpiries.put(userId, expiresAt);
-        int next = verifyAttempts.getOrDefault(userId, 0) + 1;
-        verifyAttempts.put(userId, next);
-        return next;
+        String key = VERIFY_ATTEMPTS_PREFIX + userId;
+        Long current = redis.opsForValue().increment(key);
+        if (current != null && current == 1L) {
+            redis.expire(key, ttl);
+        }
+        return current != null ? current.intValue() : 1;
     }
 
     public void clearVerifyAttempts(long userId) {
-        verifyAttempts.remove(userId);
-        verifyAttemptExpiries.remove(userId);
+        redis.delete(VERIFY_ATTEMPTS_PREFIX + userId);
     }
 
     public EmailCodeSession getEmailCode(String email) {
-        EmailCodeSession session = emailCodes.get(normalizeEmail(email));
-        if (session == null || session.expiresAt().isBefore(Instant.now())) {
-            emailCodes.remove(normalizeEmail(email));
-            return null;
-        }
-        return session;
+        return getJson(EMAIL_CODE_PREFIX + normalizeEmail(email), EmailCodeSession.class, session ->
+                session.expiresAt().isBefore(Instant.now()) ? null : session);
     }
 
     public void saveEmailCode(String email, EmailCodeSession session) {
-        emailCodes.put(normalizeEmail(email), session);
+        long ttl = Math.max(1, session.expiresAt().getEpochSecond() - Instant.now().getEpochSecond());
+        setJson(EMAIL_CODE_PREFIX + normalizeEmail(email), session, ttl);
     }
 
     public void deleteEmailCode(String email) {
-        emailCodes.remove(normalizeEmail(email));
+        redis.delete(EMAIL_CODE_PREFIX + normalizeEmail(email));
     }
 
-    @Scheduled(fixedDelay = 300_000) // every 5 minutes
-    public void evictExpired() {
-        Instant now = Instant.now();
-        setupSessions.entrySet().removeIf(e -> e.getValue().expiresAt().isBefore(now));
-        loginSessions.entrySet().removeIf(e -> e.getValue().tokenExpiry().isBefore(now));
-        verifyAttemptExpiries.entrySet().removeIf(e -> e.getValue().isBefore(now));
-        // Remove verify attempts for users whose expiry was removed
-        Iterator<Long> it = verifyAttempts.keySet().iterator();
-        while (it.hasNext()) {
-            if (!verifyAttemptExpiries.containsKey(it.next())) {
-                it.remove();
-            }
+    private <T> T getJson(String key, Class<T> type, java.util.function.Function<T, T> expiryCheck) {
+        String json = redis.opsForValue().get(key);
+        if (json == null) {
+            return null;
         }
-        emailCodes.entrySet().removeIf(e -> e.getValue().expiresAt().isBefore(now));
+        try {
+            T value = objectMapper.readValue(json, type);
+            T result = expiryCheck.apply(value);
+            if (result == null) {
+                redis.delete(key);
+            }
+            return result;
+        } catch (JsonProcessingException e) {
+            log.error("failed to deserialize TOTP session key={}: {}", key, e.getMessage());
+            redis.delete(key);
+            return null;
+        }
+    }
+
+    private void setJson(String key, Object value, long ttlSeconds) {
+        try {
+            String json = objectMapper.writeValueAsString(value);
+            redis.opsForValue().set(key, json, ttlSeconds, TimeUnit.SECONDS);
+        } catch (JsonProcessingException e) {
+            log.error("failed to serialize TOTP session key={}: {}", key, e.getMessage());
+        }
     }
 
     private String normalizeEmail(String email) {

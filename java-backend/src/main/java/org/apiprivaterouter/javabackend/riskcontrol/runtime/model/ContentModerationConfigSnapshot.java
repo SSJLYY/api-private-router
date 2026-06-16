@@ -29,8 +29,35 @@ public record ContentModerationConfigSnapshot(
         int hitRetentionDays,
         int nonHitRetentionDays,
         boolean preHashCheckEnabled,
-        Map<String, Double> thresholds
+        Map<String, Double> thresholds,
+        List<String> blockedKeywords,
+        String keywordBlockingMode,
+        ContentModerationModelFilter modelFilter
 ) {
+
+    public record ContentModerationModelFilter(
+            String mode,
+            List<String> models
+    ) {
+        private static final ContentModerationModelFilter ALL = new ContentModerationModelFilter("all", List.of());
+
+        public static ContentModerationModelFilter all() {
+            return ALL;
+        }
+
+        public boolean appliesToModel(String model) {
+            if (mode == null || "all".equals(mode) || models == null || models.isEmpty()) {
+                return true;
+            }
+            if ("include".equals(mode)) {
+                return models.contains(model);
+            }
+            if ("exclude".equals(mode)) {
+                return !models.contains(model);
+            }
+            return true;
+        }
+    }
 
     public boolean includesGroup(Long groupId) {
         if (allGroups) {
@@ -55,5 +82,17 @@ public record ContentModerationConfigSnapshot(
         } catch (NumberFormatException ex) {
             return true;
         }
+    }
+
+    public boolean isKeywordBlockingEnabled() {
+        return blockedKeywords != null && !blockedKeywords.isEmpty()
+                && keywordBlockingMode != null
+                && !keywordBlockingMode.equals("api_only");
+    }
+
+    public boolean shouldCallModerationApi() {
+        return keywordBlockingMode == null
+                || keywordBlockingMode.equals("api_only")
+                || keywordBlockingMode.equals("keyword_and_api");
     }
 }

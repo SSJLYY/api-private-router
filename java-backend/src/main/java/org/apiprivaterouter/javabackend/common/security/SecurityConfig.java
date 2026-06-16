@@ -1,6 +1,7 @@
 package org.apiprivaterouter.javabackend.common.security;
 
 import org.apiprivaterouter.javabackend.common.config.AutoSetupProperties;
+import org.apiprivaterouter.javabackend.common.config.BillingCircuitBreakerProperties;
 import org.apiprivaterouter.javabackend.common.config.DataDirectoryProperties;
 import org.apiprivaterouter.javabackend.common.config.FrontendAssetsProperties;
 import org.apiprivaterouter.javabackend.common.config.UrlAllowlistProperties;
@@ -19,7 +20,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
         DataDirectoryProperties.class,
         FrontendAssetsProperties.class,
         AutoSetupProperties.class,
-        UrlAllowlistProperties.class
+        UrlAllowlistProperties.class,
+        BillingCircuitBreakerProperties.class
 })
 public class SecurityConfig implements WebMvcConfigurer {
 

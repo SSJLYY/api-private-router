@@ -29,6 +29,9 @@ public record UpdateContentModerationConfigRequest(
         Integer retry_count,
         Integer hit_retention_days,
         Integer non_hit_retention_days,
-        Boolean pre_hash_check_enabled
+        Boolean pre_hash_check_enabled,
+        List<String> blocked_keywords,
+        String keyword_blocking_mode,
+        ContentModerationModelFilterRequest model_filter
 ) {
 }

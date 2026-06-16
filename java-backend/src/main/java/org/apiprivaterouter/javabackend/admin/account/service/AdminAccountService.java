@@ -1935,4 +1935,23 @@ public class AdminAccountService {
             String organizationId
     ) {
     }
+
+    public java.util.Map<String, Object> getAccountModels(long id) {
+        var account = repository.getAccount(id).orElseThrow(() -> new IllegalArgumentException("account not found"));
+        java.util.Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("account_id", id);
+        result.put("platform", account.platform());
+        result.put("model_whitelist", account.extra() != null ? account.extra().get("model_whitelist") : null);
+        return result;
+    }
+
+    public java.util.Map<String, Object> syncAccountModelsFromUpstream(long id) {
+        var account = repository.getAccount(id).orElseThrow(() -> new IllegalArgumentException("account not found"));
+        java.util.Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("account_id", id);
+        result.put("platform", account.platform());
+        result.put("synced", false);
+        result.put("message", "upstream model sync not yet implemented for platform: " + account.platform());
+        return result;
+    }
 }

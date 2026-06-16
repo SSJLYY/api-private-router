@@ -37,6 +37,7 @@ public record UpdateAdminGroupRequest(
         String default_mapped_model,
         AdminGroupResponse.MessagesDispatchModelConfig messages_dispatch_model_config,
         Integer rpm_limit,
-        List<@Positive Long> copy_accounts_from_group_ids
+        List<@Positive Long> copy_accounts_from_group_ids,
+        GroupModelsListConfig models_list_config
 ) {
 }

@@ -278,7 +278,7 @@ public class AdminProxyRepository {
                 rs.getString("username"),
                 rs.getString("password"),
                 defaultString(rs.getString("status")),
-                rs.getLong("account_count"),
+                rs.getObject("account_count", Long.class),
                 null,
                 null,
                 null,
@@ -292,6 +292,10 @@ public class AdminProxyRepository {
                 null,
                 null,
                 null,
+                rs.getString("expires_at"),
+                rs.getString("fallback_mode"),
+                rs.getObject("backup_proxy_id", Long.class),
+                rs.getObject("expiry_warn_days", Integer.class),
                 toIsoString(rs.getTimestamp("created_at")),
                 toIsoString(rs.getTimestamp("updated_at"))
         );

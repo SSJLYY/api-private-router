@@ -2,6 +2,7 @@ package org.apiprivaterouter.javabackend.admin.group.repository;
 
 import org.apiprivaterouter.javabackend.admin.group.model.AdminGroupResponse;
 import org.apiprivaterouter.javabackend.admin.group.model.GroupCapacitySummaryResponse;
+import org.apiprivaterouter.javabackend.admin.group.model.GroupModelsListConfig;
 import org.apiprivaterouter.javabackend.admin.group.model.GroupRateMultiplierEntryResponse;
 import org.apiprivaterouter.javabackend.admin.group.model.GroupStatsResponse;
 import org.apiprivaterouter.javabackend.admin.group.model.GroupUsageSummaryResponse;
@@ -83,7 +84,8 @@ public class AdminGroupRepository {
                        g.allow_image_generation, g.image_rate_independent, g.image_rate_multiplier,
                        g.image_price_1k, g.image_price_2k, g.image_price_4k,
                        g.claude_code_only, g.fallback_group_id, g.fallback_group_id_on_invalid_request,
-                       g.model_routing, g.model_routing_enabled, g.mcp_xml_inject, g.supported_model_scopes,
+                        g.model_routing, g.model_routing_enabled, g.mcp_xml_inject, g.supported_model_scopes,
+                        g.models_list_config,
                        g.allow_messages_dispatch, g.require_oauth_only, g.require_privacy_set,
                        g.default_mapped_model, g.messages_dispatch_model_config,
                        g.sort_order, g.created_at, g.updated_at,
@@ -123,7 +125,8 @@ public class AdminGroupRepository {
                        g.allow_image_generation, g.image_rate_independent, g.image_rate_multiplier,
                        g.image_price_1k, g.image_price_2k, g.image_price_4k,
                        g.claude_code_only, g.fallback_group_id, g.fallback_group_id_on_invalid_request,
-                       g.model_routing, g.model_routing_enabled, g.mcp_xml_inject, g.supported_model_scopes,
+                        g.model_routing, g.model_routing_enabled, g.mcp_xml_inject, g.supported_model_scopes,
+                        g.models_list_config,
                        g.allow_messages_dispatch, g.require_oauth_only, g.require_privacy_set,
                        g.default_mapped_model, g.messages_dispatch_model_config,
                        g.sort_order, g.created_at, g.updated_at,
@@ -167,7 +170,8 @@ public class AdminGroupRepository {
                        g.allow_image_generation, g.image_rate_independent, g.image_rate_multiplier,
                        g.image_price_1k, g.image_price_2k, g.image_price_4k,
                        g.claude_code_only, g.fallback_group_id, g.fallback_group_id_on_invalid_request,
-                       g.model_routing, g.model_routing_enabled, g.mcp_xml_inject, g.supported_model_scopes,
+                        g.model_routing, g.model_routing_enabled, g.mcp_xml_inject, g.supported_model_scopes,
+                        g.models_list_config,
                        g.allow_messages_dispatch, g.require_oauth_only, g.require_privacy_set,
                        g.default_mapped_model, g.messages_dispatch_model_config,
                        g.sort_order, g.created_at, g.updated_at,
@@ -234,6 +238,7 @@ public class AdminGroupRepository {
                     image_price_1k, image_price_2k, image_price_4k,
                     claude_code_only, fallback_group_id, fallback_group_id_on_invalid_request,
                     model_routing, model_routing_enabled, mcp_xml_inject, supported_model_scopes,
+                    models_list_config,
                     allow_messages_dispatch, require_oauth_only, require_privacy_set,
                     default_mapped_model, messages_dispatch_model_config, rpm_limit,
                     sort_order, created_at, updated_at
@@ -244,6 +249,7 @@ public class AdminGroupRepository {
                     :imagePrice1k, :imagePrice2k, :imagePrice4k,
                     :claudeCodeOnly, :fallbackGroupId, :fallbackGroupIdOnInvalidRequest,
                     cast(:modelRouting as jsonb), :modelRoutingEnabled, :mcpXmlInject, cast(:supportedModelScopes as jsonb),
+                    cast(:modelsListConfig as jsonb),
                     :allowMessagesDispatch, :requireOauthOnly, :requirePrivacySet,
                     :defaultMappedModel, cast(:messagesDispatchModelConfig as jsonb), :rpmLimit,
                     :sortOrder, now(), now()
@@ -283,6 +289,7 @@ public class AdminGroupRepository {
                     model_routing_enabled = :modelRoutingEnabled,
                     mcp_xml_inject = :mcpXmlInject,
                     supported_model_scopes = cast(:supportedModelScopes as jsonb),
+                    models_list_config = cast(:modelsListConfig as jsonb),
                     allow_messages_dispatch = :allowMessagesDispatch,
                     require_oauth_only = :requireOauthOnly,
                     require_privacy_set = :requirePrivacySet,
@@ -711,6 +718,7 @@ public class AdminGroupRepository {
                 .addValue("modelRoutingEnabled", model.modelRoutingEnabled())
                 .addValue("mcpXmlInject", model.mcpXmlInject())
                 .addValue("supportedModelScopes", jsonHelper.writeJson(model.supportedModelScopes() == null ? List.of() : model.supportedModelScopes()))
+                .addValue("modelsListConfig", jsonHelper.writeJson(toModelsListConfigMap(model.modelsListConfig())))
                 .addValue("allowMessagesDispatch", model.allowMessagesDispatch())
                 .addValue("requireOauthOnly", model.requireOauthOnly())
                 .addValue("requirePrivacySet", model.requirePrivacySet())
@@ -718,6 +726,16 @@ public class AdminGroupRepository {
                 .addValue("messagesDispatchModelConfig", jsonHelper.writeJson(toMessagesDispatchMap(model.messagesDispatchModelConfig())))
                 .addValue("rpmLimit", model.rpmLimit())
                 .addValue("sortOrder", model.sortOrder());
+    }
+
+    private Map<String, Object> toModelsListConfigMap(GroupModelsListConfig config) {
+        if (config == null) {
+            return Map.of();
+        }
+        Map<String, Object> value = new LinkedHashMap<>();
+        value.put("enabled", config.enabled());
+        value.put("models", config.models() == null ? List.of() : config.models());
+        return value;
     }
 
     private Map<String, Object> toMessagesDispatchMap(AdminGroupResponse.MessagesDispatchModelConfig config) {
@@ -781,6 +799,7 @@ public class AdminGroupRepository {
                 rs.getBoolean("model_routing_enabled"),
                 rs.getBoolean("mcp_xml_inject"),
                 parseSupportedModelScopes(rs.getString("supported_model_scopes")),
+                parseGroupModelsListConfig(rs.getString("models_list_config")),
                 rs.getLong("account_count"),
                 rs.getLong("active_account_count"),
                 rs.getLong("rate_limited_account_count"),
@@ -826,6 +845,17 @@ public class AdminGroupRepository {
             return List.of("claude", "gemini_text", "gemini_image");
         }
         return values;
+    }
+
+    private GroupModelsListConfig parseGroupModelsListConfig(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        Map<String, Object> map = jsonHelper.readObjectMap(raw);
+        boolean enabled = map.get("enabled") instanceof Boolean b && b;
+        List<String> models = jsonHelper.readStringList(
+                map.get("models") instanceof String s ? s : null);
+        return new GroupModelsListConfig(enabled, models);
     }
 
     private AdminGroupResponse.MessagesDispatchModelConfig parseMessagesDispatchConfig(String raw) {
@@ -916,6 +946,7 @@ public class AdminGroupRepository {
             boolean modelRoutingEnabled,
             boolean mcpXmlInject,
             List<String> supportedModelScopes,
+            GroupModelsListConfig modelsListConfig,
             boolean allowMessagesDispatch,
             boolean requireOauthOnly,
             boolean requirePrivacySet,

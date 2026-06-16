@@ -1037,10 +1037,20 @@ public class AuthLifecycleService {
         if (whitelist == null || whitelist.isEmpty()) {
             return;
         }
+        String lowerEmail = email.toLowerCase(Locale.ROOT);
+        String domain = lowerEmail.contains("@") ? lowerEmail.substring(lowerEmail.lastIndexOf('@') + 1) : "";
         for (String suffix : whitelist) {
             String normalized = trimToNull(suffix);
-            if (normalized != null && email.endsWith(normalized.toLowerCase(Locale.ROOT))) {
+            if (normalized == null) continue;
+            String lowerSuffix = normalized.toLowerCase(Locale.ROOT);
+            if (lowerEmail.endsWith(lowerSuffix)) {
                 return;
+            }
+            if (lowerSuffix.startsWith("*.") && domain.length() > 0) {
+                String wildcardBase = lowerSuffix.substring(1);
+                if (domain.endsWith(wildcardBase) || domain.equals(wildcardBase.substring(1))) {
+                    return;
+                }
             }
         }
         throw new ApiErrorException(400, "EMAIL_SUFFIX_NOT_ALLOWED",

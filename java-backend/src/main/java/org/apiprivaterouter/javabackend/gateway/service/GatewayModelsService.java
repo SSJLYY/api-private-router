@@ -32,14 +32,16 @@ public class GatewayModelsService {
         List<String> ids = collectModelIds(currentUser, platformHint);
         if (ids.isEmpty()) {
             ids = switch (normalizePlatform(platformHint)) {
-                case "openai" -> List.of("gpt-5.5", "gpt-5.4", "gpt-5.4-mini", "gpt-5.3-codex", "gpt-image-1", "gpt-image-2");
+                case "openai" -> List.of("gpt-5.5", "gpt-5.4", "gpt-5.4-mini", "gpt-5.3-codex", "gpt-image-1", "gpt-image-2", "text-embedding-3-small", "text-embedding-3-large");
                 default -> List.of(
                         "claude-opus-4-5-20251101",
                         "claude-opus-4-6",
                         "claude-opus-4-7",
+                        "claude-opus-4-8",
                         "claude-sonnet-4-5-20250929",
                         "claude-sonnet-4-6",
-                        "claude-haiku-4-5-20251001"
+                        "claude-haiku-4-5-20251001",
+                        "claude-fable-5"
                 );
             };
         }
@@ -60,6 +62,7 @@ public class GatewayModelsService {
                 new ClaudeGatewayModelResponse("claude-opus-4-5-20251101", "model", "Claude Opus 4.5", "2025-11-01T00:00:00Z"),
                 new ClaudeGatewayModelResponse("claude-opus-4-6", "model", "Claude Opus 4.6", "2026-02-06T00:00:00Z"),
                 new ClaudeGatewayModelResponse("claude-opus-4-7", "model", "Claude Opus 4.7", "2026-04-17T00:00:00Z"),
+                new ClaudeGatewayModelResponse("claude-opus-4-8", "model", "Claude Opus 4.8", "2026-05-22T00:00:00Z"),
                 new ClaudeGatewayModelResponse("claude-sonnet-4-5-20250929", "model", "Claude Sonnet 4.5", "2025-09-29T00:00:00Z"),
                 new ClaudeGatewayModelResponse("claude-sonnet-4-6", "model", "Claude Sonnet 4.6", "2026-02-06T00:00:00Z"),
                 new ClaudeGatewayModelResponse("claude-sonnet-4-7", "model", "Claude Sonnet 4.7", "2026-04-17T00:00:00Z"),
@@ -72,7 +75,8 @@ public class GatewayModelsService {
                 new ClaudeGatewayModelResponse("gemini-3-pro-preview", "model", "Gemini 3 Pro Preview", CLAUDE_CREATED_AT),
                 new ClaudeGatewayModelResponse("gemini-3.1-pro-preview", "model", "Gemini 3.1 Pro Preview", CLAUDE_CREATED_AT),
                 new ClaudeGatewayModelResponse("gemini-3.1-pro-preview-customtools", "model", "Gemini 3.1 Pro Preview Custom Tools", CLAUDE_CREATED_AT),
-                new ClaudeGatewayModelResponse("gemini-3.1-flash-image", "model", "Gemini 3.1 Flash Image", CLAUDE_CREATED_AT)
+                new ClaudeGatewayModelResponse("gemini-3.1-flash-image", "model", "Gemini 3.1 Flash Image", CLAUDE_CREATED_AT),
+                new ClaudeGatewayModelResponse("claude-fable-5", "model", "Claude Fable 5", "2026-06-10T00:00:00Z")
         );
         return new ClaudeGatewayModelsResponse("list", models);
     }

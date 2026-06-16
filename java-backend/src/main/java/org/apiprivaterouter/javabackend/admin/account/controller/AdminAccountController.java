@@ -44,6 +44,7 @@ import org.apiprivaterouter.javabackend.admin.account.model.WindowStatsResponse;
 import org.apiprivaterouter.javabackend.admin.account.service.AdminAccountService;
 import org.apiprivaterouter.javabackend.admin.account.service.AdminAccountTestService;
 import org.apiprivaterouter.javabackend.admin.account.service.ClaudeOAuthService;
+import org.apiprivaterouter.javabackend.admin.proxy.service.ProxyExpiryService;
 import org.apiprivaterouter.javabackend.common.api.ApiResponse;
 import org.apiprivaterouter.javabackend.common.api.PageResponse;
 import org.apiprivaterouter.javabackend.common.security.CurrentUserContext;
@@ -71,17 +72,20 @@ public class AdminAccountController {
     private final AdminAccountService service;
     private final AdminAccountTestService accountTestService;
     private final ClaudeOAuthService claudeOAuthService;
+    private final ProxyExpiryService proxyExpiryService;
     private final CurrentUserContext currentUserContext;
 
     public AdminAccountController(
             AdminAccountService service,
             AdminAccountTestService accountTestService,
             ClaudeOAuthService claudeOAuthService,
+            ProxyExpiryService proxyExpiryService,
             CurrentUserContext currentUserContext
     ) {
         this.service = service;
         this.accountTestService = accountTestService;
         this.claudeOAuthService = claudeOAuthService;
+        this.proxyExpiryService = proxyExpiryService;
         this.currentUserContext = currentUserContext;
     }
 
@@ -392,5 +396,24 @@ public class AdminAccountController {
     ) {
         currentUserContext.requireAdmin();
         return ApiResponse.success(service.getTodayStats(id, timezone));
+    }
+
+    @PostMapping("/{id}/revert-proxy-fallback")
+    public ApiResponse<Map<String, String>> revertProxyFallback(@PathVariable long id) {
+        currentUserContext.requireAdmin();
+        proxyExpiryService.revertProxyFallback(id);
+        return ApiResponse.success(Map.of("status", "reverted"));
+    }
+
+    @GetMapping("/{id}/models")
+    public ApiResponse<Map<String, Object>> getAccountModels(@PathVariable long id) {
+        currentUserContext.requireAdmin();
+        return ApiResponse.success(service.getAccountModels(id));
+    }
+
+    @PostMapping("/{id}/models/sync-upstream")
+    public ApiResponse<Map<String, Object>> syncAccountModelsFromUpstream(@PathVariable long id) {
+        currentUserContext.requireAdmin();
+        return ApiResponse.success(service.syncAccountModelsFromUpstream(id));
     }
 }

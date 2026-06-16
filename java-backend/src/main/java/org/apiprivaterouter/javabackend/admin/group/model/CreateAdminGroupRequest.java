@@ -31,6 +31,7 @@ public record CreateAdminGroupRequest(
         Boolean model_routing_enabled,
         Boolean mcp_xml_inject,
         List<String> supported_model_scopes,
+        GroupModelsListConfig models_list_config,
         Boolean allow_messages_dispatch,
         Boolean require_oauth_only,
         Boolean require_privacy_set,

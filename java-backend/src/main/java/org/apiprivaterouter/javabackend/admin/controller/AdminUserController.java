@@ -48,11 +48,12 @@ public class AdminUserController {
             @RequestParam(required = false) String role,
             @RequestParam(required = false) String search,
             @RequestParam(name = "group_name", required = false) String groupName,
+            @RequestParam(name = "api_key_group", required = false) Long apiKeyGroup,
             @RequestParam(name = "sort_by", required = false) String sortBy,
             @RequestParam(name = "sort_order", required = false) String sortOrder
     ) {
         currentUserContext.requireAdmin();
-        return ApiResponse.success(adminUserService.listUsers(page, pageSize, status, role, search, groupName, sortBy, sortOrder));
+        return ApiResponse.success(adminUserService.listUsers(page, pageSize, status, role, search, groupName, apiKeyGroup, sortBy, sortOrder));
     }
 
     @GetMapping("/{id}")
