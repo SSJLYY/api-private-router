@@ -107,7 +107,6 @@
           <iframe
             :src="embeddedUrl"
             class="custom-embed-frame"
-            sandbox="allow-scripts allow-same-origin allow-popups"
             allowfullscreen
           ></iframe>
         </div>
@@ -313,10 +312,8 @@ function injectCopyButtons() {
   const container = markdownContainer.value
   if (!container) return
 
-  // Remove existing copy buttons before re-injecting (for re-renders)
-  container.querySelectorAll('.copy-btn').forEach((btn) => btn.remove())
-
   container.querySelectorAll('pre').forEach((pre) => {
+    if (pre.querySelector('.copy-btn')) return
     const btn = document.createElement('button')
     btn.className = 'copy-btn'
     btn.textContent = '复制'
@@ -371,10 +368,6 @@ onUnmounted(() => {
   if (themeObserver) {
     themeObserver.disconnect()
     themeObserver = null
-  }
-  if (scrollRafId) {
-    cancelAnimationFrame(scrollRafId)
-    scrollRafId = 0
   }
 })
 </script>

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Setup API endpoints
  */
 import axios from 'axios'
@@ -69,22 +69,14 @@ export async function getSetupStatus(): Promise<SetupStatus> {
  * Test database connection
  */
 export async function testDatabase(config: DatabaseConfig): Promise<void> {
-  const response = await setupClient.post('/setup/test-db', config)
-  const body = response.data
-  if (body?.code !== 0) {
-    throw { code: body?.code, message: body?.message || 'Database connection test failed' }
-  }
+  await setupClient.post('/setup/test-db', config)
 }
 
 /**
  * Test Redis connection
  */
 export async function testRedis(config: RedisConfig): Promise<void> {
-  const response = await setupClient.post('/setup/test-redis', config)
-  const body = response.data
-  if (body?.code !== 0) {
-    throw { code: body?.code, message: body?.message || 'Redis connection test failed' }
-  }
+  await setupClient.post('/setup/test-redis', config)
 }
 
 /**

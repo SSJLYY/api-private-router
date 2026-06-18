@@ -3,8 +3,6 @@ import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { adminAPI } from '@/api/admin'
 import type { AntigravityTokenInfo } from '@/api/admin/antigravity'
-import { extractApiErrorMessage } from '@/utils/apiError'
-
 
 export function useAntigravityOAuth() {
   const appStore = useAppStore()
@@ -33,7 +31,7 @@ export function useAntigravityOAuth() {
 
     try {
       const payload: Record<string, unknown> = {}
-      if (proxyId != null) payload.proxy_id = proxyId
+      if (proxyId) payload.proxy_id = proxyId
 
       const response = await adminAPI.antigravity.generateAuthUrl(payload as any)
       authUrl.value = response.auth_url
@@ -42,7 +40,7 @@ export function useAntigravityOAuth() {
       return true
     } catch (err: any) {
       error.value =
-        extractApiErrorMessage(err, t('admin.accounts.oauth.antigravity.failedToGenerateUrl'))
+        err.response?.data?.detail || t('admin.accounts.oauth.antigravity.failedToGenerateUrl')
       appStore.showError(error.value)
       return false
     } finally {
@@ -77,7 +75,7 @@ export function useAntigravityOAuth() {
       return tokenInfo as AntigravityTokenInfo
     } catch (err: any) {
       error.value =
-        extractApiErrorMessage(err, t('admin.accounts.oauth.antigravity.failedToExchangeCode'))
+        err.response?.data?.detail || t('admin.accounts.oauth.antigravity.failedToExchangeCode')
       appStore.showError(error.value)
       return null
     } finally {
@@ -105,7 +103,7 @@ export function useAntigravityOAuth() {
       return tokenInfo as AntigravityTokenInfo
     } catch (err: any) {
       error.value =
-        extractApiErrorMessage(err, t('admin.accounts.oauth.antigravity.failedToValidateRT'))
+        err.response?.data?.detail || t('admin.accounts.oauth.antigravity.failedToValidateRT')
       // Don't show global error toast for batch validation to avoid spamming
       // appStore.showError(error.value)
       return null

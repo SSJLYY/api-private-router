@@ -4,12 +4,12 @@ type LocaleCode = 'en' | 'zh'
 
 type LocaleMessages = Record<string, any>
 
-const LOCALE_KEY = 'api-private-router_locale'
+const LOCALE_KEY = 'sub2api_locale'
 const DEFAULT_LOCALE: LocaleCode = 'en'
 
 const localeLoaders: Record<LocaleCode, () => Promise<{ default: LocaleMessages }>> = {
   en: () => import('./locales/en'),
-  zh: () => import('./locales/zh-safe')
+  zh: () => import('./locales/zh')
 }
 
 function isLocaleCode(value: string): value is LocaleCode {
@@ -35,12 +35,9 @@ export const i18n = createI18n({
   locale: getDefaultLocale(),
   fallbackLocale: DEFAULT_LOCALE,
   messages: {},
-  datetimeFormats: {
-    en: { monthYear: { year: 'numeric', month: 'long' } },
-    zh: { monthYear: { year: 'numeric', month: 'long' } }
-  },
-  // Enable HTML message warnings for security (can be disabled per-message if needed)
-  warnHtmlMessage: true
+  // 禁用 HTML 消息警告 - 引导步骤使用富文本内容（driver.js 支持 HTML）
+  // 这些内容是内部定义的，不存在 XSS 风险
+  warnHtmlMessage: false
 })
 
 const loadedLocales = new Set<LocaleCode>()
@@ -72,7 +69,7 @@ export async function setLocale(locale: string): Promise<void> {
   localStorage.setItem(LOCALE_KEY, locale)
   document.documentElement.setAttribute('lang', locale)
 
-  // Sync browser tab title with language change
+  // 同步更新浏览器页签标题，使其跟随语言切换
   const { resolveDocumentTitle } = await import('@/router/title')
   const { default: router } = await import('@/router')
   const { useAppStore } = await import('@/stores/app')
@@ -92,4 +89,3 @@ export const availableLocales = [
 ] as const
 
 export default i18n
-

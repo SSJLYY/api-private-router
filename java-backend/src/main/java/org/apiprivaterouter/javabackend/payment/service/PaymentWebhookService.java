@@ -390,6 +390,14 @@ public class PaymentWebhookService {
                 throw new IllegalStateException("provider metadata mismatch");
             }
         }
+        if ("airwallex".equals(providerKey)) {
+            assertMatchesAnySnapshotKey(snapshot, metadata, "account_id", "merchant_id", "accountId");
+            assertMatchesAnySnapshotKey(snapshot, metadata, "currency", "currency");
+            String status = metadata.getOrDefault("status", "").trim();
+            if (!status.isBlank() && !"SUCCEEDED".equalsIgnoreCase(status)) {
+                throw new IllegalStateException("provider metadata mismatch");
+            }
+        }
     }
 
     private void assertMatchesAnySnapshotKey(Map<String, Object> snapshot, Map<String, String> metadata, String metadataKey, String... snapshotKeys) {
@@ -472,6 +480,22 @@ public class PaymentWebhookService {
             }
             return values.getOrDefault("out_trade_no", "");
         }
+        if ("airwallex".equals(providerKey)) {
+            try {
+                Map<String, Object> root = jsonHelper.readObjectMap(rawBody == null ? "" : rawBody);
+                Object data = root.get("data");
+                if (data instanceof Map<?, ?> dataMap) {
+                    Object obj = dataMap.get("object");
+                    if (obj instanceof Map<?, ?> objMap) {
+                        Object orderId = objMap.get("merchant_order_id");
+                        return orderId == null ? "" : String.valueOf(orderId);
+                    }
+                }
+                return "";
+            } catch (Exception ex) {
+                return "";
+            }
+        }
         return "";
     }
 
@@ -499,6 +523,9 @@ public class PaymentWebhookService {
             return ResponseEntity.ok(Map.of("code", "SUCCESS", "message", "成功"));
         }
         if ("stripe".equals(normalized)) {
+            return ResponseEntity.ok().contentType(MediaType.TEXT_PLAIN).body("");
+        }
+        if ("airwallex".equals(normalized)) {
             return ResponseEntity.ok().contentType(MediaType.TEXT_PLAIN).body("");
         }
         return ResponseEntity.ok().contentType(MediaType.TEXT_PLAIN).body("success");

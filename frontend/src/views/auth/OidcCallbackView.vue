@@ -252,7 +252,6 @@ import PendingOAuthCreateAccountForm, {
 } from '@/components/auth/PendingOAuthCreateAccountForm.vue'
 import { apiClient } from '@/api/client'
 import { useAuthStore, useAppStore } from '@/stores'
-import { extractApiErrorMessage } from '@/utils/apiError'
 import {
   completeOIDCOAuthRegistration,
   exchangePendingOAuthCompletion,
@@ -266,7 +265,6 @@ import {
   type PendingOAuthExchangeResponse
 } from '@/api/auth'
 import {
-
   clearAllAffiliateReferralCodes,
   loadOAuthAffiliateCode,
   oauthAffiliatePayload
@@ -340,6 +338,7 @@ type PendingOidcCompletion = PendingOAuthExchangeResponse & {
   pending_email?: string
   resolved_email?: string
   existing_account_email?: string
+  compat_email?: string
   email?: string
   suggested_email?: string
   provider_fallback?: string
@@ -463,6 +462,7 @@ function extractPendingAccountEmail(completion: PendingOidcCompletion): string {
   return (
     completion.pending_email ||
     completion.existing_account_email ||
+    completion.compat_email ||
     completion.resolved_email ||
     completion.email ||
     completion.suggested_email ||
@@ -566,7 +566,7 @@ function switchToCreateAccountMode() {
 
 function getRequestErrorMessage(error: unknown, fallback: string): string {
   const err = error as { message?: string; response?: { data?: { detail?: string; message?: string } } }
-  return extractApiErrorMessage(err, fallback)
+  return err.response?.data?.detail || err.response?.data?.message || err.message || fallback
 }
 
 function isCreateAccountRecoveryError(error: unknown): boolean {
@@ -676,7 +676,7 @@ async function handleSubmitInvitation() {
   } catch (e: unknown) {
     const err = e as { message?: string; response?: { data?: { message?: string } } }
     invitationError.value =
-      extractApiErrorMessage(err, err.message || t('auth.oidc.completeRegistrationFailed'))
+      err.response?.data?.message || err.message || t('auth.oidc.completeRegistrationFailed')
   } finally {
     isSubmitting.value = false
   }
@@ -753,7 +753,6 @@ async function handleSubmitTotpChallenge() {
       temp_token: totpTempToken.value,
       totp_code: code
     })
-    persistOAuthTokenContext(completion)
     await authStore.setToken(completion.access_token)
     clearAllAffiliateReferralCodes()
     appStore.showSuccess(t('auth.loginSuccess'))

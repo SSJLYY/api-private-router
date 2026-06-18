@@ -1,7 +1,8 @@
 <template>
   <ProfileIdentityBindingsSection
     :user="user"
-    :community-enabled="communityEnabled"
+    :linuxdo-enabled="linuxdoEnabled"
+    :dingtalk-enabled="dingtalkEnabled"
     :oidc-enabled="oidcEnabled"
     :oidc-provider-name="oidcProviderName"
     :wechat-enabled="wechatEnabled"
@@ -17,7 +18,8 @@ import type { User } from '@/types'
 withDefaults(
   defineProps<{
     user: User | null
-    communityEnabled?: boolean
+    linuxdoEnabled?: boolean
+    dingtalkEnabled?: boolean
     oidcEnabled?: boolean
     oidcProviderName?: string
     wechatEnabled?: boolean
@@ -25,7 +27,8 @@ withDefaults(
     wechatMpEnabled?: boolean
   }>(),
   {
-    communityEnabled: false,
+    linuxdoEnabled: false,
+    dingtalkEnabled: false,
     oidcEnabled: false,
     oidcProviderName: 'OIDC',
     wechatEnabled: false,

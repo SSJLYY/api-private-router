@@ -15,7 +15,6 @@ export const useAnnouncementStore = defineStore('announcements', () => {
 
   // Session-scoped dedup set — not reactive, used as plain lookup only
   let shownPopupIds = new Set<number>()
-  let popupTimer: ReturnType<typeof setTimeout> | null = null
 
   // Getters
   const unreadCount = computed(() =>
@@ -37,7 +36,7 @@ export const useAnnouncementStore = defineStore('announcements', () => {
       const all = await announcementsAPI.list(false)
       announcements.value = all.slice(0, 20)
       enqueueNewPopups()
-    } catch (err: unknown) {
+    } catch (err: any) {
       // Revert throttle timestamp on failure so retry is allowed
       lastFetchTime.value = 0
       console.error('Failed to fetch announcements:', err)
@@ -82,11 +81,7 @@ export const useAnnouncementStore = defineStore('announcements', () => {
 
     // Show next popup after a short delay
     if (popupQueue.value.length > 0) {
-      if (popupTimer) clearTimeout(popupTimer)
-      popupTimer = setTimeout(() => {
-        popupTimer = null
-        showNextPopup()
-      }, 300)
+      setTimeout(() => showNextPopup(), 300)
     }
   }
 
@@ -97,7 +92,7 @@ export const useAnnouncementStore = defineStore('announcements', () => {
       if (ann) {
         ann.read_at = new Date().toISOString()
       }
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error('Failed to mark announcement as read:', err)
     }
   }
@@ -108,14 +103,13 @@ export const useAnnouncementStore = defineStore('announcements', () => {
 
     try {
       loading.value = true
-      const results = await Promise.allSettled(unread.map((a) => announcementsAPI.markRead(a.id)))
-      const now = new Date().toISOString()
-      results.forEach((result, index) => {
-        if (result.status === 'fulfilled') {
-          unread[index].read_at = now
+      await Promise.all(unread.map((a) => announcementsAPI.markRead(a.id)))
+      announcements.value.forEach((a) => {
+        if (!a.read_at) {
+          a.read_at = new Date().toISOString()
         }
       })
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error('Failed to mark all as read:', err)
       throw err
     } finally {
@@ -124,10 +118,6 @@ export const useAnnouncementStore = defineStore('announcements', () => {
   }
 
   function reset() {
-    if (popupTimer) {
-      clearTimeout(popupTimer)
-      popupTimer = null
-    }
     announcements.value = []
     lastFetchTime.value = 0
     shownPopupIds = new Set()

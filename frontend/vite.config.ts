@@ -61,7 +61,7 @@ export default defineConfig(({ mode }) => {
     __INTLIFY_JIT_COMPILATION__: true
   },
   build: {
-    outDir: 'dist',
+    outDir: '../backend/internal/web/dist',
     emptyOutDir: true,
     rollupOptions: {
       output: {
@@ -107,9 +107,8 @@ export default defineConfig(({ mode }) => {
     }
   },
     server: {
-      host: process.env.VITE_DEV_HOST || 'localhost',
+      host: '0.0.0.0',
       port: devPort,
-      strictPort: true,
       proxy: {
         '/api': {
           target: backendUrl,

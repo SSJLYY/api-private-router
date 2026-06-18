@@ -5,8 +5,6 @@
 
 import { apiClient } from '../client'
 import type {
-  AccountConsumptionRankingResponse,
-  ConsumptionLeaderboardResponse,
   DashboardStats,
   TrendDataPoint,
   ModelStat,
@@ -242,11 +240,6 @@ export interface UserSpendingRankingParams
   limit?: number
 }
 
-export interface AccountConsumptionRankingParams
-  extends Pick<TrendParams, 'start_date' | 'end_date'> {
-  limit?: number
-}
-
 /**
  * Get user usage trend data
  * @param params - Query parameters for filtering
@@ -273,26 +266,17 @@ export async function getUserSpendingRanking(
   return data
 }
 
-export async function getAccountConsumptionRanking(
-  params?: AccountConsumptionRankingParams
-): Promise<AccountConsumptionRankingResponse> {
-  const { data } = await apiClient.get<AccountConsumptionRankingResponse>('/admin/dashboard/accounts-ranking', {
-    params
-  })
-  return data
-}
-
-export async function getConsumptionLeaderboard(limit?: number): Promise<ConsumptionLeaderboardResponse> {
-  const { data } = await apiClient.get<ConsumptionLeaderboardResponse>('/admin/dashboard/consumption-leaderboard', {
-    params: { limit }
-  })
-  return data
+export interface PlatformUsage {
+  platform: string
+  today_actual_cost: number
+  total_actual_cost: number
 }
 
 export interface BatchUserUsageStats {
   user_id: number
   today_actual_cost: number
   total_actual_cost: number
+  by_platform?: PlatformUsage[]
 }
 
 export interface BatchUsersUsageResponse {
@@ -348,8 +332,6 @@ export const dashboardAPI = {
   getApiKeyUsageTrend,
   getUserUsageTrend,
   getUserSpendingRanking,
-  getAccountConsumptionRanking,
-  getConsumptionLeaderboard,
   getBatchUsersUsage,
   getBatchApiKeysUsage
 }

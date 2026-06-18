@@ -8,8 +8,6 @@ import Icon from '@/components/icons/Icon.vue'
 import { opsAPI, type AlertEventsQuery } from '@/api/admin/ops'
 import type { AlertEvent } from '../types'
 import { formatDateTime } from '../utils/opsFormatters'
-import { extractApiErrorMessage } from '@/utils/apiError'
-
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -97,7 +95,7 @@ async function loadFirstPage() {
     hasMore.value = data.length === PAGE_SIZE
   } catch (err: any) {
     console.error('[OpsAlertEventsCard] Failed to load alert events', err)
-    appStore.showError(extractApiErrorMessage(err, t('admin.ops.alertEvents.loadFailed')))
+    appStore.showError(err?.response?.data?.detail || t('admin.ops.alertEvents.loadFailed'))
     events.value = []
     hasMore.value = false
   } finally {
@@ -207,7 +205,7 @@ async function openDetail(row: AlertEvent) {
     selected.value = detail
   } catch (err: any) {
     console.error('[OpsAlertEventsCard] Failed to load alert detail', err)
-    appStore.showError(extractApiErrorMessage(err, t('admin.ops.alertEvents.detail.loadFailed')))
+    appStore.showError(err?.response?.data?.detail || t('admin.ops.alertEvents.detail.loadFailed'))
   } finally {
     detailLoading.value = false
   }
@@ -286,7 +284,7 @@ async function silenceAlert() {
     appStore.showSuccess(t('admin.ops.alertEvents.detail.silenceSuccess'))
   } catch (err: any) {
     console.error('[OpsAlertEventsCard] Failed to silence alert', err)
-    appStore.showError(extractApiErrorMessage(err, t('admin.ops.alertEvents.detail.silenceFailed')))
+    appStore.showError(err?.response?.data?.detail || t('admin.ops.alertEvents.detail.silenceFailed'))
   } finally {
     detailActionLoading.value = false
   }
@@ -307,7 +305,7 @@ async function manualResolve() {
     await loadHistory()
   } catch (err: any) {
     console.error('[OpsAlertEventsCard] Failed to resolve alert', err)
-    appStore.showError(extractApiErrorMessage(err, t('admin.ops.alertEvents.detail.manualResolvedFailed')))
+    appStore.showError(err?.response?.data?.detail || t('admin.ops.alertEvents.detail.manualResolvedFailed'))
   } finally {
     detailActionLoading.value = false
   }

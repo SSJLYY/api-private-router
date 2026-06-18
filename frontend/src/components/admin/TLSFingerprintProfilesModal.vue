@@ -145,7 +145,7 @@
             </button>
             <p class="text-xs text-gray-500 dark:text-gray-400">
               {{ t('admin.tlsFingerprintProfiles.form.pasteYamlHint') }}
-              <a href="https://tls.api-private-router.example" target="_blank" rel="noopener noreferrer" class="text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 underline">{{ t('admin.tlsFingerprintProfiles.form.openCollector') }}</a>
+              <a href="https://tls.sub2api.org" target="_blank" rel="noopener noreferrer" class="text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 underline">{{ t('admin.tlsFingerprintProfiles.form.openCollector') }}</a>
             </p>
           </div>
         </div>
@@ -335,8 +335,6 @@ import type { TLSFingerprintProfile } from '@/api/admin/tlsFingerprintProfile'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import Icon from '@/components/icons/Icon.vue'
-import { extractApiErrorMessage } from '@/utils/apiError'
-
 
 const props = defineProps<{
   show: boolean
@@ -603,7 +601,7 @@ const handleSubmit = async () => {
     closeFormModal()
     loadProfiles()
   } catch (error: any) {
-    appStore.showError(extractApiErrorMessage(error, t('admin.tlsFingerprintProfiles.saveFailed')))
+    appStore.showError(error.response?.data?.detail || t('admin.tlsFingerprintProfiles.saveFailed'))
     console.error('Error saving TLS fingerprint profile:', error)
   } finally {
     submitting.value = false
@@ -620,7 +618,7 @@ const confirmDelete = async () => {
     deletingProfile.value = null
     loadProfiles()
   } catch (error: any) {
-    appStore.showError(extractApiErrorMessage(error, t('admin.tlsFingerprintProfiles.deleteFailed')))
+    appStore.showError(error.response?.data?.detail || t('admin.tlsFingerprintProfiles.deleteFailed'))
     console.error('Error deleting TLS fingerprint profile:', error)
   }
 }

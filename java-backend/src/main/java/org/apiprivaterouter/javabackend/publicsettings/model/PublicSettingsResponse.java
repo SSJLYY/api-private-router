@@ -52,6 +52,8 @@ public record PublicSettingsResponse(
         boolean redpacket_enabled,
         boolean game_hall_enabled,
         boolean transfer_enabled,
-        boolean fund_center_enabled
+        boolean fund_center_enabled,
+        String loginAgreementDocuments,
+        String loginAgreementUpdatedAt
 ) {
 }

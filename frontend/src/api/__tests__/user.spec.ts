@@ -14,7 +14,7 @@ describe('user api oauth binding urls', () => {
     const { buildOAuthBindingStartURL } = await import('@/api/user')
 
     expect(buildOAuthBindingStartURL('linuxdo', { redirectTo: '/settings/profile' })).toBe(
-      'https://api.example.com/api/v1/auth/oauth/community/bind/start?redirect=%2Fsettings%2Fprofile&intent=bind_current_user'
+      'https://api.example.com/api/v1/auth/oauth/linuxdo/bind/start?redirect=%2Fsettings%2Fprofile&intent=bind_current_user'
     )
     expect(
       buildOAuthBindingStartURL('wechat', {

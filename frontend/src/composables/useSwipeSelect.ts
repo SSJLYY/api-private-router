@@ -520,10 +520,11 @@ export function useSwipeSelect(
       const step = () => {
         const prevScrollTop = scrollEl.scrollTop
         scrollEl.scrollTop += dy
-        // Stop auto-scroll if we've reached the boundary
-        if (scrollEl.scrollTop === prevScrollTop) return
-        const rowIdx = findIdx(lastMouseY)
-        if (rowIdx >= 0 && rowIdx !== lastEndIndex) apply(rowIdx)
+        // Only re-check selection if scroll actually moved
+        if (scrollEl.scrollTop !== prevScrollTop) {
+          const rowIdx = findIdx(lastMouseY)
+          if (rowIdx >= 0 && rowIdx !== lastEndIndex) apply(rowIdx)
+        }
         scrollRAF = requestAnimationFrame(step)
       }
       scrollRAF = requestAnimationFrame(step)

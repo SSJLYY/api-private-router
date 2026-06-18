@@ -9,6 +9,8 @@ import org.apiprivaterouter.javabackend.common.security.CurrentUser;
 import org.apiprivaterouter.javabackend.userkeys.service.UserApiKeyService;
 import org.apiprivaterouter.javabackend.userusage.model.BatchApiKeysUsageRequest;
 import org.apiprivaterouter.javabackend.userusage.model.UserDashboardStatsResponse;
+import org.apiprivaterouter.javabackend.userusage.model.UserErrorDetailResponse;
+import org.apiprivaterouter.javabackend.userusage.model.UserErrorLogResponse;
 import org.apiprivaterouter.javabackend.userusage.model.UserUsageLogResponse;
 import org.apiprivaterouter.javabackend.userusage.model.UserUsageStatsResponse;
 import org.apiprivaterouter.javabackend.userusage.repository.UserUsageRepository;
@@ -117,6 +119,32 @@ public class UserUsageService {
             userApiKeyService.getById(currentUser, apiKeyId);
         }
         return repository.getBatchApiKeysUsage(apiKeyIds, timezone);
+    }
+
+    public PageResponse<UserErrorLogResponse> listErrorLogs(
+            CurrentUser currentUser,
+            int page,
+            int pageSize,
+            Long apiKeyId,
+            String startDate,
+            String endDate,
+            String timezone
+    ) {
+        Long normalizedApiKeyId = normalizeApiKeyId(currentUser, apiKeyId);
+        return repository.listErrorLogs(
+                currentUser.userId(),
+                page,
+                pageSize,
+                normalizedApiKeyId,
+                startDate,
+                endDate,
+                timezone
+        );
+    }
+
+    public UserErrorDetailResponse getErrorDetail(CurrentUser currentUser, long id) {
+        return repository.findErrorDetailForUser(id, currentUser.userId())
+                .orElseThrow(() -> new HttpStatusException(404, "error log not found"));
     }
 
     private Long normalizeApiKeyId(CurrentUser currentUser, Long apiKeyId) {

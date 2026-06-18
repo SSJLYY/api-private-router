@@ -10,8 +10,6 @@ import { opsAPI } from '@/api/admin/ops'
 import type { AlertRule, MetricType, Operator } from '../types'
 import type { OpsSeverity } from '@/api/admin/ops'
 import { formatDateTime } from '../utils/opsFormatters'
-import { extractApiErrorMessage } from '@/utils/apiError'
-
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -25,7 +23,7 @@ async function load() {
     rules.value = await opsAPI.listAlertRules()
   } catch (err: any) {
     console.error('[OpsAlertRulesCard] Failed to load rules', err)
-    appStore.showError(extractApiErrorMessage(err, t('admin.ops.alertRules.loadFailed')))
+    appStore.showError(err?.response?.data?.detail || t('admin.ops.alertRules.loadFailed'))
     rules.value = []
   } finally {
     loading.value = false
@@ -224,6 +222,14 @@ const metricDefinitions = computed(() => {
       unit: '%'
     },
     {
+      type: 'account_temp_unscheduled_count',
+      group: 'account',
+      label: t('admin.ops.alertRules.metrics.accountTempUnscheduledCount'),
+      description: t('admin.ops.alertRules.metricDescriptions.accountTempUnscheduledCount'),
+      recommendedOperator: '>',
+      recommendedThreshold: 0
+    },
+    {
       type: 'overload_account_count',
       group: 'account',
       label: t('admin.ops.alertRules.metrics.overloadAccountCount'),
@@ -346,7 +352,7 @@ async function save() {
     appStore.showSuccess(t('admin.ops.alertRules.saveSuccess'))
   } catch (err: any) {
     console.error('[OpsAlertRulesCard] Failed to save rule', err)
-    appStore.showError(extractApiErrorMessage(err, t('admin.ops.alertRules.saveFailed')))
+    appStore.showError(err?.response?.data?.detail || t('admin.ops.alertRules.saveFailed'))
   } finally {
     saving.value = false
   }
@@ -370,7 +376,7 @@ async function confirmDelete() {
     appStore.showSuccess(t('admin.ops.alertRules.deleteSuccess'))
   } catch (err: any) {
     console.error('[OpsAlertRulesCard] Failed to delete rule', err)
-    appStore.showError(extractApiErrorMessage(err, t('admin.ops.alertRules.deleteFailed')))
+    appStore.showError(err?.response?.data?.detail || t('admin.ops.alertRules.deleteFailed'))
   }
 }
 

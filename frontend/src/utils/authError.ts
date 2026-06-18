@@ -1,4 +1,3 @@
-import { extractApiErrorMessage } from './apiError'
 interface APIErrorLike {
   message?: string
   response?: {
@@ -11,7 +10,7 @@ interface APIErrorLike {
 
 function extractErrorMessage(error: unknown): string {
   const err = (error || {}) as APIErrorLike
-  return extractApiErrorMessage(err, err.message || '')
+  return err.response?.data?.detail || err.response?.data?.message || err.message || ''
 }
 
 export function buildAuthErrorMessage(

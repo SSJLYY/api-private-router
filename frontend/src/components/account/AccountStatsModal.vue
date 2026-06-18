@@ -323,8 +323,8 @@
           <!-- Accumulated Tokens -->
           <div class="card p-4">
             <div class="mb-3 flex items-center gap-2">
-              <div class="rounded-lg bg-blue-100 p-1.5 dark:bg-blue-900/30">
-                <Icon name="cube" size="sm" class="text-blue-600 dark:text-blue-400" :stroke-width="2" />
+              <div class="rounded-lg bg-teal-100 p-1.5 dark:bg-teal-900/30">
+                <Icon name="cube" size="sm" class="text-teal-600 dark:text-teal-400" :stroke-width="2" />
               </div>
               <span class="text-sm font-semibold text-gray-900 dark:text-white">{{
                 t('admin.accounts.stats.accumulatedTokens')
@@ -484,7 +484,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, onBeforeUnmount } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   Chart as ChartJS,
@@ -690,23 +690,17 @@ watch(
   }
 )
 
-const isMounted = ref(true)
-onBeforeUnmount(() => { isMounted.value = false })
-
 const loadStats = async () => {
   if (!props.account) return
 
   loading.value = true
   try {
-    const result = await adminAPI.accounts.getStats(props.account.id, 30)
-  if (isMounted.value) stats.value = result
+    stats.value = await adminAPI.accounts.getStats(props.account.id, 30)
   } catch (error) {
-    if (isMounted.value) {
-      console.error('Failed to load account stats:', error)
-      stats.value = null
-    }
+    console.error('Failed to load account stats:', error)
+    stats.value = null
   } finally {
-    if (isMounted.value) loading.value = false
+    loading.value = false
   }
 }
 

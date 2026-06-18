@@ -761,24 +761,24 @@ const redisMiddleClass = computed(() => {
   return 'text-gray-900 dark:text-white'
 })
 
-const threadCountValue = computed<number | null>(() => {
-  const v = systemMetrics.value?.thread_count
+const goroutineCountValue = computed<number | null>(() => {
+  const v = systemMetrics.value?.goroutine_count
   return typeof v === 'number' && Number.isFinite(v) ? v : null
 })
 
-const threadsWarnThreshold = 8_000
-const threadsCriticalThreshold = 15_000
+const goroutinesWarnThreshold = 8_000
+const goroutinesCriticalThreshold = 15_000
 
-const threadStatus = computed<'ok' | 'warning' | 'critical' | 'unknown'>(() => {
-  const n = threadCountValue.value
+const goroutineStatus = computed<'ok' | 'warning' | 'critical' | 'unknown'>(() => {
+  const n = goroutineCountValue.value
   if (n == null) return 'unknown'
-  if (n >= threadsCriticalThreshold) return 'critical'
-  if (n >= threadsWarnThreshold) return 'warning'
+  if (n >= goroutinesCriticalThreshold) return 'critical'
+  if (n >= goroutinesWarnThreshold) return 'warning'
   return 'ok'
 })
 
-const threadStatusLabel = computed(() => {
-  switch (threadStatus.value) {
+const goroutineStatusLabel = computed(() => {
+  switch (goroutineStatus.value) {
     case 'ok':
       return t('admin.ops.ok')
     case 'warning':
@@ -790,8 +790,8 @@ const threadStatusLabel = computed(() => {
   }
 })
 
-const threadStatusClass = computed(() => {
-  switch (threadStatus.value) {
+const goroutineStatusClass = computed(() => {
+  switch (goroutineStatus.value) {
     case 'ok':
       return 'text-emerald-600 dark:text-emerald-400'
     case 'warning':
@@ -1499,19 +1499,19 @@ function handleToolbarRefresh() {
           </div>
         </div>
 
-        <!-- Threads -->
+        <!-- Goroutines -->
         <div class="rounded-xl bg-gray-50 p-3 dark:bg-dark-900">
           <div class="flex items-center gap-1">
-            <div class="text-[10px] font-bold uppercase tracking-wider text-gray-400">{{ t('admin.ops.threads') }}</div>
-            <HelpTooltip v-if="!props.fullscreen" :content="t('admin.ops.tooltips.threads')" />
+            <div class="text-[10px] font-bold uppercase tracking-wider text-gray-400">{{ t('admin.ops.goroutines') }}</div>
+            <HelpTooltip v-if="!props.fullscreen" :content="t('admin.ops.tooltips.goroutines')" />
           </div>
-          <div class="mt-1 text-lg font-black" :class="threadStatusClass">
-            {{ threadStatusLabel }}
+          <div class="mt-1 text-lg font-black" :class="goroutineStatusClass">
+            {{ goroutineStatusLabel }}
           </div>
           <div v-if="!props.fullscreen" class="mt-1 text-[10px] text-gray-500 dark:text-gray-400">
-            {{ t('admin.ops.current') }} <span class="font-mono">{{ threadCountValue ?? '-' }}</span>
-            · {{ t('common.warning') }} <span class="font-mono">{{ threadsWarnThreshold }}</span>
-            · {{ t('common.critical') }} <span class="font-mono">{{ threadsCriticalThreshold }}</span>
+            {{ t('admin.ops.current') }} <span class="font-mono">{{ goroutineCountValue ?? '-' }}</span>
+            · {{ t('common.warning') }} <span class="font-mono">{{ goroutinesWarnThreshold }}</span>
+            · {{ t('common.critical') }} <span class="font-mono">{{ goroutinesCriticalThreshold }}</span>
             <span v-if="systemMetrics?.concurrency_queue_depth != null">
               · {{ t('admin.ops.queue') }} <span class="font-mono">{{ systemMetrics.concurrency_queue_depth }}</span>
             </span>

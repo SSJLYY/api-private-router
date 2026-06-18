@@ -46,7 +46,7 @@ vi.mock('vue-i18n', async (importOriginal) => {
         if (key === 'profile.authBindings.status.bound') return 'Bound'
         if (key === 'profile.authBindings.status.notBound') return 'Not bound'
         if (key === 'profile.authBindings.providers.email') return 'Email'
-        if (key === 'profile.authBindings.providers.linuxdo') return 'Community'
+        if (key === 'profile.authBindings.providers.linuxdo') return 'LinuxDo'
         if (key === 'profile.authBindings.providers.wechat') return 'WeChat'
         if (key === 'profile.authBindings.providers.oidc') return params?.providerName || 'OIDC'
         if (key === 'profile.authBindings.bindAction') return `Bind ${params?.providerName || ''}`.trim()
@@ -135,7 +135,7 @@ describe('ProfileIdentityBindingsSection', () => {
             wechat: false,
           },
         }),
-        communityEnabled: true,
+        linuxdoEnabled: true,
         oidcEnabled: true,
         oidcProviderName: 'ExampleID',
         wechatEnabled: true,
@@ -160,7 +160,7 @@ describe('ProfileIdentityBindingsSection', () => {
       },
       props: {
         user: createUser(),
-        communityEnabled: false,
+        linuxdoEnabled: false,
         oidcEnabled: false,
         wechatEnabled: true,
         wechatOpenEnabled: true,
@@ -176,30 +176,6 @@ describe('ProfileIdentityBindingsSection', () => {
     expect(locationState.current.href).toContain('redirect=%2Fprofile')
   })
 
-  it('starts the Community bind flow for the current profile page while keeping the linuxdo slug internal', async () => {
-    const wrapper = mount(ProfileIdentityBindingsSection, {
-      global: {
-        plugins: [pinia],
-      },
-      props: {
-        user: createUser({
-          auth_bindings: {
-            linuxdo: { bound: false },
-          },
-        }),
-        communityEnabled: true,
-        oidcEnabled: false,
-        wechatEnabled: false,
-      },
-    })
-
-    await wrapper.get('[data-testid="profile-binding-linuxdo-action"]').trigger('click')
-
-    expect(locationState.current.href).toContain('/api/v1/auth/oauth/community/bind/start?')
-    expect(locationState.current.href).toContain('intent=bind_current_user')
-    expect(locationState.current.href).toContain('redirect=%2Fprofile')
-  })
-
   it('hides the WeChat bind action outside the WeChat browser when only mp mode is configured', () => {
     const wrapper = mount(ProfileIdentityBindingsSection, {
       global: {
@@ -207,7 +183,7 @@ describe('ProfileIdentityBindingsSection', () => {
       },
       props: {
         user: createUser(),
-        communityEnabled: false,
+        linuxdoEnabled: false,
         oidcEnabled: false,
         wechatEnabled: true,
         wechatOpenEnabled: false,
@@ -225,7 +201,7 @@ describe('ProfileIdentityBindingsSection', () => {
       },
       props: {
         user: createUser(),
-        communityEnabled: false,
+        linuxdoEnabled: false,
         oidcEnabled: false,
         wechatEnabled: true,
       },
@@ -241,7 +217,7 @@ describe('ProfileIdentityBindingsSection', () => {
       },
       props: {
         user: createUser(),
-        communityEnabled: false,
+        linuxdoEnabled: false,
         oidcEnabled: false,
         wechatEnabled: true,
       },
@@ -267,7 +243,7 @@ describe('ProfileIdentityBindingsSection', () => {
       invitation_code_enabled: false,
       turnstile_enabled: false,
       turnstile_site_key: '',
-      site_name: 'api-private-router',
+      site_name: 'Sub2API',
       site_logo: '',
       site_subtitle: '',
       api_base_url: '',
@@ -300,7 +276,7 @@ describe('ProfileIdentityBindingsSection', () => {
       },
       props: {
         user: createUser(),
-        communityEnabled: false,
+        linuxdoEnabled: false,
         oidcEnabled: false,
         wechatEnabled: true,
       },
@@ -338,7 +314,7 @@ describe('ProfileIdentityBindingsSection', () => {
       },
       props: {
         user: authStore.user,
-        communityEnabled: false,
+        linuxdoEnabled: false,
         oidcEnabled: false,
         wechatEnabled: false,
       },
@@ -376,7 +352,7 @@ describe('ProfileIdentityBindingsSection', () => {
             email: { bound: false },
           },
         }),
-        communityEnabled: false,
+        linuxdoEnabled: false,
         oidcEnabled: false,
         wechatEnabled: false,
       },
@@ -399,7 +375,7 @@ describe('ProfileIdentityBindingsSection', () => {
             email: { bound: false },
           },
         }),
-        communityEnabled: false,
+        linuxdoEnabled: false,
         oidcEnabled: false,
         wechatEnabled: false,
       },
@@ -421,7 +397,7 @@ describe('ProfileIdentityBindingsSection', () => {
             email: { bound: false },
           },
         }),
-        communityEnabled: false,
+        linuxdoEnabled: false,
         oidcEnabled: false,
         wechatEnabled: false,
       },
@@ -450,7 +426,7 @@ describe('ProfileIdentityBindingsSection', () => {
             } as any,
           },
         }),
-        communityEnabled: false,
+        linuxdoEnabled: false,
         oidcEnabled: false,
         wechatEnabled: false,
       },
@@ -490,7 +466,7 @@ describe('ProfileIdentityBindingsSection', () => {
       },
       props: {
         user: authStore.user,
-        communityEnabled: false,
+        linuxdoEnabled: false,
         oidcEnabled: false,
         wechatEnabled: false,
       },
@@ -539,7 +515,7 @@ describe('ProfileIdentityBindingsSection', () => {
           },
         }),
         compact: true,
-        communityEnabled: false,
+        linuxdoEnabled: false,
         oidcEnabled: false,
         wechatEnabled: false,
       },
@@ -579,13 +555,13 @@ describe('ProfileIdentityBindingsSection', () => {
               bound: true,
               display_name: 'linuxdo-handle',
               subject_hint: 'lin***3456',
-              note: 'Linked from Community',
+              note: 'Linked from LinuxDo',
               can_unbind: true,
             },
           },
         }),
         compact: true,
-        communityEnabled: true,
+        linuxdoEnabled: true,
         oidcEnabled: false,
         wechatEnabled: false,
       },
@@ -593,7 +569,7 @@ describe('ProfileIdentityBindingsSection', () => {
 
     expect(wrapper.text()).toContain('linuxdo-handle')
     expect(wrapper.text()).toContain('lin***3456')
-    expect(wrapper.text()).toContain('Linked from Community')
+    expect(wrapper.text()).toContain('Linked from LinuxDo')
 
     await wrapper.get('[data-testid="profile-binding-linuxdo-unbind"]').trigger('click')
 
@@ -621,7 +597,7 @@ describe('ProfileIdentityBindingsSection', () => {
             } as any,
           },
         }),
-        communityEnabled: true,
+        linuxdoEnabled: true,
         oidcEnabled: false,
         wechatEnabled: false,
       },
@@ -643,7 +619,7 @@ describe('ProfileIdentityBindingsSection', () => {
             oidc: { bound: false, can_bind: true },
           },
         }),
-        communityEnabled: false,
+        linuxdoEnabled: false,
         oidcEnabled: false,
         wechatEnabled: false,
       },

@@ -18,11 +18,12 @@ public class FrontendSecurityHeadersFilter extends OncePerRequestFilter {
     public static final String CSP_NONCE_REQUEST_ATTRIBUTE = "cspNonce";
 
     private static final String CSP_TEMPLATE = "default-src 'self'; "
-            + "script-src 'self' 'nonce-%s' https://static.cloudflareinsights.com; "
-            + "style-src 'self' 'unsafe-inline'; "
+            + "script-src 'self' 'nonce-%s' https://static.cloudflareinsights.com https://static.airwallex.com https://static-demo.airwallex.com; "
+            + "style-src 'self' 'unsafe-inline' https://static.airwallex.com https://static-demo.airwallex.com; "
             + "img-src 'self' data: blob: https:; "
             + "font-src 'self' data:; "
             + "connect-src 'self' https: wss:; "
+            + "frame-src https://checkout.airwallex.com https://checkout-demo.airwallex.com; "
             + "frame-ancestors 'none'; "
             + "base-uri 'self'; "
             + "object-src 'none'";

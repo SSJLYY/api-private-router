@@ -112,7 +112,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onUnmounted, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { adminPaymentAPI } from '@/api/admin/payment'
@@ -192,6 +192,7 @@ const paymentTypeFilterOptions = computed(() => [
   { value: 'alipay', label: t('payment.methods.alipay') },
   { value: 'wxpay', label: t('payment.methods.wxpay') },
   { value: 'stripe', label: t('payment.methods.stripe') },
+  { value: 'airwallex', label: t('payment.methods.airwallex') },
 ])
 
 const orderTypeFilterOptions = computed(() => [
@@ -237,8 +238,4 @@ async function handleRefund(data: { amount: number; reason: string; deduct_balan
 function formatDateTime(dateStr: string): string { return formatOrderDateTime(dateStr) }
 
 onMounted(() => loadOrders())
-
-onUnmounted(() => {
-  if (debounceTimer) clearTimeout(debounceTimer)
-})
 </script>

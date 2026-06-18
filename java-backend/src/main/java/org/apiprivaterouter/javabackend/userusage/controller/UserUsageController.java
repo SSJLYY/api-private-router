@@ -9,6 +9,8 @@ import org.apiprivaterouter.javabackend.common.api.PageResponse;
 import org.apiprivaterouter.javabackend.common.security.CurrentUserContext;
 import org.apiprivaterouter.javabackend.userusage.model.BatchApiKeysUsageRequest;
 import org.apiprivaterouter.javabackend.userusage.model.UserDashboardStatsResponse;
+import org.apiprivaterouter.javabackend.userusage.model.UserErrorDetailResponse;
+import org.apiprivaterouter.javabackend.userusage.model.UserErrorLogResponse;
 import org.apiprivaterouter.javabackend.userusage.model.UserUsageLogResponse;
 import org.apiprivaterouter.javabackend.userusage.model.UserUsageStatsResponse;
 import org.apiprivaterouter.javabackend.userusage.service.UserUsageService;
@@ -128,6 +130,31 @@ public class UserUsageController {
                 endDate,
                 timezone
         ));
+    }
+
+    @GetMapping("/errors")
+    public ApiResponse<PageResponse<UserErrorLogResponse>> listErrors(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(name = "page_size", defaultValue = "20") int pageSize,
+            @RequestParam(name = "api_key_id", required = false) Long apiKeyId,
+            @RequestParam(name = "start_date", required = false) String startDate,
+            @RequestParam(name = "end_date", required = false) String endDate,
+            @RequestParam(required = false) String timezone
+    ) {
+        return ApiResponse.success(service.listErrorLogs(
+                currentUserContext.requireUser(),
+                page,
+                pageSize,
+                apiKeyId,
+                startDate,
+                endDate,
+                timezone
+        ));
+    }
+
+    @GetMapping("/errors/{id}")
+    public ApiResponse<UserErrorDetailResponse> getErrorDetail(@PathVariable long id) {
+        return ApiResponse.success(service.getErrorDetail(currentUserContext.requireUser(), id));
     }
 
     @PostMapping("/dashboard/api-keys-usage")

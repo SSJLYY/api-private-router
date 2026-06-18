@@ -6,7 +6,8 @@
     >
       <ProfileInfoCard
         :user="user"
-        :community-enabled="communityOAuthEnabled"
+        :linuxdo-enabled="linuxdoOAuthEnabled"
+        :dingtalk-enabled="dingtalkOAuthEnabled"
         :oidc-enabled="oidcOAuthEnabled"
         :oidc-provider-name="oidcOAuthProviderName"
         :wechat-enabled="wechatOAuthEnabled"
@@ -68,7 +69,8 @@ const user = computed(() => authStore.user)
 const contactInfo = ref('')
 const balanceLowNotifyEnabled = ref(false)
 const systemDefaultThreshold = ref(0)
-const communityOAuthEnabled = ref(false)
+const linuxdoOAuthEnabled = ref(false)
+const dingtalkOAuthEnabled = ref(false)
 const wechatOAuthEnabled = ref(false)
 const wechatOAuthOpenEnabled = ref<boolean | undefined>(undefined)
 const wechatOAuthMPEnabled = ref<boolean | undefined>(undefined)
@@ -88,7 +90,8 @@ onMounted(async () => {
       contactInfo.value = settings.contact_info || ''
       balanceLowNotifyEnabled.value = settings.balance_low_notify_enabled ?? false
       systemDefaultThreshold.value = settings.balance_low_notify_threshold ?? 0
-      communityOAuthEnabled.value = settings.linuxdo_oauth_enabled ?? false
+      linuxdoOAuthEnabled.value = settings.linuxdo_oauth_enabled ?? false
+      dingtalkOAuthEnabled.value = settings.dingtalk_oauth_enabled ?? false
       wechatOAuthEnabled.value = isWeChatWebOAuthEnabled(settings)
       wechatOAuthOpenEnabled.value = typeof settings.wechat_oauth_open_enabled === 'boolean'
         ? settings.wechat_oauth_open_enabled

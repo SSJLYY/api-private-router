@@ -99,9 +99,6 @@ const filteredGroups = computed(() => {
     } else {
       // 默认：只能选择同 platform 的分组
       result = result.filter((g) => g.platform === props.platform)
-      if (result.length === 0) {
-        result = props.groups
-      }
     }
   }
   if (isSearchable.value && searchText.value) {

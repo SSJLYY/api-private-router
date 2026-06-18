@@ -50,6 +50,7 @@ public class PaymentService {
     private final AlipayPaymentClient alipayPaymentClient;
     private final WxpayPaymentClient wxpayPaymentClient;
     private final StripePaymentClient stripePaymentClient;
+    private final AirwallexPaymentClient airwallexPaymentClient;
     private final PaymentWebhookService paymentWebhookService;
     private final JsonHelper jsonHelper;
 
@@ -62,6 +63,7 @@ public class PaymentService {
             AlipayPaymentClient alipayPaymentClient,
             WxpayPaymentClient wxpayPaymentClient,
             StripePaymentClient stripePaymentClient,
+            AirwallexPaymentClient airwallexPaymentClient,
             PaymentWebhookService paymentWebhookService,
             JsonHelper jsonHelper
     ) {
@@ -73,6 +75,7 @@ public class PaymentService {
         this.alipayPaymentClient = alipayPaymentClient;
         this.wxpayPaymentClient = wxpayPaymentClient;
         this.stripePaymentClient = stripePaymentClient;
+        this.airwallexPaymentClient = airwallexPaymentClient;
         this.paymentWebhookService = paymentWebhookService;
         this.jsonHelper = jsonHelper;
     }
@@ -267,6 +270,20 @@ public class PaymentService {
                 payUrl = "";
                 qrCode = null;
                 paymentMode = "redirect";
+            } else if ("airwallex".equalsIgnoreCase(provider.provider_key())) {
+                AirwallexPaymentClient.AirwallexCreateOrderResult routed = airwallexPaymentClient.createOrder(
+                        provider,
+                        order,
+                        effectiveRequest,
+                        buildProviderNotifyUrl(provider, httpRequest),
+                        buildProviderReturnUrl(canonicalReturnUrl, order, resumeToken),
+                        buildPaymentSubject(plan, limitAmount)
+                );
+                paymentTradeNo = routed.tradeNo();
+                clientSecret = routed.clientSecret();
+                payUrl = "";
+                qrCode = null;
+                paymentMode = "redirect";
             }
         } catch (RuntimeException ex) {
             paymentRepository.markOrderFailed(order.id(), ex.getMessage());
@@ -326,6 +343,8 @@ public class PaymentService {
                 alipayPaymentClient.cancelPayment(resolveOrderProvider(order), order);
             } else if ("wxpay".equalsIgnoreCase(order.provider_key()) || "wxpay".equalsIgnoreCase(order.payment_type())) {
                 wxpayPaymentClient.cancelPayment(resolveOrderProvider(order), order);
+            } else if ("airwallex".equalsIgnoreCase(order.provider_key()) || "airwallex".equalsIgnoreCase(order.payment_type())) {
+                airwallexPaymentClient.cancelPayment(resolveOrderProvider(order), order);
             }
         } catch (Exception ex) {
             log.warn("gateway cancel failed for order {}: {}", order.out_trade_no(), ex.getMessage());
@@ -733,6 +752,7 @@ public class PaymentService {
                     case "alipay" -> "/api/v1/payment/webhook/alipay";
                     case "wxpay" -> "/api/v1/payment/webhook/wxpay";
                     case "stripe" -> "/api/v1/payment/webhook/stripe";
+                    case "airwallex" -> "/api/v1/payment/webhook/airwallex";
                     default -> "";
                 }
         );
@@ -819,6 +839,9 @@ public class PaymentService {
             putIfNotBlank(snapshot, "merchant_app_id", provider.config().get("appId"));
         } else if ("stripe".equals(providerKey)) {
             putIfNotBlank(snapshot, "publishable_key", provider.config().get("publishableKey"));
+        } else if ("airwallex".equals(providerKey)) {
+            putIfNotBlank(snapshot, "merchant_id", provider.config().get("accountId"));
+            snapshot.put("currency", resolveAirwallexCurrency(provider.config()));
         } else if ("wxpay".equals(providerKey)) {
             String appId = request.openid() != null && !request.openid().isBlank()
                     ? firstNonBlank(provider.config().get("mpAppId"), provider.config().get("appId"))
@@ -896,6 +919,14 @@ public class PaymentService {
         }
     }
 
+    private String resolveAirwallexCurrency(Map<String, String> config) {
+        String currency = config == null ? null : config.get("currency");
+        if (currency != null && !currency.trim().isEmpty()) {
+            return currency.trim().toUpperCase(Locale.ROOT);
+        }
+        return "CNY";
+    }
+
     private String firstNonBlank(String first, String second) {
         if (first != null && !first.trim().isEmpty()) {
             return first.trim();
@@ -930,7 +961,8 @@ public class PaymentService {
         if (!"stripe".equalsIgnoreCase(providerKey)
                 && !"wxpay".equalsIgnoreCase(providerKey)
                 && !"alipay".equalsIgnoreCase(providerKey)
-                && !"easypay".equalsIgnoreCase(providerKey)) {
+                && !"easypay".equalsIgnoreCase(providerKey)
+                && !"airwallex".equalsIgnoreCase(providerKey)) {
             return order;
         }
         if (!"PENDING".equalsIgnoreCase(order.status())
@@ -1006,6 +1038,24 @@ public class PaymentService {
                             Map.of("pid", firstNonBlank(provider.config().get("pid"), ""))
                     ),
                     "easypay"
+            );
+        } else if ("airwallex".equalsIgnoreCase(provider.provider_key())) {
+            AirwallexPaymentClient.AirwallexQueryOrderResult upstream = airwallexPaymentClient.queryOrder(provider, order);
+            if (!upstream.paid()) {
+                return order;
+            }
+            paymentWebhookService.handleNotification(
+                    new org.apiprivaterouter.javabackend.payment.model.PaymentWebhookNotification(
+                            "airwallex",
+                            upstream.tradeNo(),
+                            order.out_trade_no(),
+                            upstream.amount(),
+                            "success",
+                            "",
+                            Map.of("account_id", firstNonBlank(provider.config().get("accountId"), ""),
+                                   "currency", resolveAirwallexCurrency(provider.config()))
+                    ),
+                    "airwallex"
             );
         }
         return paymentRepository.findOrderByIdPublic(order.id()).orElse(order);

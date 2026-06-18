@@ -20,34 +20,26 @@ export const usePaymentStore = defineStore('payment', () => {
 
   const configLoading = ref(false)
   const configLoaded = ref(false)
-  let configPromise: Promise<PaymentConfig | null> | null = null
 
   // ==================== Actions ====================
 
   /** Fetch payment configuration */
   async function fetchConfig(force = false): Promise<PaymentConfig | null> {
     if (configLoaded.value && !force) return config.value
-    if (configPromise && !force) return configPromise
+    if (configLoading.value) return config.value
 
     configLoading.value = true
-    const requestPromise = (async () => {
-      try {
-        const response = await paymentAPI.getConfig()
-        config.value = response.data
-        configLoaded.value = true
-        return config.value
-      } catch (error: unknown) {
-        console.error('[payment] Failed to fetch config:', error)
-        return null
-      } finally {
-        configLoading.value = false
-        if (configPromise === requestPromise) {
-          configPromise = null
-        }
-      }
-    })()
-    configPromise = requestPromise
-    return configPromise
+    try {
+      const response = await paymentAPI.getConfig()
+      config.value = response.data
+      configLoaded.value = true
+      return config.value
+    } catch (error: unknown) {
+      console.error('[payment] Failed to fetch config:', error)
+      return null
+    } finally {
+      configLoading.value = false
+    }
   }
 
   /** Fetch available subscription plans */
@@ -94,15 +86,6 @@ export const usePaymentStore = defineStore('payment', () => {
     currentOrder.value = null
   }
 
-  function reset() {
-    config.value = null
-    currentOrder.value = null
-    plans.value = []
-    configLoading.value = false
-    configLoaded.value = false
-    configPromise = null
-  }
-
   return {
     config,
     currentOrder,
@@ -113,7 +96,6 @@ export const usePaymentStore = defineStore('payment', () => {
     fetchPlans,
     createOrder,
     pollOrderStatus,
-    clearCurrentOrder,
-    reset
+    clearCurrentOrder
   }
 })

@@ -408,4 +408,33 @@ public class AdminRedeemRepository {
             String notes
     ) {
     }
+
+    public int batchUpdateCodes(java.util.List<Long> ids, String status, String expiresAt, String notes, Long groupId) {
+        if (ids == null || ids.isEmpty()) {
+            return 0;
+        }
+        StringBuilder sql = new StringBuilder("update redeem_codes set updated_at = now()");
+        org.springframework.jdbc.core.namedparam.MapSqlParameterSource params = new org.springframework.jdbc.core.namedparam.MapSqlParameterSource();
+        params.addValue("ids", ids);
+        if (status != null) {
+            sql.append(", status = :status");
+            params.addValue("status", status);
+        }
+        if (expiresAt != null) {
+            sql.append(", expires_at = cast(:expiresAt as timestamptz)");
+            params.addValue("expiresAt", expiresAt);
+        }
+        if (notes != null) {
+            sql.append(", notes = :notes");
+            params.addValue("notes", notes);
+        }
+        if (groupId != null) {
+            sql.append(", group_id = :groupId");
+            params.addValue("groupId", groupId);
+        } else if (expiresAt != null || status != null || notes != null) {
+            // groupId null intentionally means "not updating group_id"
+        }
+        sql.append(" where id in (:ids)");
+        return jdbcTemplate.update(sql.toString(), params);
+    }
 }

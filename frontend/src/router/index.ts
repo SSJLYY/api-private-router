@@ -1,5 +1,5 @@
 /**
- * Vue Router configuration for api-private-router frontend
+ * Vue Router configuration for Sub2API frontend
  * Defines all application routes with lazy loading and navigation guards
  */
 
@@ -7,8 +7,11 @@ import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
 import { useAdminSettingsStore } from '@/stores/adminSettings'
+import { useAdminComplianceStore } from '@/stores/adminCompliance'
 import { useNavigationLoadingState } from '@/composables/useNavigationLoading'
 import { useRoutePrefetch } from '@/composables/useRoutePrefetch'
+import { getSetupStatus } from '@/api/setup'
+import { resolveCompletedSetupRedirectPath } from './setupRedirect'
 import { resolveDocumentTitle } from './title'
 
 /**
@@ -43,7 +46,7 @@ const routes: RouteRecordRaw[] = [
     meta: {
       requiresAuth: false,
       title: 'Login',
-      titleKey: 'common.login'
+      titleKey: 'home.login'
     }
   },
   {
@@ -77,14 +80,13 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
-    path: '/auth/community/callback',
-    alias: '/auth/linuxdo/callback',
-    name: 'CommunityOAuthCallback',
-    component: () => import('@/views/auth/CommunityCallbackView.vue'),
+    path: '/auth/linuxdo/callback',
+    name: 'LinuxDoOAuthCallback',
+    component: () => import('@/views/auth/LinuxDoCallbackView.vue'),
     meta: {
       requiresAuth: false,
-      title: 'Community OAuth Callback',
-      titleKey: 'auth.communityCallbackPageTitle'
+      title: 'LinuxDo OAuth Callback',
+      titleKey: 'auth.linuxdoCallbackPageTitle'
     }
   },
   {
@@ -105,6 +107,25 @@ const routes: RouteRecordRaw[] = [
       requiresAuth: false,
       title: 'WeChat Payment Callback',
       titleKey: 'auth.wechatPaymentCallbackPageTitle'
+    }
+  },
+  {
+    path: '/auth/dingtalk/callback',
+    name: 'DingTalkOAuthCallback',
+    component: () => import('@/views/auth/DingTalkCallbackView.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'DingTalk OAuth Callback',
+      titleKey: 'auth.dingtalkCallbackPageTitle'
+    }
+  },
+  {
+    path: '/auth/dingtalk/email-completion',
+    name: 'dingtalk-email-completion',
+    component: () => import('@/views/auth/DingTalkEmailCompletionView.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'DingTalk Email Completion'
     }
   },
   {
@@ -146,13 +167,12 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
-    path: '/leaderboard',
-    name: 'PublicLeaderboard',
-    component: () => import('@/views/public/LeaderboardView.vue'),
+    path: '/legal/:documentId',
+    name: 'LegalDocument',
+    component: () => import('@/views/public/LegalDocumentView.vue'),
     meta: {
       requiresAuth: false,
-      title: 'Consumption Leaderboard',
-      titleKey: 'leaderboard.title'
+      title: 'Legal Document'
     }
   },
 
@@ -186,37 +206,15 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
-    path: '/checkin',
-    name: 'CheckIn',
-    component: () => import('@/views/user/CheckInView.vue'),
+    path: '/usage',
+    name: 'Usage',
+    component: () => import('@/views/user/UsageView.vue'),
     meta: {
       requiresAuth: true,
       requiresAdmin: false,
-      title: 'Daily Check-In',
-      titleKey: 'checkin.title',
-      descriptionKey: 'checkin.heroDescription'
-    }
-  },
-  {
-    path: '/redpacket',
-    name: 'RedPacket',
-    component: () => import('@/views/user/RedPacketView.vue'),
-    meta: {
-      requiresAuth: true,
-      requiresAdmin: false,
-      title: 'Red Packet',
-      titleKey: 'nav.redpacket'
-    }
-  },
-  {
-    path: '/fund',
-    name: 'FundCenter',
-    component: () => import('@/views/user/FundCenterView.vue'),
-    meta: {
-      requiresAuth: true,
-      requiresAdmin: false,
-      title: 'Fund Center',
-      titleKey: 'nav.fund'
+      title: 'Usage Records',
+      titleKey: 'usage.title',
+      descriptionKey: 'usage.description'
     }
   },
   {
@@ -341,6 +339,18 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/payment/airwallex',
+    name: 'AirwallexPayment',
+    component: () => import('@/views/user/AirwallexPaymentView.vue'),
+    meta: {
+      requiresAuth: false,
+      requiresAdmin: false,
+      title: 'Airwallex Payment',
+      titleKey: 'payment.airwallexPay',
+      requiresPayment: false
+    }
+  },
+  {
     path: '/payment/stripe-popup',
     name: 'StripePopup',
     component: () => import('@/views/user/StripePopupView.vue'),
@@ -378,17 +388,6 @@ const routes: RouteRecordRaw[] = [
       title: 'Admin Dashboard',
       titleKey: 'admin.dashboard.title',
       descriptionKey: 'admin.dashboard.description'
-    }
-  },
-  {
-    path: '/admin/leaderboard',
-    name: 'AdminLeaderboard',
-    component: () => import('@/views/admin/AdminLeaderboardView.vue'),
-    meta: {
-      requiresAuth: true,
-      requiresAdmin: true,
-      title: 'Consumption Leaderboard',
-      titleKey: 'leaderboard.title'
     }
   },
   {
@@ -687,22 +686,16 @@ const router = createRouter({
  */
 let authInitialized = false
 
-// Reset on HMR for development
-if (import.meta.hot) {
-  import.meta.hot.dispose(() => {
-    authInitialized = false
-  })
-}
-
-// Initialize navigation loading state
+// 初始化导航加载状态和预加载
 const navigationLoading = useNavigationLoadingState()
-// Delay prefetch initialization, pass router instance
+// 延迟初始化预加载，传入 router 实例
 let routePrefetch: ReturnType<typeof useRoutePrefetch> | null = null
-const BACKEND_MODE_ALLOWED_PATHS = ['/login', '/key-usage', '/setup', '/payment/result']
+const BACKEND_MODE_ALLOWED_PATHS = ['/login', '/key-usage', '/setup', '/payment/result', '/payment/airwallex', '/legal']
 const BACKEND_MODE_CALLBACK_PATHS = [
   '/auth/callback',
   '/auth/linuxdo/callback',
-  '/auth/community/callback',
+  '/auth/dingtalk/callback',
+  '/auth/dingtalk/email-completion',
   '/auth/oidc/callback',
   '/auth/wechat/callback',
   '/auth/wechat/payment/callback',
@@ -725,8 +718,9 @@ function isBackendModePublicRouteAllowed(path: string, hasPendingAuthSession: bo
   return false
 }
 
-router.beforeEach((to, _from, next) => {
-  // 寮€濮嬪鑸姞杞界姸鎬?  navigationLoading.startNavigation()
+router.beforeEach(async (to, _from, next) => {
+  // 开始导航加载状态
+  navigationLoading.startNavigation()
 
   const authStore = useAuthStore()
 
@@ -746,7 +740,7 @@ router.beforeEach((to, _from, next) => {
     const menuItem = publicItems.find((item) => item.id === id)
       ?? (authStore.isAdmin ? adminSettingsStore.customMenuItems.find((item) => item.id === id) : undefined)
     if (menuItem?.label) {
-      const siteName = appStore.siteName || 'api-private-router'
+      const siteName = appStore.siteName || 'Sub2API'
       document.title = `${menuItem.label} - ${siteName}`
     } else {
       document.title = resolveDocumentTitle(to.meta.title, appStore.siteName, to.meta.titleKey as string)
@@ -758,6 +752,18 @@ router.beforeEach((to, _from, next) => {
   // Check if route requires authentication
   const requiresAuth = to.meta.requiresAuth !== false // Default to true
   const requiresAdmin = to.meta.requiresAdmin === true
+
+  if (to.path === '/setup') {
+    try {
+      const status = await getSetupStatus()
+      if (!status.needs_setup) {
+        next(resolveCompletedSetupRedirectPath(authStore.isAuthenticated, authStore.isAdmin))
+        return
+      }
+    } catch {
+      // If setup status cannot be determined, keep the setup page reachable.
+    }
+  }
 
   // If route doesn't require auth, allow access
   if (!requiresAuth) {
@@ -802,6 +808,20 @@ router.beforeEach((to, _from, next) => {
     return
   }
 
+  if (requiresAdmin && authStore.isAdmin) {
+    const adminComplianceStore = useAdminComplianceStore()
+    if (!adminComplianceStore.initialized) {
+      try {
+        await adminComplianceStore.fetchStatus()
+      } catch (error) {
+        const err = error as { status?: number; code?: string; metadata?: Record<string, string> }
+        if (err.status === 423 && err.code === 'ADMIN_COMPLIANCE_ACK_REQUIRED') {
+          adminComplianceStore.requireAcknowledgement(err.metadata)
+        }
+      }
+    }
+  }
+
 
   // Check payment requirement (internal payment system only)
   if (to.meta.requiresPayment) {
@@ -820,7 +840,7 @@ router.beforeEach((to, _from, next) => {
     }
   }
 
-  // 绠€鏄撴ā寮忎笅闄愬埗璁块棶鏌愪簺椤甸潰
+  // 简易模式下限制访问某些页面
   if (authStore.isSimpleMode) {
     const restrictedPaths = [
       '/admin/groups',
@@ -831,7 +851,8 @@ router.beforeEach((to, _from, next) => {
     ]
 
     if (restrictedPaths.some((path) => to.path.startsWith(path))) {
-      // 绠€鏄撴ā寮忎笅璁块棶鍙楅檺椤甸潰,閲嶅畾鍚戝埌浠〃鏉?      next(authStore.isAdmin ? '/admin/dashboard' : '/dashboard')
+      // 简易模式下访问受限页面,重定向到仪表板
+      next(authStore.isAdmin ? '/admin/dashboard' : '/dashboard')
       return
     }
   }
@@ -857,14 +878,14 @@ router.beforeEach((to, _from, next) => {
  * Navigation guard: End loading and trigger prefetch
  */
 router.afterEach((to) => {
-  // End navigation loading state
+  // 结束导航加载状态
   navigationLoading.endNavigation()
 
-  // Lazily initialize route prefetch helper on first navigation
+  // 懒初始化预加载（首次导航时创建，传入 router 实例）
   if (!routePrefetch) {
     routePrefetch = useRoutePrefetch(router)
   }
-  // Trigger route prefetch during idle time
+  // 触发路由预加载（在浏览器空闲时执行）
   routePrefetch.triggerPrefetch(to)
 })
 
@@ -889,7 +910,7 @@ router.onError((error) => {
     const now = Date.now()
 
     // Allow reload if never attempted or more than 10 seconds ago
-    if (!lastReload || now - (parseInt(lastReload, 10) || 0) > 10000) {
+    if (!lastReload || now - parseInt(lastReload) > 10000) {
       sessionStorage.setItem(reloadKey, now.toString())
       console.warn('Chunk load error detected, reloading page to fetch latest version...')
       window.location.reload()
@@ -900,4 +921,3 @@ router.onError((error) => {
 })
 
 export default router
-

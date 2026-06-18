@@ -219,22 +219,6 @@ export interface PendingOAuthSendVerifyCodeResponse extends SendVerifyCodeRespon
 
 export type OAuthCompletionKind = 'login' | 'bind'
 
-export type CommunityOAuthProviderSlug = 'community'
-
-const COMMUNITY_OAUTH_PROVIDER_SLUG: CommunityOAuthProviderSlug = 'community'
-
-export function getCommunityOAuthStartPath(): string {
-  return `/auth/oauth/${COMMUNITY_OAUTH_PROVIDER_SLUG}/start`
-}
-
-export function getCommunityOAuthBindStartPath(): string {
-  return `/auth/oauth/${COMMUNITY_OAUTH_PROVIDER_SLUG}/bind/start`
-}
-
-export function getCommunityOAuthCompleteRegistrationPath(): string {
-  return `/auth/oauth/${COMMUNITY_OAUTH_PROVIDER_SLUG}/complete-registration`
-}
-
 export interface OAuthAdoptionDecision {
   adoptDisplayName?: boolean
   adoptAvatar?: boolean
@@ -574,15 +558,16 @@ export async function resetPassword(request: ResetPasswordRequest): Promise<Rese
 }
 
 /**
- * Complete Community OAuth registration by supplying an invitation code.
- * The backend provider key remains `linuxdo` for compatibility.
+ * Complete LinuxDo OAuth registration by supplying an invitation code
+ * @param invitationCode - Invitation code entered by the user
+ * @returns Token pair on success
  */
-export async function completeCommunityOAuthRegistration(
+export async function completeLinuxDoOAuthRegistration(
   invitationCode: string,
   decision?: OAuthAdoptionDecision,
   affiliateCode?: string
 ): Promise<OAuthTokenResponse> {
-  return createPendingCommunityOAuthAccount(invitationCode, decision, affiliateCode)
+  return createPendingLinuxDoOAuthAccount(invitationCode, decision, affiliateCode)
 }
 
 /**
@@ -607,7 +592,7 @@ export async function completeWeChatOAuthRegistration(
 }
 
 async function createPendingOAuthAccount(
-  provider: 'community' | 'linuxdo' | 'oidc' | 'wechat',
+  provider: 'linuxdo' | 'oidc' | 'wechat' | 'dingtalk',
   invitationCode: string,
   decision?: OAuthAdoptionDecision,
   affiliateCode?: string
@@ -624,16 +609,13 @@ async function createPendingOAuthAccount(
   return data
 }
 
-export async function createPendingCommunityOAuthAccount(
+export async function createPendingLinuxDoOAuthAccount(
   invitationCode: string,
   decision?: OAuthAdoptionDecision,
   affiliateCode?: string
 ): Promise<PendingOAuthCreateAccountResponse> {
-  return createPendingOAuthAccount(COMMUNITY_OAUTH_PROVIDER_SLUG, invitationCode, decision, affiliateCode)
+  return createPendingOAuthAccount('linuxdo', invitationCode, decision, affiliateCode)
 }
-
-export const completeLinuxDoOAuthRegistration = completeCommunityOAuthRegistration
-export const createPendingLinuxDoOAuthAccount = createPendingCommunityOAuthAccount
 
 export async function createPendingOIDCOAuthAccount(
   invitationCode: string,
@@ -649,6 +631,14 @@ export async function createPendingWeChatOAuthAccount(
   affiliateCode?: string
 ): Promise<PendingOAuthCreateAccountResponse> {
   return createPendingOAuthAccount('wechat', invitationCode, decision, affiliateCode)
+}
+
+export async function createPendingDingTalkOAuthAccount(
+  invitationCode: string,
+  decision?: OAuthAdoptionDecision,
+  affiliateCode?: string
+): Promise<PendingOAuthCreateAccountResponse> {
+  return createPendingOAuthAccount('dingtalk', invitationCode, decision, affiliateCode)
 }
 
 export async function completePendingOAuthBindLogin(
@@ -695,18 +685,14 @@ export const authAPI = {
   isPendingOAuthCreateAccountRequired,
   hasPendingOAuthSuggestedProfile,
   completePendingOAuthBindLogin,
-  createPendingCommunityOAuthAccount,
+  createPendingLinuxDoOAuthAccount,
   createPendingOIDCOAuthAccount,
   createPendingWeChatOAuthAccount,
   exchangePendingOAuthCompletion,
-  completeCommunityOAuthRegistration,
+  completeLinuxDoOAuthRegistration,
   completeOIDCOAuthRegistration,
   completeWeChatOAuthRegistration,
-  getCommunityOAuthStartPath,
-  getCommunityOAuthBindStartPath,
-  getCommunityOAuthCompleteRegistrationPath,
-  createPendingLinuxDoOAuthAccount,
-  completeLinuxDoOAuthRegistration
+  createPendingDingTalkOAuthAccount
 }
 
 export default authAPI

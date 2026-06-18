@@ -78,6 +78,7 @@ export const useAdminSettingsStore = defineStore('adminSettings', () => {
       loaded.value = true
     } catch (err) {
       // Keep cached/default value: do not "flip" the UI based on a transient fetch failure.
+      loaded.value = true
       console.error('[adminSettings] Failed to fetch settings:', err)
     } finally {
       loading.value = false
@@ -144,17 +145,6 @@ export const useAdminSettingsStore = defineStore('adminSettings', () => {
     setOpsMonitoringEnabledLocal,
     setOpsRealtimeMonitoringEnabledLocal,
     setPaymentEnabledLocal,
-    setOpsQueryModeDefaultLocal,
-    reset
-  }
-
-  function reset() {
-    loaded.value = false
-    loading.value = false
-    opsMonitoringEnabled.value = true
-    opsRealtimeMonitoringEnabled.value = true
-    opsQueryModeDefault.value = 'auto'
-    paymentEnabled.value = false
-    customMenuItems.value = []
+    setOpsQueryModeDefaultLocal
   }
 })

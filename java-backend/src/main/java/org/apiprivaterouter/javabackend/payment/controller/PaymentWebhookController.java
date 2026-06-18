@@ -43,4 +43,9 @@ public class PaymentWebhookController {
     public ResponseEntity<?> stripe(HttpServletRequest request, @RequestBody(required = false) String body) {
         return paymentWebhookService.handle("stripe", request, body, false);
     }
+
+    @PostMapping("/airwallex")
+    public ResponseEntity<?> airwallex(HttpServletRequest request, @RequestBody(required = false) String body) {
+        return paymentWebhookService.handle("airwallex", request, body, false);
+    }
 }

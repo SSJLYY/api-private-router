@@ -131,7 +131,7 @@
                 v-model="formData.database.dbname"
                 type="text"
                 class="input"
-                placeholder="api-private-router"
+                placeholder="sub2api"
               />
             </div>
             <div>
@@ -496,8 +496,6 @@ import { testDatabase, testRedis, install, type InstallRequest } from '@/api/set
 import Select from '@/components/common/Select.vue'
 import Toggle from '@/components/common/Toggle.vue'
 import Icon from '@/components/icons/Icon.vue'
-import { extractApiErrorMessage } from '@/utils/apiError'
-
 
 const { t } = useI18n()
 
@@ -537,7 +535,7 @@ const formData = reactive<InstallRequest>({
     port: 5432,
     user: 'postgres',
     password: '',
-    dbname: 'api-private-router',
+    dbname: 'sub2api',
     sslmode: 'disable'
   },
   redis: {
@@ -586,7 +584,7 @@ async function testDatabaseConnection() {
   } catch (error: unknown) {
     const err = error as { response?: { data?: { detail?: string; message?: string } }; message?: string }
     errorMessage.value =
-      extractApiErrorMessage(err, extractApiErrorMessage(err, err.message || 'Connection failed'))
+      err.response?.data?.detail || err.response?.data?.message || err.message || 'Connection failed'
   } finally {
     testingDb.value = false
   }
@@ -603,7 +601,7 @@ async function testRedisConnection() {
   } catch (error: unknown) {
     const err = error as { response?: { data?: { detail?: string; message?: string } }; message?: string }
     errorMessage.value =
-      extractApiErrorMessage(err, extractApiErrorMessage(err, err.message || 'Connection failed'))
+      err.response?.data?.detail || err.response?.data?.message || err.message || 'Connection failed'
   } finally {
     testingRedis.value = false
   }
@@ -628,7 +626,7 @@ async function performInstall() {
   } catch (error: unknown) {
     const err = error as { response?: { data?: { detail?: string; message?: string } }; message?: string }
     errorMessage.value =
-      extractApiErrorMessage(err, extractApiErrorMessage(err, err.message || 'Installation failed'))
+      err.response?.data?.detail || err.response?.data?.message || err.message || 'Installation failed'
   } finally {
     installing.value = false
   }

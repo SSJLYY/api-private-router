@@ -72,8 +72,6 @@ import type { AdminUser, UserAttributeValuesMap } from '@/types'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import UserAttributeForm from '@/components/user/UserAttributeForm.vue'
 import Icon from '@/components/icons/Icon.vue'
-import { extractApiErrorMessage } from '@/utils/apiError'
-
 
 const props = defineProps<{ show: boolean, user: AdminUser | null }>()
 const emit = defineEmits(['close', 'success'])
@@ -118,7 +116,7 @@ const handleUpdateUser = async () => {
     appStore.showSuccess(t('admin.users.userUpdated'))
     emit('success'); emit('close')
   } catch (e: any) {
-    appStore.showError(extractApiErrorMessage(e, t('admin.users.failedToUpdate')))
+    appStore.showError(e.response?.data?.detail || t('admin.users.failedToUpdate'))
   } finally { submitting.value = false }
 }
 </script>

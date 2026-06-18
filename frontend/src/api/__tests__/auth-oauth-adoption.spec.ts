@@ -44,40 +44,40 @@ describe('oauth adoption auth api', () => {
     })
   })
 
-  it('posts community invitation completion with adoption decisions', async () => {
-    const { completeCommunityOAuthRegistration, getCommunityOAuthCompleteRegistrationPath } = await import('@/api/auth')
+  it('posts linuxdo invitation completion with adoption decisions', async () => {
+    const { completeLinuxDoOAuthRegistration } = await import('@/api/auth')
 
-    await completeCommunityOAuthRegistration('invite-code', {
+    await completeLinuxDoOAuthRegistration('invite-code', {
       adoptDisplayName: true,
       adoptAvatar: false
     })
 
-    expect(post).toHaveBeenCalledWith(getCommunityOAuthCompleteRegistrationPath(), {
+    expect(post).toHaveBeenCalledWith('/auth/oauth/linuxdo/complete-registration', {
       invitation_code: 'invite-code',
       adopt_display_name: true,
       adopt_avatar: false
     })
   })
 
-  it('posts community create-account completion with adoption decisions', async () => {
-    const { createPendingCommunityOAuthAccount, getCommunityOAuthCompleteRegistrationPath } = await import('@/api/auth')
+  it('posts linuxdo create-account completion with adoption decisions', async () => {
+    const { createPendingLinuxDoOAuthAccount } = await import('@/api/auth')
 
-    await createPendingCommunityOAuthAccount('invite-code', {
+    await createPendingLinuxDoOAuthAccount('invite-code', {
       adoptDisplayName: false,
       adoptAvatar: true
     })
 
-    expect(post).toHaveBeenCalledWith(getCommunityOAuthCompleteRegistrationPath(), {
+    expect(post).toHaveBeenCalledWith('/auth/oauth/linuxdo/complete-registration', {
       invitation_code: 'invite-code',
       adopt_display_name: false,
       adopt_avatar: true
     })
   })
 
-  it('posts affiliate code when completing community oauth registration', async () => {
-    const { completeCommunityOAuthRegistration, getCommunityOAuthCompleteRegistrationPath } = await import('@/api/auth')
+  it('posts affiliate code when completing linuxdo oauth registration', async () => {
+    const { completeLinuxDoOAuthRegistration } = await import('@/api/auth')
 
-    await completeCommunityOAuthRegistration(
+    await completeLinuxDoOAuthRegistration(
       'invite-code',
       {
         adoptDisplayName: true,
@@ -86,7 +86,7 @@ describe('oauth adoption auth api', () => {
       ' AFF123 '
     )
 
-    expect(post).toHaveBeenCalledWith(getCommunityOAuthCompleteRegistrationPath(), {
+    expect(post).toHaveBeenCalledWith('/auth/oauth/linuxdo/complete-registration', {
       invitation_code: 'invite-code',
       aff_code: 'AFF123',
       adopt_display_name: true,

@@ -60,7 +60,7 @@ export function useOpenAIOAuth() {
 
     try {
       const payload: Record<string, unknown> = {}
-      if (proxyId != null) {
+      if (proxyId) {
         payload.proxy_id = proxyId
       }
       if (redirectUri) {
@@ -110,7 +110,7 @@ export function useOpenAIOAuth() {
         code: code.trim(),
         state: state.trim()
       }
-      if (proxyId != null) {
+      if (proxyId) {
         payload.proxy_id = proxyId
       }
 

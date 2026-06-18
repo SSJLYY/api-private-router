@@ -1,6 +1,8 @@
-import { ref, onUnmounted } from 'vue'
+import { ref } from 'vue'
 import { useAppStore } from '@/stores/app'
-import { useI18n } from 'vue-i18n'
+import { i18n } from '@/i18n'
+
+const { t } = i18n.global
 
 /**
  * 检测是否支持 Clipboard API（需要安全上下文：HTTPS/localhost）
@@ -28,11 +30,7 @@ function fallbackCopy(text: string): boolean {
 
 export function useClipboard() {
   const appStore = useAppStore()
-  const { t } = useI18n()
   const copied = ref(false)
-  let copyTimer: ReturnType<typeof setTimeout> | null = null
-
-  onUnmounted(() => { if (copyTimer) clearTimeout(copyTimer) })
 
   const copyToClipboard = async (
     text: string,
@@ -56,10 +54,8 @@ export function useClipboard() {
     if (success) {
       copied.value = true
       appStore.showSuccess(successMessage || t('common.copiedToClipboard'))
-      if (copyTimer) clearTimeout(copyTimer)
-      copyTimer = setTimeout(() => {
+      setTimeout(() => {
         copied.value = false
-        copyTimer = null
       }, 2000)
     } else {
       appStore.showError(t('common.copyFailed'))

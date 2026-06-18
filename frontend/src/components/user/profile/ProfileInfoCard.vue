@@ -138,7 +138,8 @@
         >
           <ProfileIdentityBindingsSection
             :user="user"
-            :community-enabled="communityEnabled"
+            :linuxdo-enabled="linuxdoEnabled"
+            :dingtalk-enabled="dingtalkEnabled"
             :oidc-enabled="oidcEnabled"
             :oidc-provider-name="oidcProviderName"
             :wechat-enabled="wechatEnabled"
@@ -189,14 +190,16 @@ import type { User, UserAuthBindingStatus, UserAuthProvider, UserProfileSourceCo
 
 const props = withDefaults(defineProps<{
   user: User | null
-  communityEnabled?: boolean
+  linuxdoEnabled?: boolean
+  dingtalkEnabled?: boolean
   oidcEnabled?: boolean
   oidcProviderName?: string
   wechatEnabled?: boolean
   wechatOpenEnabled?: boolean
   wechatMpEnabled?: boolean
 }>(), {
-  communityEnabled: false,
+  linuxdoEnabled: false,
+  dingtalkEnabled: false,
   oidcEnabled: false,
   oidcProviderName: 'OIDC',
   wechatEnabled: false,
@@ -262,6 +265,7 @@ const memberSinceLabel = computed(() => {
 const providerLabels = computed<Record<UserAuthProvider, string>>(() => ({
   email: t('profile.authBindings.providers.email'),
   linuxdo: t('profile.authBindings.providers.linuxdo'),
+  dingtalk: t('profile.authBindings.providers.dingtalk'),
   oidc: t('profile.authBindings.providers.oidc', { providerName: props.oidcProviderName }),
   wechat: t('profile.authBindings.providers.wechat'),
   github: 'GitHub',

@@ -267,4 +267,48 @@ public class AdminRedeemService {
         }
         return code.trim();
     }
+
+    @Transactional
+    public Map<String, Object> batchUpdate(List<Long> ids, Map<String, Object> fields) {
+        if (ids == null || ids.isEmpty()) {
+            throw new StructuredApiErrorException(400, "REDEEM_CODE_BATCH_UPDATE_IDS_REQUIRED", "ids are required");
+        }
+        if (fields == null || fields.isEmpty()) {
+            throw new StructuredApiErrorException(400, "REDEEM_CODE_BATCH_UPDATE_EMPTY", "at least one field must be selected");
+        }
+        if (fields.containsKey("type") || fields.containsKey("value")) {
+            throw new StructuredApiErrorException(400, "REDEEM_CODE_CORE_FIELDS_IMMUTABLE", "type and value cannot be batch updated");
+        }
+        List<Long> distinctIds = ids.stream().distinct().filter(id -> id > 0).toList();
+        if (distinctIds.isEmpty()) {
+            throw new StructuredApiErrorException(400, "REDEEM_CODE_BATCH_UPDATE_INVALID_ID", "ids must be positive");
+        }
+        String status = fields.get("status") instanceof String s ? s : null;
+        if (status != null && !List.of("unused", "disabled").contains(status.toLowerCase())) {
+            throw new StructuredApiErrorException(400, "REDEEM_CODE_STATUS_INVALID", "status must be unused or disabled");
+        }
+        String expiresAt = fields.get("expires_at") instanceof String s ? s : null;
+        if (expiresAt != null) {
+            try {
+                OffsetDateTime parsed = OffsetDateTime.parse(expiresAt);
+                if (!parsed.isAfter(OffsetDateTime.now())) {
+                    throw new StructuredApiErrorException(400, "REDEEM_CODE_EXPIRES_AT_INVALID", "expires_at must be in the future");
+                }
+            } catch (StructuredApiErrorException ex) {
+                throw ex;
+            } catch (Exception ex) {
+                throw new StructuredApiErrorException(400, "REDEEM_CODE_EXPIRES_AT_INVALID", "expires_at must be a valid ISO datetime");
+            }
+        }
+        Long groupId = fields.get("group_id") instanceof Number n ? n.longValue() : null;
+        if (fields.containsKey("group_id") && groupId != null && groupId <= 0) {
+            throw new StructuredApiErrorException(400, "REDEEM_CODE_GROUP_ID_INVALID", "group_id must be positive");
+        }
+        String notes = fields.get("notes") instanceof String s ? s : null;
+        int updated = repository.batchUpdateCodes(distinctIds, status, expiresAt, notes, groupId);
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("updated", updated);
+        result.put("message", "Redeem codes updated successfully");
+        return result;
+    }
 }

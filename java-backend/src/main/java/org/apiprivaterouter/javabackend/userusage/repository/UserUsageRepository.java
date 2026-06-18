@@ -10,6 +10,8 @@ import org.apiprivaterouter.javabackend.admin.usage.repository.AdminUsageReposit
 import org.apiprivaterouter.javabackend.admin.usage.service.AdminUsageService;
 import org.apiprivaterouter.javabackend.common.api.PageResponse;
 import org.apiprivaterouter.javabackend.userusage.model.UserDashboardStatsResponse;
+import org.apiprivaterouter.javabackend.userusage.model.UserErrorDetailResponse;
+import org.apiprivaterouter.javabackend.userusage.model.UserErrorLogResponse;
 import org.apiprivaterouter.javabackend.userusage.model.UserUsageLogResponse;
 import org.apiprivaterouter.javabackend.userusage.model.UserUsageStatsResponse;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -345,6 +347,104 @@ public class UserUsageRepository {
 
     public BatchApiKeysUsageResponse getBatchApiKeysUsage(List<Long> apiKeyIds, String timezone) {
         return adminDashboardService.getBatchApiKeysUsage(apiKeyIds, timezone);
+    }
+
+    public PageResponse<UserErrorLogResponse> listErrorLogs(
+            long userId,
+            int page,
+            int pageSize,
+            Long apiKeyId,
+            String startDate,
+            String endDate,
+            String timezone
+    ) {
+        StringBuilder countSql = new StringBuilder("select count(*) from error_logs el where el.user_id = :userId");
+        StringBuilder dataSql = new StringBuilder("""
+                select el.id, el.request_id, el.request_type, el.model, el.upstream_model,
+                       el.status_code, el.error_code, el.error_message, el.created_at,
+                       el.input_preview
+                from error_logs el
+                where el.user_id = :userId""");
+        MapSqlParameterSource params = new MapSqlParameterSource().addValue("userId", userId);
+        if (apiKeyId != null) {
+            countSql.append(" and el.api_key_id = :apiKeyId");
+            dataSql.append(" and el.api_key_id = :apiKeyId");
+            params.addValue("apiKeyId", apiKeyId);
+        }
+        if (startDate != null && !startDate.isBlank()) {
+            countSql.append(" and el.created_at >= :startDate");
+            dataSql.append(" and el.created_at >= :startDate");
+            params.addValue("startDate", parseTimestamp(startDate, timezone));
+        }
+        if (endDate != null && !endDate.isBlank()) {
+            countSql.append(" and el.created_at < :endDate");
+            dataSql.append(" and el.created_at < :endDate");
+            params.addValue("endDate", parseTimestamp(endDate, timezone));
+        }
+        dataSql.append(" order by el.created_at desc limit :limit offset :offset");
+        Long total = jdbcTemplate.queryForObject(countSql.toString(), params, Long.class);
+        if (total == null) {
+            total = 0L;
+        }
+        int offset = (page - 1) * pageSize;
+        params.addValue("limit", pageSize).addValue("offset", offset);
+        List<UserErrorLogResponse> items = jdbcTemplate.query(dataSql.toString(), params, (rs, rowNum) -> new UserErrorLogResponse(
+                rs.getLong("id"),
+                defaultString(rs.getString("request_id")),
+                defaultString(rs.getString("request_type")),
+                defaultString(rs.getString("model")),
+                defaultString(rs.getString("upstream_model")),
+                rs.getInt("status_code"),
+                defaultString(rs.getString("error_code")),
+                defaultString(rs.getString("error_message")),
+                toIsoString(rs.getTimestamp("created_at")),
+                defaultString(rs.getString("input_preview"))
+        ));
+        return new PageResponse<>(items, total, page, pageSize);
+    }
+
+    public Optional<UserErrorDetailResponse> findErrorDetailForUser(long id, long userId) {
+        List<UserErrorDetailResponse> items = jdbcTemplate.query("""
+                select el.id, el.request_id, el.request_type, el.model, el.upstream_model,
+                       el.status_code, el.error_code, el.error_message, el.created_at,
+                       el.input_preview, el.request_body, el.response_body, el.upstream_url
+                from error_logs el
+                where el.id = :id and el.user_id = :userId
+                """, new MapSqlParameterSource()
+                .addValue("id", id)
+                .addValue("userId", userId), (rs, rowNum) -> new UserErrorDetailResponse(
+                rs.getLong("id"),
+                defaultString(rs.getString("request_id")),
+                defaultString(rs.getString("request_type")),
+                defaultString(rs.getString("model")),
+                defaultString(rs.getString("upstream_model")),
+                rs.getInt("status_code"),
+                defaultString(rs.getString("error_code")),
+                defaultString(rs.getString("error_message")),
+                toIsoString(rs.getTimestamp("created_at")),
+                defaultString(rs.getString("input_preview")),
+                rs.getString("request_body"),
+                rs.getString("response_body"),
+                defaultString(rs.getString("upstream_url"))
+        ));
+        return items.stream().findFirst();
+    }
+
+    private Timestamp parseTimestamp(String dateStr, String timezone) {
+        try {
+            if (timezone == null || timezone.isBlank()) {
+                timezone = "UTC";
+            }
+            ZonedDateTime zdt = ZonedDateTime.parse(dateStr);
+            return Timestamp.from(zdt.toInstant());
+        } catch (Exception e) {
+            try {
+                LocalDate ld = LocalDate.parse(dateStr);
+                return Timestamp.valueOf(ld.atStartOfDay());
+            } catch (Exception ex) {
+                return Timestamp.valueOf(LocalDate.now().atStartOfDay());
+            }
+        }
     }
 
     private UserUsageLogResponse toUserUsageLog(AdminUsageLogResponse raw) {

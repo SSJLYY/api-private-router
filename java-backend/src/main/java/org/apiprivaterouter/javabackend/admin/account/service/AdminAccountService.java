@@ -1954,4 +1954,85 @@ public class AdminAccountService {
         result.put("message", "upstream model sync not yet implemented for platform: " + account.platform());
         return result;
     }
+
+    public java.util.Map<String, Object> importCodexSession(java.util.Map<String, Object> request) {
+        java.util.Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("total", 0);
+        result.put("created", 0);
+        result.put("updated", 0);
+        result.put("skipped", 0);
+        result.put("failed", 0);
+        result.put("items", java.util.List.of());
+        result.put("warnings", java.util.List.of());
+        result.put("errors", java.util.List.of());
+        Object content = request.get("content");
+        Object contents = request.get("contents");
+        if ((content == null || String.valueOf(content).isBlank())
+                && (contents == null || (contents instanceof java.util.List<?> list && list.isEmpty()))) {
+            result.put("errors", java.util.List.of(java.util.Map.of("index", 0, "message", "content or contents is required")));
+            return result;
+        }
+        result.put("message", "codex session import not yet fully implemented");
+        return result;
+    }
+
+    public java.util.Map<String, Object> applyOAuthCredentials(long id, java.util.Map<String, Object> request) {
+        var account = repository.getAccount(id)
+                .orElseThrow(() -> new IllegalArgumentException("account not found"));
+        String type = request.get("type") instanceof String s ? s : "";
+        if (!"oauth".equalsIgnoreCase(type) && !"setup-token".equalsIgnoreCase(type)) {
+            throw new IllegalArgumentException("type must be oauth or setup-token");
+        }
+        @SuppressWarnings("unchecked")
+        java.util.Map<String, Object> credentials = request.get("credentials") instanceof java.util.Map<?, ?> m
+                ? (java.util.Map<String, Object>) m
+                : java.util.Map.of();
+        if (credentials.isEmpty()) {
+            throw new IllegalArgumentException("credentials is required");
+        }
+        repository.updateAccountColumns(
+                id, null, false, null, type,
+                true, credentials,
+                false, null,
+                false, null, null, null, false, null, null, null, null, false, null, null
+        );
+        @SuppressWarnings("unchecked")
+        java.util.Map<String, Object> extra = request.get("extra") instanceof java.util.Map<?, ?> m
+                ? (java.util.Map<String, Object>) m
+                : null;
+        if (extra != null && !extra.isEmpty()) {
+            try {
+                var existingExtra = account.extra() != null ? new java.util.LinkedHashMap<>(account.extra()) : new java.util.LinkedHashMap<String, Object>();
+                existingExtra.putAll(extra);
+                repository.updateAccountColumns(
+                        id, null, false, null, null,
+                        false, null,
+                        true, existingExtra,
+                        false, null, null, null, false, null, null, null, null, false, null, null
+                );
+            } catch (Exception ignored) {
+            }
+        }
+        repository.clearError(id);
+        var updated = repository.getAccount(id).orElseThrow(() -> new IllegalArgumentException("account not found"));
+        java.util.Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("id", updated.id());
+        result.put("platform", updated.platform());
+        result.put("type", updated.type());
+        result.put("status", updated.status());
+        return result;
+    }
+
+    public java.util.Map<String, Object> syncUpstreamModelsPreview(java.util.Map<String, Object> request) {
+        String platform = request.get("platform") instanceof String s ? s : "";
+        String type = request.get("type") instanceof String s ? s : "";
+        String apiKey = request.get("api_key") instanceof String s ? s : "";
+        if (platform.isBlank() || type.isBlank() || apiKey.isBlank()) {
+            throw new IllegalArgumentException("platform, type, and api_key are required");
+        }
+        java.util.Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("models", java.util.List.of());
+        result.put("message", "upstream model sync preview not yet fully implemented for platform: " + platform);
+        return result;
+    }
 }

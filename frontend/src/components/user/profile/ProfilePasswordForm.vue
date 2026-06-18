@@ -75,8 +75,6 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { userAPI } from '@/api'
-import { extractApiErrorMessage } from '@/utils/apiError'
-
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -110,7 +108,7 @@ const handleChangePassword = async () => {
     form.value = { old_password: '', new_password: '', confirm_password: '' }
     appStore.showSuccess(t('profile.passwordChangeSuccess'))
   } catch (error: any) {
-    appStore.showError(extractApiErrorMessage(error, t('profile.passwordChangeFailed')))
+    appStore.showError(error.response?.data?.detail || t('profile.passwordChangeFailed'))
   } finally {
     loading.value = false
   }

@@ -143,7 +143,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, onBeforeUnmount } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { adminAPI } from '@/api/admin'
@@ -208,12 +208,8 @@ const remainingText = computed(() => {
   return t('admin.accounts.tempUnschedulable.remainingHoursMinutes', { hours, minutes: rest })
 })
 
-const isMounted = ref(true)
-onBeforeUnmount(() => { isMounted.value = false })
-
 const loadStatus = async () => {
   if (!props.account) return
-  if (!isMounted.value) return
   loading.value = true
   try {
     status.value = await adminAPI.accounts.getTempUnschedulableStatus(props.account.id)
@@ -221,7 +217,7 @@ const loadStatus = async () => {
     appStore.showError(error?.message || t('admin.accounts.tempUnschedulable.failedToLoad'))
     status.value = null
   } finally {
-    if (isMounted.value) loading.value = false
+    loading.value = false
   }
 }
 

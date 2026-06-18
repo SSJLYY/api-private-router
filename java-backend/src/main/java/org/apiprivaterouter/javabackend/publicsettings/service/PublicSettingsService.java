@@ -84,6 +84,8 @@ public class PublicSettingsService {
     private static final String KEY_GAME_HALL_ENABLED = "game_hall_enabled";
     private static final String KEY_TRANSFER_ENABLED = "transfer_enabled";
     private static final String KEY_FUND_CENTER_ENABLED = "fund_center_enabled";
+    private static final String KEY_LOGIN_AGREEMENT_DOCUMENTS = "login_agreement_documents";
+    private static final String KEY_LOGIN_AGREEMENT_UPDATED_AT = "login_agreement_updated_at";
 
     private static final String DEFAULT_VERSION = "";
     private static final String DEFAULT_SITE_NAME = "api-private-router";
@@ -120,7 +122,7 @@ public class PublicSettingsService {
         try {
             String cached = redis.opsForValue().get(CACHE_KEY);
             if (cached != null) {
-                return jsonHelper.objectMapper().readValue(cached, PublicSettingsResponse.class);
+                return jsonHelper.readObject(cached, PublicSettingsResponse.class);
             }
         } catch (Exception ignored) {
         }
@@ -128,7 +130,7 @@ public class PublicSettingsService {
         PublicSettingsResponse response = loadPublicSettings();
 
         try {
-            String json = jsonHelper.objectMapper().writeValueAsString(response);
+            String json = jsonHelper.writeJson(response);
             redis.opsForValue().set(CACHE_KEY, json, CACHE_TTL_SECONDS, TimeUnit.SECONDS);
         } catch (Exception ignored) {
         }
@@ -202,7 +204,9 @@ public class PublicSettingsService {
                 KEY_REDPACKET_ENABLED,
                 KEY_GAME_HALL_ENABLED,
                 KEY_TRANSFER_ENABLED,
-                KEY_FUND_CENTER_ENABLED
+                KEY_FUND_CENTER_ENABLED,
+                KEY_LOGIN_AGREEMENT_DOCUMENTS,
+                KEY_LOGIN_AGREEMENT_UPDATED_AT
         ));
 
         boolean emailVerifyEnabled = isStrictTrue(settings.get(KEY_EMAIL_VERIFY_ENABLED));
@@ -291,7 +295,9 @@ public class PublicSettingsService {
                 isStrictTrue(settings.get(KEY_REDPACKET_ENABLED)),
                 isStrictTrue(settings.get(KEY_GAME_HALL_ENABLED)),
                 isStrictTrue(settings.get(KEY_TRANSFER_ENABLED)),
-                isStrictTrue(settings.get(KEY_FUND_CENTER_ENABLED))
+                isStrictTrue(settings.get(KEY_FUND_CENTER_ENABLED)),
+                defaultString(settings.get(KEY_LOGIN_AGREEMENT_DOCUMENTS)),
+                defaultString(settings.get(KEY_LOGIN_AGREEMENT_UPDATED_AT))
         );
     }
 

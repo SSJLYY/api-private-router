@@ -115,7 +115,7 @@ export function platformBadgeClass(p: string): string {
 }
 
 export function platformBadgeLightClass(p: string): string {
-  return isPlatform(p) ? BADGE_LIGHT[p] : 'bg-slate-500/10 text-slate-600 dark:bg-slate-500/10 dark:text-slate-300'
+  return isPlatform(p) ? BADGE_LIGHT[p] : BADGE_DEFAULT
 }
 
 export function platformBorderClass(p: string): string {

@@ -25,7 +25,7 @@ export const useAppStore = defineStore('app', () => {
   // Public settings cache state
   const publicSettingsLoaded = ref<boolean>(false)
   const publicSettingsLoading = ref<boolean>(false)
-  const siteName = ref<string>('api-private-router')
+  const siteName = ref<string>('Sub2API')
   const siteLogo = ref<string>('')
   const siteVersion = ref<string>('')
   const contactInfo = ref<string>('')
@@ -44,7 +44,6 @@ export const useAppStore = defineStore('app', () => {
 
   // Auto-incrementing ID for toasts
   let toastIdCounter = 0
-  const toastTimers = new Map<string, ReturnType<typeof setTimeout>>()
 
   // ==================== Computed ====================
 
@@ -119,11 +118,9 @@ export const useAppStore = defineStore('app', () => {
 
     // Auto-dismiss if duration is specified
     if (duration !== undefined) {
-      const timer = setTimeout(() => {
-        toastTimers.delete(id)
+      setTimeout(() => {
         hideToast(id)
       }, duration)
-      toastTimers.set(id, timer)
     }
 
     return id
@@ -180,8 +177,6 @@ export const useAppStore = defineStore('app', () => {
    * Clear all toasts
    */
   function clearAllToasts(): void {
-    toastTimers.forEach(timer => clearTimeout(timer))
-    toastTimers.clear()
     toasts.value = []
   }
 
@@ -232,26 +227,9 @@ export const useAppStore = defineStore('app', () => {
    */
   function reset(): void {
     sidebarCollapsed.value = false
-    mobileOpen.value = false
     loading.value = false
     loadingCount.value = 0
     toasts.value = []
-    publicSettingsLoaded.value = false
-    publicSettingsLoading.value = false
-    cachedPublicSettings.value = null
-    siteName.value = 'api-private-router'
-    siteLogo.value = ''
-    siteVersion.value = ''
-    contactInfo.value = ''
-    apiBaseUrl.value = ''
-    docUrl.value = ''
-    versionLoaded.value = false
-    versionLoading.value = false
-    currentVersion.value = ''
-    latestVersion.value = ''
-    hasUpdate.value = false
-    buildType.value = 'source'
-    releaseInfo.value = null
   }
 
   // ==================== Version Management ====================
@@ -314,7 +292,7 @@ export const useAppStore = defineStore('app', () => {
       window.__APP_CONFIG__ = { ...config }
     }
     cachedPublicSettings.value = config
-    siteName.value = config.site_name || 'api-private-router'
+    siteName.value = config.site_name || 'Sub2API'
     siteLogo.value = config.site_logo || ''
     siteVersion.value = config.version || ''
     contactInfo.value = config.contact_info || ''
@@ -380,11 +358,9 @@ export const useAppStore = defineStore('app', () => {
         channel_monitor_default_interval_seconds: 60,
         available_channels_enabled: false,
         risk_control_enabled: false,
+        service_quota_enabled: false,
         affiliate_enabled: false,
-        redpacket_enabled: false,
-        game_hall_enabled: false,
-        transfer_enabled: false,
-        fund_center_enabled: false,
+        allow_user_view_error_requests: false,
       }
     }
 

@@ -416,4 +416,25 @@ public class AdminAccountController {
         currentUserContext.requireAdmin();
         return ApiResponse.success(service.syncAccountModelsFromUpstream(id));
     }
+
+    @PostMapping("/import/codex-session")
+    public ApiResponse<Map<String, Object>> importCodexSession(@RequestBody Map<String, Object> request) {
+        currentUserContext.requireAdmin();
+        return ApiResponse.success(service.importCodexSession(request));
+    }
+
+    @PostMapping("/{id}/apply-oauth-credentials")
+    public ApiResponse<Map<String, Object>> applyOAuthCredentials(
+            @PathVariable long id,
+            @RequestBody Map<String, Object> request
+    ) {
+        currentUserContext.requireAdmin();
+        return ApiResponse.success(service.applyOAuthCredentials(id, request));
+    }
+
+    @PostMapping("/models/sync-upstream-preview")
+    public ApiResponse<Map<String, Object>> syncUpstreamModelsPreview(@RequestBody Map<String, Object> request) {
+        currentUserContext.requireAdmin();
+        return ApiResponse.success(service.syncUpstreamModelsPreview(request));
+    }
 }

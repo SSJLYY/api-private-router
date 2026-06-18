@@ -25,33 +25,21 @@ export const apiClient: AxiosInstance = axios.create({
 // Track if a token refresh is in progress to prevent multiple simultaneous refresh requests
 let isRefreshing = false
 // Queue of requests waiting for token refresh
-let refreshSubscribers: Array<{ resolve: (token: string) => void; reject: (error: unknown) => void }> = []
+let refreshSubscribers: Array<(token: string) => void> = []
 
 /**
  * Subscribe to token refresh completion
  */
-function subscribeTokenRefresh(): Promise<string> {
-  return new Promise((resolve, reject) => {
-    refreshSubscribers.push({ resolve, reject })
-  })
+function subscribeTokenRefresh(callback: (token: string) => void): void {
+  refreshSubscribers.push(callback)
 }
 
 /**
- * Notify all subscribers that token has been refreshed successfully
+ * Notify all subscribers that token has been refreshed
  */
 function onTokenRefreshed(token: string): void {
-  const subscribers = [...refreshSubscribers]
+  refreshSubscribers.forEach((callback) => callback(token))
   refreshSubscribers = []
-  subscribers.forEach(({ resolve }) => resolve(token))
-}
-
-/**
- * Notify all subscribers that token refresh failed
- */
-function onTokenRefreshFailed(error: unknown): void {
-  const subscribers = [...refreshSubscribers]
-  refreshSubscribers = []
-  subscribers.forEach(({ reject }) => reject(error))
 }
 
 // ==================== Request Interceptor ====================
@@ -160,6 +148,23 @@ apiClient.interceptors.response.use(
         })
       }
 
+      if (status === 423 && apiData.code === 'ADMIN_COMPLIANCE_ACK_REQUIRED') {
+        try {
+          window.dispatchEvent(new CustomEvent('admin-compliance-required', {
+            detail: apiData.metadata || {}
+          }))
+        } catch {
+          // ignore event failures
+        }
+
+        return Promise.reject({
+          status,
+          code: apiData.code,
+          message: apiData.message || error.message,
+          metadata: apiData.metadata,
+        })
+      }
+
       // 401: Try to refresh the token if we have a refresh token
       // This handles TOKEN_EXPIRED, INVALID_TOKEN, TOKEN_REVOKED, etc.
       if (status === 401 && !originalRequest._retry) {
@@ -171,16 +176,25 @@ apiClient.interceptors.response.use(
         if (refreshToken && !isAuthEndpoint) {
           if (isRefreshing) {
             // Wait for the ongoing refresh to complete
-            try {
-              const newToken = await subscribeTokenRefresh()
-              originalRequest._retry = true
-              if (originalRequest.headers) {
-                originalRequest.headers.Authorization = `Bearer ${newToken}`
-              }
-              return apiClient(originalRequest)
-            } catch (refreshError) {
-              return Promise.reject(refreshError)
-            }
+            return new Promise((resolve, reject) => {
+              subscribeTokenRefresh((newToken: string) => {
+                if (newToken) {
+                  // Mark as retried to prevent infinite loop if retry also returns 401
+                  originalRequest._retry = true
+                  if (originalRequest.headers) {
+                    originalRequest.headers.Authorization = `Bearer ${newToken}`
+                  }
+                  resolve(apiClient(originalRequest))
+                } else {
+                  // Refresh failed, reject with original error
+                  reject({
+                    status,
+                    code: apiData.code,
+                    message: apiData.message || apiData.detail || error.message
+                  })
+                }
+              })
+            })
           }
 
           originalRequest._retry = true
@@ -223,13 +237,8 @@ apiClient.interceptors.response.use(
             // Refresh response was not successful, fall through to clear auth
             throw new Error('Token refresh failed')
           } catch (refreshError) {
-            // Refresh failed - notify all waiting subscribers
-            const rejectionError = {
-              status: 401,
-              code: apiData.code,
-              message: apiData.message || apiData.detail || error.message
-            }
-            onTokenRefreshFailed(rejectionError)
+            // Refresh failed - notify subscribers with empty token
+            onTokenRefreshed('')
             isRefreshing = false
 
             // Clear tokens and redirect to login
@@ -239,11 +248,6 @@ apiClient.interceptors.response.use(
             localStorage.removeItem('token_expires_at')
             sessionStorage.setItem('auth_expired', '1')
 
-            // NOTE: Using window.location.href instead of router.push because
-            // this module doesn't have access to the router instance. This causes
-            // a full page reload, losing all in-memory state. If SPA navigation
-            // is preferred, pass the router instance to this module or use
-            // a shared event bus.
             if (!window.location.pathname.includes('/login')) {
               window.location.href = '/login'
             }

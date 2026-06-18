@@ -82,6 +82,20 @@ public class AdminRedeemController {
         return ApiResponse.success(service.batchDelete(request.ids()));
     }
 
+    @PostMapping("/batch-update")
+    public ApiResponse<Map<String, Object>> batchUpdate(@RequestBody Map<String, Object> request) {
+        currentUserContext.requireAdmin();
+        @SuppressWarnings("unchecked")
+        java.util.List<Long> ids = request.get("ids") instanceof java.util.List<?> l
+                ? l.stream().map(v -> v instanceof Number n ? n.longValue() : 0L).filter(v -> v > 0).toList()
+                : java.util.List.of();
+        @SuppressWarnings("unchecked")
+        Map<String, Object> fields = request.get("fields") instanceof Map<?, ?> m
+                ? (Map<String, Object>) m
+                : Map.of();
+        return ApiResponse.success(service.batchUpdate(ids, fields));
+    }
+
     @PostMapping("/{id}/expire")
     public ApiResponse<AdminRedeemCodeResponse> expire(@PathVariable long id) {
         currentUserContext.requireAdmin();

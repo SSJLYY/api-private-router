@@ -34,7 +34,7 @@ vi.mock('vue-i18n', async (importOriginal) => {
         if (key === 'profile.administrator') return 'Administrator'
         if (key === 'profile.user') return 'User'
         if (key === 'profile.authBindings.providers.email') return 'Email'
-        if (key === 'profile.authBindings.providers.linuxdo') return 'Community'
+        if (key === 'profile.authBindings.providers.linuxdo') return 'LinuxDo'
         if (key === 'profile.authBindings.providers.wechat') return 'WeChat'
         if (key === 'profile.authBindings.providers.oidc') return params?.providerName || 'OIDC'
         if (key === 'profile.authBindings.source.avatar') {
@@ -107,8 +107,8 @@ describe('ProfileInfoCard', () => {
       }
     })
 
-    expect(wrapper.text()).toContain('Avatar synced from Community')
-    expect(wrapper.text()).toContain('Username synced from Community')
+    expect(wrapper.text()).toContain('Avatar synced from LinuxDo')
+    expect(wrapper.text()).toContain('Username synced from LinuxDo')
   })
 
   it('uses the configured OIDC provider name in source hints', () => {

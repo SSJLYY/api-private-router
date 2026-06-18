@@ -438,8 +438,6 @@ import type { ErrorPassthroughRule } from '@/api/admin/errorPassthrough'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import Icon from '@/components/icons/Icon.vue'
-import { extractApiErrorMessage } from '@/utils/apiError'
-
 
 const props = defineProps<{
   show: boolean
@@ -618,7 +616,7 @@ const handleSubmit = async () => {
     closeFormModal()
     loadRules()
   } catch (error: any) {
-    appStore.showError(extractApiErrorMessage(error, t('admin.errorPassthrough.failedToSave')))
+    appStore.showError(error.response?.data?.detail || t('admin.errorPassthrough.failedToSave'))
     console.error('Error saving rule:', error)
   } finally {
     submitting.value = false
@@ -630,7 +628,7 @@ const toggleEnabled = async (rule: ErrorPassthroughRule) => {
     await adminAPI.errorPassthrough.toggleEnabled(rule.id, !rule.enabled)
     rule.enabled = !rule.enabled
   } catch (error: any) {
-    appStore.showError(extractApiErrorMessage(error, t('admin.errorPassthrough.failedToToggle')))
+    appStore.showError(error.response?.data?.detail || t('admin.errorPassthrough.failedToToggle'))
     console.error('Error toggling rule:', error)
   }
 }
@@ -645,7 +643,7 @@ const confirmDelete = async () => {
     deletingRule.value = null
     loadRules()
   } catch (error: any) {
-    appStore.showError(extractApiErrorMessage(error, t('admin.errorPassthrough.failedToDelete')))
+    appStore.showError(error.response?.data?.detail || t('admin.errorPassthrough.failedToDelete'))
     console.error('Error deleting rule:', error)
   }
 }

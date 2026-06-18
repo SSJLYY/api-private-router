@@ -2,14 +2,6 @@
  * Shared URL builder for iframe-embedded pages.
  * Used by PurchaseSubscriptionView and CustomPageView to build consistent URLs
  * with user_id, token, theme, lang, ui_mode, src_host, and src parameters.
- *
- * SECURITY NOTE: Auth tokens in URL query parameters may be logged by:
- * - Browser history
- * - Server access logs
- * - Analytics scripts
- * - Referrer headers
- *
- * For production use, consider using postMessage API or short-lived tokens.
  */
 
 const EMBEDDED_USER_ID_QUERY_KEY = 'user_id'

@@ -46,6 +46,7 @@ public class PaymentWebhookProviderVerifier {
             case "alipay" -> verifyAlipay(candidate, rawBody);
             case "stripe" -> verifyStripe(candidate, rawBody, headers);
             case "wxpay" -> verifyWxpay(candidate, rawBody, headers);
+            case "airwallex" -> verifyAirwallex(candidate, rawBody, headers);
             default -> throw new IllegalArgumentException("unsupported webhook provider: " + providerKey);
         };
     }
@@ -195,9 +196,78 @@ public class PaymentWebhookProviderVerifier {
                     rawBody == null ? "" : rawBody,
                     metadata
             );
+        } catch (IllegalArgumentException ex) {
+            throw ex;
         } catch (Exception ex) {
             throw new IllegalArgumentException("wxpay payload parse failed", ex);
         }
+    }
+
+    private PaymentWebhookNotification verifyAirwallex(PaymentWebhookCandidate candidate, String rawBody, Map<String, String> headers) {
+        String webhookSecret = trimToEmpty(candidate.config().get("webhookSecret"));
+        String timestampHeader = trimToEmpty(headers.get("x-timestamp"));
+        String signatureHeader = trimToEmpty(headers.get("x-signature"));
+        if (webhookSecret.isBlank()) {
+            throw new IllegalArgumentException("missing airwallex webhook secret");
+        }
+        if (timestampHeader.isBlank() || signatureHeader.isBlank()) {
+            throw new IllegalArgumentException("missing airwallex signature headers");
+        }
+        try {
+            long timestamp = Long.parseLong(timestampHeader);
+            long now = Instant.now().getEpochSecond();
+            if (Math.abs(now - timestamp) > 300) {
+                throw new IllegalArgumentException("airwallex signature expired");
+            }
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException("invalid airwallex timestamp");
+        }
+        String signedPayload = timestampHeader + (rawBody == null ? "" : rawBody);
+        String expected = hmacSha256Hex(webhookSecret, signedPayload);
+        if (!MessageDigest.isEqual(
+                expected.getBytes(StandardCharsets.UTF_8),
+                signatureHeader.getBytes(StandardCharsets.UTF_8)
+        )) {
+            throw new IllegalArgumentException("invalid airwallex signature");
+        }
+        try {
+            JsonNode root = objectMapper.readTree(rawBody == null ? "" : rawBody);
+            String eventType = root.path("type").asText("");
+            JsonNode dataObject = root.path("data").path("object");
+            String outTradeNo = dataObject.path("merchant_order_id").asText("");
+            String intentId = dataObject.path("id").asText("");
+            double amount = dataObject.path("amount").asDouble(0);
+            String currency = dataObject.path("currency").asText("");
+            String status = normalizeAirwallexStatus(dataObject.path("status").asText(""));
+            Map<String, String> metadata = new HashMap<>();
+            putIfPresent(metadata, "account_id", dataObject.path("account_id").asText(""));
+            putIfPresent(metadata, "currency", currency);
+            putIfPresent(metadata, "status", dataObject.path("status").asText(""));
+            if (!"success".equals(status) && !"failed".equals(status)) {
+                return null;
+            }
+            return new PaymentWebhookNotification(
+                    "airwallex",
+                    intentId,
+                    outTradeNo,
+                    amount,
+                    status,
+                    rawBody == null ? "" : rawBody,
+                    metadata
+            );
+        } catch (IllegalArgumentException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("airwallex payload parse failed", ex);
+        }
+    }
+
+    private String normalizeAirwallexStatus(String status) {
+        return switch (trimToEmpty(status).toUpperCase(Locale.ROOT)) {
+            case "SUCCEEDED" -> "success";
+            case "CANCELLED", "FAILED" -> "failed";
+            default -> "pending";
+        };
     }
 
     private String buildEasyPaySignBase(Map<String, String> params) {

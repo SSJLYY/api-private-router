@@ -1,6 +1,6 @@
 /**
  * 格式化工具函数
- * 参考 Remote Source 早期实现的 format.js 实现
+ * 参考 CRS 项目的 format.js 实现
  */
 
 import { i18n, getLocale } from '@/i18n'
@@ -10,12 +10,12 @@ import { i18n, getLocale } from '@/i18n'
  * @param date 日期字符串或 Date 对象
  * @returns 相对时间字符串，如 "5m ago", "2h ago", "3d ago"
  */
-export function formatRelativeTime(date: string | Date | null | undefined, now?: Date): string {
+export function formatRelativeTime(date: string | Date | null | undefined): string {
   if (!date) return i18n.global.t('common.time.never')
 
-  const currentTime = now ?? new Date()
+  const now = new Date()
   const past = new Date(date)
-  const diffMs = currentTime.getTime() - past.getTime()
+  const diffMs = now.getTime() - past.getTime()
 
   // 处理未来时间或无效日期
   if (diffMs < 0 || isNaN(diffMs)) return i18n.global.t('common.time.never')
@@ -59,13 +59,7 @@ export function formatNumber(num: number | null | undefined): string {
  * @returns 格式化后的字符串，如 "$1.25"
  */
 export function formatCurrency(amount: number | null | undefined, currency: string = 'USD'): string {
-  if (amount === null || amount === undefined) {
-    const locale = getLocale()
-    return new Intl.NumberFormat(locale, {
-      style: 'currency', currency,
-      minimumFractionDigits: 2, maximumFractionDigits: 2
-    }).format(0)
-  }
+  if (amount === null || amount === undefined) return '$0.00'
 
   const locale = getLocale()
 
@@ -87,15 +81,13 @@ export function formatCurrency(amount: number | null | undefined, currency: stri
  * @returns 格式化后的字符串，如 "1.5 MB"
  */
 export function formatBytes(bytes: number, decimals: number = 2): string {
-  if (!Number.isFinite(bytes) || bytes === 0) return '0 Bytes'
-  if (bytes < 0) return '-' + formatBytes(-bytes, decimals)
-  if (bytes < 1) return parseFloat(bytes.toFixed(decimals < 0 ? 0 : decimals)) + ' Bytes'
+  if (bytes === 0) return '0 Bytes'
 
   const k = 1024
   const dm = decimals < 0 ? 0 : decimals
   const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
 
-  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), sizes.length - 1)
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
 
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
 }
@@ -159,12 +151,9 @@ export function formatDateTime(
 
 /**
  * 格式化为 datetime-local 控件值（YYYY-MM-DDTHH:mm，使用本地时间）
- *
- * 注意：datetime-local 输入控件使用本地时间，与后端 API 交互时需注意时区转换。
- * 此函数将 UTC 时间戳转换为用户本地时间的 datetime-local 格式。
  */
 export function formatDateTimeLocalInput(timestampSeconds: number | null): string {
-  if (timestampSeconds == null) return ''
+  if (!timestampSeconds) return ''
   const date = new Date(timestampSeconds * 1000)
   if (isNaN(date.getTime())) return ''
   const year = date.getFullYear()
